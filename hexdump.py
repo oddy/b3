@@ -27,7 +27,7 @@ def hexdump(prefix, src, length=16):
             if col != oldCol and colOK:
                 hexa += cols[col]
                 oldCol = col
-            hexa += ' %02X' % ord(x) ; nccl += 3
+            hexa += ' %02x' % ord(x) ; nccl += 3
         if colOK:         hexa += cols['rst']
         hexa += ' ' * (length*3 - nccl)     # pad
         s = s.translate(HEX_FILTER)

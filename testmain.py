@@ -1,4 +1,4 @@
-
+d
 from   varint import encode_varint, decode_varint
 from hexdump import hexdump                         # note this wraps stdout
 from pprint import pprint
@@ -15,13 +15,35 @@ from pprint import pprint
 
 # * Top level list-structure does NOT start with a type tag because we always know what type it is.
 
-# Lets do a full in-memory parser/builder first, then break it down into different APIs
+# USERS:
+# 1) BMQ     messages
+# 2) C3      signed-items
+# 3) ACMD    messages
+# 4) qsafile packer (maybe) - probably seperate project
+#    - see how hard it is to write C DLL that creates python dicts and gives them to python.
+
+
+# * Lets do a full in-memory parser/builder first, then break it down into different APIs
+# Next steps -
+# - write the same as this in Go
+# - write the same as this in C (?)
+# - try to speed python up - inline the parser index handling and slicing, and list-normalise the builders so they're not all string-joinging all the time
+# - try to make it so python doesn't have to have/do the whole thing in memory
+# - operations for prepending new stuff onto an existing list buf (bmq)
+# - integrate tag handling (C3 style)
+
+# * Make C3 work with this
+# * Make BMQ work with this
+# * Make ACMD work with this
+
+# * make a python dict with a C DLL  (for the packer)
+
 
 # --- Protobuf-compatible wiretypes ---
 WIRE_VARINT  = 0            # a varint follows
-# WIRE_64BIT   = 1            # little endian
+# WIRE_64BIT = 1            # little endian
 WIRE_BYTES   = 2            # varint length then byte string
-# WIRE_32BIT   = 5            # little endian
+# WIRE_32BIT = 5            # little endian
 
 # I'm abusing the purity of wiretypes to e-z hack in lists and dicts.
 
@@ -109,7 +131,7 @@ def ParseItem(buf, index=0):
         l_buf_len,index = decode_varint(buf, index)
         l_buf = buf[index:index+l_buf_len]
         index += l_buf_len
-        l_list = ParseListBuf(l_buf, 0)
+        _,l_list = ParseListBuf(l_buf, 0)
         print '   done decoding list'
         return index,l_list,tag
 
@@ -118,7 +140,7 @@ def ParseItem(buf, index=0):
         d_buf_len,index = decode_varint(buf, index)
         d_buf = buf[index:index+d_buf_len]
         index += d_buf_len
-        d_dict = ParseDictBuf(d_buf, 0)
+        _,d_dict = ParseDictBuf(d_buf, 0)
         print '   done decoding dict'
         return index,d_dict,tag
 
@@ -134,17 +156,17 @@ def ParseItem(buf, index=0):
 
 
 #  expects entire buf in one byte string
-def ParseListBuf(buf, index=0):
+def ParseListBuf(buf, index):
     buf = bytes(buf)
     out = []
     nitems,index = decode_varint(buf, index)
     for n in range(nitems):
         index,itm,tagn = ParseItem(buf, index)
         out.append(itm)
-    return out
+    return index,out
 
 
-def ParseDictBuf(buf, index=0):
+def ParseDictBuf(buf, index):
     buf = bytes(buf)
     out = {}
     nitems,index = decode_varint(buf, index)
@@ -154,10 +176,14 @@ def ParseDictBuf(buf, index=0):
         index += klen
         index,itm,tagn = ParseItem(buf, index)          # value item (tagn likely 0 or conflict, etc)
         out[k] = itm
-    return out
+    return index,out
 
+def TestMain1():
+    buf = '\x02' * 80
+    out = ParseListBuf(buf, 0)
+    pprint(out)
 
-def TestMain():
+def TestMain2():
     print 'Building buf'
     list_1 = ["Hello", 123, "world","test1","test2"]
     list_2 = ["Hello", "world", "test1",123, "foooo", 456]
@@ -173,10 +199,15 @@ def TestMain():
 
     print
     print 'parsing buf'
-    out = ParseListBuf(buf)
+    out = ParseListBuf(buf, 0)
     pprint(out)
 
+def TestMain():
+    g = encode_varint(4111111111111111)
+    print hexdump('buf', g)
 
+    out, index = decode_varint(g, 0)
+    print 'ret index ',index,', val ',out
 
 
 
