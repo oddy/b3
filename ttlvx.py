@@ -2,13 +2,35 @@
 # Item:
 # [BYTE type] [VARINT tag] <[VARINT namelen] [UTF8 name]> [VARINT len] [BYTES data]
 
+
 # Bag:
-# [item][item][item][item-of-type BAG_END]
-# And we only need BAG_END for nexted bags! End of input also counts as bag end.
+# [item][item][item][item-of-type END_BAG]
+# * And we only need BAG_END for nexted bags! End of input also counts as bag end.
+# * end sentinel has totally won. End sentinel logic locked in.
+
+
+# no-tag, tag-present, name-present
+
+# problem with tag-0-requires-a-name is sometimes we dont want a tag OR a name. as in we're just doing lists.
+
+# - Think we're gonna have to eat 2 bits in the type byte so each Item has switchable tag and name.
+# - Because trying to control the format of Items from one layer up with a TYPE_DICT_BAG / TYPE_LIST_BAG
+#   breaks the lovely simplicity we have just won ourselves, because you've got top-layer state reaching into all the lower level items.
+
+# we could still have a TYPE_LIST_BAG type but it would be more of a hint than a full-control data structure.
+# especially because the inner stuff either has already been seralized in a block that is e.g. signed, or
+# has yet to be serialized and we'd have to pass a bunch of flags around.
+# and thats just for building!
+
+# we dont want tags to always be mandatory. Sometimes a list is just a list.
+# This way we very simply get the best of ALL worlds.
+
+# Decided thusly: 2 bits for tag on / name on.    # tag probably overrides name.
+
 
 TYPE_0 = 0
-TYPE_BAG = 255   #     - upperlevel type that is a bag inside
-TYPE_BAG_END = 254   # - bag level type that says this bag is done. (only need it for nested bags) Note: now we have types without lengths.
+TYPE_BAG = 255          # - upperlevel type that is a bag inside
+TYPE_BAG_END = 254      # - bag level type that says this bag is done. (only need it for nested bags) Note: now we have types without lengths.
 TYPE_BYTES = 2
 TYPE_VARINT = 3
 TYPE_STRING = 4
@@ -29,15 +51,12 @@ from   varint import encode_varint, decode_varint, decode_varint0
 from   hexdump import hexdump
 
 
-# Still using the build list collapse model and the ,index model to begin with.
+known_types = { int:TYPE_VARINT,  bytes:TYPE_BYTES, unicode:TYPE_STRING }
+type_encode = { TYPE_VARINT:encode_varint,  TYPE_BYTES:lambda x:x, TYPE_STRING:codecs.encode }
+type_decode = { TYPE_VARINT:decode_varint0, TYPE_BYTES:lambda x:x, TYPE_STRING:codecs.decode }
 
-known_types = {int:TYPE_VARINT,  bytes:TYPE_BYTES, unicode:TYPE_STRING }
-type_encode = {TYPE_VARINT:encode_varint,  TYPE_BYTES:lambda x:x, TYPE_STRING:codecs.encode}
-type_decode = {TYPE_VARINT:decode_varint0, TYPE_BYTES:lambda x:x, TYPE_STRING:codecs.decode}
 
-# bag: number of items or end sentinel?
-# if the end sentinel is an item type, then we can build and parse dynamically without
-# ok lets try it.
+
 
 def BuildItem(tag, item, typ=None):
     out = []
