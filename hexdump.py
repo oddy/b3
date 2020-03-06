@@ -38,4 +38,4 @@ def hexdump(prefix, src, length=16):
 
 
 if __name__ == '__main__':
-    print hexdump('',sys.stdin.read())
+    print(hexdump('',sys.stdin.read()))
