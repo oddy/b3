@@ -17,10 +17,10 @@
 # todo: fix the TYPE_END vs END thing.
 # todo: figure out zero-copy unpacking. (passing indexes around vs copying sub-buffers)
 
+# NOTE !!!!! b'' and u'' ALL CONSTANTS !!!!!!!!!
 
 
-
-END = '\x00'          # The one 'type' that has no key and no value. Type 0 with the high bit set is illegal.
+END = b'\x00'          # The one 'type' that has no key and no value. Type 0 with the high bit set is illegal.
 TYPE_END = 0          # - bag level type that says this bag is done. (only need it for nested bags) Note: now we have types without lengths.
 TYPE_BAG = 1          # - upperlevel type that is a bag inside
 TYPE_BYTES = 3
@@ -261,7 +261,9 @@ def PackRecursive(itm, tag_name=None):
         buf = b''.join([PackRecursive(v, k) for k, v in itm.items()]) + END  # bag bytes...
         return Pack(buf, tag_name, bytes_override=TYPE_DICT_BAG)        # ...becomes item
 
-    return Pack(itm, tag_name)
+    out = Pack(itm, tag_name)
+    print("PackRecursive out %r" % out)
+    return out
 
 
 
