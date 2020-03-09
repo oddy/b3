@@ -1,5 +1,6 @@
 
 import struct
+from   six import PY2
 
 def encode_varint(num):
     _next = 1
@@ -12,28 +13,14 @@ def encode_varint(num):
         num = _next
     return b''.join(values)
 
-def decode_varint0(data):
-    index = 0
-    item = 128
-    num = 0
-    left = 0
-    while item & 128:
-        item = struct.unpack('B', data[index])[0]
-        #item = ord( data[index] )
-        index += 1
-        value = (item & 127) << left
-        num += value
-        left += 7
-    return num
-
 
 def decode_varint(data, index):
     item = 128
     num = 0
     left = 0
     while item & 128:
-        item = struct.unpack('B', data[index])[0]
-        #item = ord( data[index] )
+        item = data[index]
+        if PY2: item = ord(item)
         index += 1
         value = (item & 127) << left
         num += value

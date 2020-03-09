@@ -16,8 +16,8 @@
 
 # todo: fix the TYPE_END vs END thing.
 # todo: figure out zero-copy unpacking. (passing indexes around vs copying sub-buffers)
-
 # NOTE !!!!! b'' and u'' ALL CONSTANTS !!!!!!!!!
+# NOTE byte buffer element access in py2 gives us small byte buffers (strs), in py3 gives us INTS.
 
 
 END = b'\x00'          # The one 'type' that has no key and no value. Type 0 with the high bit set is illegal.
@@ -65,16 +65,13 @@ else:
 # Note: composite type stuff is different for the different (json/protobuf/expect) use case systems.
 
 
-
-
-
-
 # =====================================================================================================================
-# = Packing base operations
+# = Base operations - Pack & Unpack
 # =====================================================================================================================
 
+# --- Pack ---
 
-# In: a python object and an optional tag
+# In: a python object and an optional tag. Tag can be unicode string or integer.
 # Out: the object converted to bytes and prepended with the necessary headers for its type and key info.
 
 def Pack(item_data, tag=None, bytes_override=None):              # returns a packed ITEM
@@ -102,14 +99,8 @@ def Pack(item_data, tag=None, bytes_override=None):              # returns a pac
     out.append(encode_varint(len(data_bytes)))
     if data_bytes:
         out.append(data_bytes)
-
     print("Pack out: %r" % out)
-
     return b''.join(out)
-
-
-
-
 
 
 # In: a basic type item
@@ -129,32 +120,24 @@ def PackBasicType(itm):
         return TYPE_VARINT, encode_varint(itm)
 
     # ... Moar Types ...
-    if isinstance(itm, (list, dict)):   raise TypeError('PackBasicType does not accept composite types, use Pack instead')
+    if isinstance(itm, (list, dict)):   raise TypeError('Pack does not accept composite types, please use one of the composite APIs')
     raise NotImplementedError('PackBasicType Unknown type %r' % type(itm))
 
 
-BASIC_TYPE_DEFAULTS = {             # like these are type defaults for AT THE USER LEVEL, so UTF8 becomes a u''. We can still use u'' in py3
-    TYPE_BYTES      : b'',
-    TYPE_UTF8       : u'',
-    TYPE_VARINT     : 0,
-}
 
-
-
-# =====================================================================================================================
-# = Unpacking base operations
-# =====================================================================================================================
-
+# --- Unpack ---
 
 # In:  bytes buffer, index pointing to location in buffer
 # Out: updated index, datatype, tag, converted data value
 
 def Unpack(buf, index=0):
+    if not isinstance(buf, bytes):      raise TypeError('Unpack takes only bytes buffers as input')
     print("\nunpack called with index=%r" % index)
     print(hexdump("unpack buf",buf))
 
     # --- Type byte ---
-    type_b = struct.unpack('B', buf[index])[0]
+    type_b  = buf[index]                                    # str on py2, int on py3
+    if PY2:   type_b = ord(type_b)                          # ord should be safe to use if we're ensured bytes coming in
     has_tag = bool(type_b & 0x80)
     tag_str = bool(type_b & 0x40)
     index += 1
@@ -168,11 +151,13 @@ def Unpack(buf, index=0):
     tag = None                                              # no tag
     if has_tag:
         if tag_str:                                         # string tag
+            print('got tag STRING tag')
             name_len,index = decode_varint(buf, index)
             name_b = buf[index : index+name_len]
             tag = name_b.decode('utf8')
             index += name_len
         else:                                               # int tag
+            print('got tag INT tag')
             tag,index = decode_varint(buf, index)
 
     # --- Data (value) ---
@@ -181,7 +166,7 @@ def Unpack(buf, index=0):
     val_buf = buf[index : index+data_len]
     print(hexdump("unpack val_buf",val_buf))
     if typ in [TYPE_BYTES, TYPE_BAG, TYPE_DICT_BAG, TYPE_LIST_BAG]:
-        #value = (index,data_len)                             # zero-copy mode, caller has to copy buffer (if they want)
+        #value = (index,data_len)                           # zero-copy mode, caller has to copy buffer (if they want)
         value = val_buf                                     # not zero-copy mode.
     else:
         value = UnpackBasicType(val_buf, typ)
@@ -190,12 +175,6 @@ def Unpack(buf, index=0):
     print("unpack returning index %r typ %r tag %r value %r" % (index,typ,tag,value))
     return index, typ, tag, value                           # the thin end of the unknowns-wedge
 
-
-    # This definitely does not belong in Unpack:
-
-    # if typ == TYPE_BAG:                                     # or other bag types (?)
-    #     index, sub_bag = UnpackBag(buf, index)              # we're ok to recurse here because its alwaus just UnpackBag - simpler than on the pack side.
-    #     return index, typ, tag, sub_bag
 
 # In:  buffer, index, typecode
 # Out: py-type value
@@ -208,45 +187,21 @@ def UnpackBasicType(val_buf, typ):            # not sure about the index jugglin
         return val
     raise TypeError('Unknown type %d encountered' % typ)
 
-# =====================================================================================================================
-# = Recursive dict/list (json-style UX) unpacking
-# =====================================================================================================================
-
-def UnpackTopLevelList(buf, index=0):
-    return UnpackRecursive(buf, index, container_type=TYPE_LIST_BAG)
-
-def UnpackRecursive(buf, index, container_type):
-    out = { TYPE_BAG: list(), TYPE_LIST_BAG : list(),  TYPE_DICT_BAG : dict() }[container_type]
-    while True:
-        index, typ, tag, val = Unpack(buf, index)
-        if typ == TYPE_END:
-            print("recur we hit an end marker")
-            break
-
-        if typ == TYPE_LIST_BAG or typ == TYPE_DICT_BAG:         # Note unpack gives us the bytes, we call ourselves to turn those bytes into a list/dict
-            val = UnpackRecursive(val, 0, typ)                   # turn bytes into a dict or list for sub structures.
-            # Note: we dont return or need a returned index in this case because val is a copied-buffer.
-            # Note: if we move to zero-copy then we may have to pass indexes through. (but we also may not because of the
-            # Note: higher-level bag having its own size at the higher level.)
-
-        if container_type == TYPE_LIST_BAG:     out.append(val)
-        if container_type == TYPE_DICT_BAG:     out[tag] = val
-
-        if index >= len(buf):
-            print("recur we hit end of input")
-            break
-    return out
-
 
 
 # =====================================================================================================================
-# = Recursive dict/list (json-style UX) packing
+# = Composite recursive dict/list (json-style UX)
 # =====================================================================================================================
 
 # todo: recurse limits.
+# todo: this allows int keys in dicts to become tag numbers. Do we want this?
+# todo: - Possible security implications if mix-matched with schemaed messages that have number tags.
 
 # return a list as bag data, not wrapped in a single item like PackRecursive does if you call IT with a list, and not with a end marker.
 # this works because we always want top-level to be a list, not a dict.
+# todo: cultural policy is currently to have top-level be a list always. Sub-levels can be dicts.
+
+# --- Pack ---
 
 def PackTopLevelList(itm_list):
     return b''.join([PackRecursive(i) for i in itm_list])
@@ -266,19 +221,41 @@ def PackRecursive(itm, tag_name=None):
     return out
 
 
+# --- Unpack ---
+
+def UnpackTopLevelList(buf, index=0):
+    return UnpackRecursive(buf, index, container_type=TYPE_LIST_BAG)
+
+def UnpackRecursive(buf, index, container_type):
+    out = { TYPE_BAG: list(), TYPE_LIST_BAG : list(),  TYPE_DICT_BAG : dict() }[container_type]
+    while True:
+        index, typ, tag, val = Unpack(buf, index)
+        if typ == TYPE_END:
+            print("recur we hit an end marker")
+            break
+
+        if typ == TYPE_LIST_BAG or typ == TYPE_DICT_BAG:         # Note unpack gives us the bytes, we call ourselves to turn those bytes into a list/dict
+            val = UnpackRecursive(val, 0, typ)                   # turn bytes into a dict or list for sub structures.
+            # Note: we dont return or need a returned index in this case because val is a copied-buffer.
+            # Note: if we move to zero-copy then we may have to pass indexes through. (but we also may not because of the
+            # Note: higher-level bag having its own size at the higher level.)
+
+        if container_type == TYPE_LIST_BAG:     out.append(val)
+        if container_type == TYPE_BAG:          out.append(val)     # we're interpreting an un type-hinted bag as a list.
+        if container_type == TYPE_DICT_BAG:     out[tag] = val
+
+        if index >= len(buf):
+            print("recur we hit end of input")
+            break
+    return out
+
+
 
 # =====================================================================================================================
-# = Manual (Build/Expect-style UX) packing & unpacking
+# = Composite manual (build/expect-style UX)
 # =====================================================================================================================
 
-# For pack there are no additional helper functions, we just call Pack directly.
-
-def TestBuildExpectPack():
-    sub_bag = Pack(9,'-9-') + Pack(8,'-8-') + END
-    bagbuf1 = Pack(33, 'hello') + Pack(34, sub_bag, bytes_override=TYPE_BAG) + Pack(44, 'world') + Pack(55, 'bar') + END
-    bagbuf2 = Pack(66, 6) + Pack(77, 7) + Pack(88, 8) + END
-    mainbuf = Pack(111, bagbuf1, bytes_override=TYPE_BAG) + Pack(222, bagbuf2, bytes_override=TYPE_BAG) + Pack(333, 333) + END
-    print(hexdump('buildexpect',mainbuf))
+# --- Unpack ---
 
 def Expect(wanted_tags, buf, index=0):
     index, typ, tag, value = Unpack(buf, index)
@@ -287,10 +264,39 @@ def Expect(wanted_tags, buf, index=0):
     return index, tag, value
 
 
+# For pack there are no additional helper functions, user just call Pack directly, like this:
+    # sub_bag = Pack(9,'-9-') + Pack(8,'-8-') + END
+    # bagbuf1 = Pack(33, 'hello') + Pack(34, sub_bag, bytes_override=TYPE_BAG) + Pack(44, 'world') + Pack(55, 'bar') + END
+    # bagbuf2 = Pack(66, 6) + Pack(77, 7) + Pack(88, 8) + END
+    # mainbuf = Pack(111, bagbuf1, bytes_override=TYPE_BAG) + Pack(222, bagbuf2, bytes_override=TYPE_BAG) + Pack(333, 333) + END
+
+# --- Pack ---
+
+def TestBuildExpectPack():
+    buf = Pack(111, 1) + Pack('222', 2)
+    index = 0
+    index, tag, val = Expect([1,2,3], buf, index)
+    print("1 Got tag %r val %r" % (tag,val))
+    index, tag, val = Expect([3], buf, index)
+    print("2 Got tag %r val %r" % (tag,val))
+    # index, tag, val = Expect([1,2,3], buf, index)
+    # print("3 Got tag %r val %r" % (tag,val))
+
+
+
+
+
+
 
 # =====================================================================================================================
 # = Tagged Schema-ed packing (protobuf-style UX)
 # =====================================================================================================================
+
+BASIC_TYPE_DEFAULTS = {             # like these are type defaults for AT THE USER LEVEL, so UTF8 becomes a u''. We can still use u'' in py3
+    TYPE_BYTES      : b'',
+    TYPE_UTF8       : u'',
+    TYPE_VARINT     : 0,
+}
 
 # protobuf .proto files are 'optional' type name = tag_number;
 # we can do type,name,number triples. And maybe [stretch goal] an sql-like CREATE TABLE-style syntax for expressing simple schemas.
@@ -350,7 +356,7 @@ class Message(object):
 
 
 def TestListDict():
-    x = [1,2,3,[4,5,6],[7,8,'9'],10]
+    x = [1,2,3,[4,5,6],[7,8,'9'],10,{11:{(99,88):13}},14]
     buf = PackTopLevelList(x)
     print(hexdump('listdict',buf))
     y = UnpackTopLevelList(buf,0)
@@ -393,8 +399,9 @@ def test_build_item_varint_no_key():
 #
 
 if __name__ == '__main__':
-    #TestBuildExpectPack()
-    TestListDict()
+    #TestListDict()
+    TestBuildExpectPack()
+
 
 
 
