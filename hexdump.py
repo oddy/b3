@@ -33,7 +33,8 @@ def hexdump(prefix, src, length=16):
         s = s.translate(HEX_FILTER)
         result += "%s %04X %s   %s\n" % (prefix, N, hexa, s)
         N += length
-    return result
+
+    return result.strip()
 
 
 

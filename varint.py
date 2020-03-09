@@ -1,5 +1,5 @@
 
-
+import struct
 
 def encode_varint(num):
     _next = 1
@@ -8,9 +8,9 @@ def encode_varint(num):
         _next = num >> 7
         shift = 128 if _next else 0
         part = (num & 127) | shift
-        values.append(chr( part ))
+        values.append(struct.pack('B', part))
         num = _next
-    return ''.join(values)
+    return b''.join(values)
 
 def decode_varint0(data):
     index = 0
@@ -18,7 +18,8 @@ def decode_varint0(data):
     num = 0
     left = 0
     while item & 128:
-        item = ord( data[index] )
+        item = struct.unpack('B', data[index])[0]
+        #item = ord( data[index] )
         index += 1
         value = (item & 127) << left
         num += value
@@ -31,7 +32,8 @@ def decode_varint(data, index):
     num = 0
     left = 0
     while item & 128:
-        item = ord( data[index] )
+        item = struct.unpack('B', data[index])[0]
+        #item = ord( data[index] )
         index += 1
         value = (item & 127) << left
         num += value
