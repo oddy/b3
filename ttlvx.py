@@ -462,8 +462,8 @@ def test_build_item_varint_no_key():
 
 if __name__ == '__main__':
     TestListDict()
-    #TestBuildExpectPack()
-    #TestSchemaedMessage()
+    TestBuildExpectPack()
+    TestSchemaedMessage()
 
 
 
