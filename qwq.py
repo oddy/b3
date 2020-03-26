@@ -27,6 +27,7 @@ def ping():
     cmd = "\377\377\377\377status\x00";
 
     sk = socket.socket(type=socket.SOCK_DGRAM)
+    sk.settimeout(2.0)
     sk.connect(('quake.retrolan.nz',27500))
     sk.send(cmd)
     rx = sk.recv(819)
@@ -71,7 +72,11 @@ def main():
     while True:
         time.sleep(1.0)
         os.system('cls')
-        ping()
+        try:
+            ping()
+        except Exception as e:
+            print("ERROR:",str(e))
+
 
 
 
