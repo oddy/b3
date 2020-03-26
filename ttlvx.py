@@ -460,10 +460,18 @@ def test_build_item_varint_no_key():
 #     print(repr(g))
 #
 
+def TestVarints():
+    g = encode_varint(64)
+    print(hexdump(g, prefix='varint +ve'))
+    #print(hexdump(prefix='varint -ve', encode_varint(-44)))            # infnite loop! memory error!
+
+
 if __name__ == '__main__':
-    TestListDict()
-    TestBuildExpectPack()
-    TestSchemaedMessage()
+    # TestListDict()
+    # TestBuildExpectPack()
+    # TestSchemaedMessage()
+
+    TestVarints()
 
 
 

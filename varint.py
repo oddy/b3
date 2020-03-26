@@ -26,3 +26,6 @@ def decode_varint(data, index):
         num += value
         left += 7
     return num, index
+
+
+
