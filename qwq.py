@@ -1,10 +1,11 @@
 
 import socket, shlex, time, os, traceback, sys, textwrap, hashlib
-import operator, math
+import math
 from   hexdump  import hexdump
 from   operator import itemgetter
 from   pprint import pprint
 
+# fuck python 3.
 
 """
 #define	S2C_CHALLENGE		'c'
@@ -42,27 +43,21 @@ class QwServer(object):
     # --- Info ping query ---
 
     def Status(s):
-        s.sk.send(b"\xff\xff\xff\xffstatus\x00")
+        s.sk.send("\xff\xff\xff\xffstatus\x00")
         rx = s.sk.recv(1500)
-        if rx[4] not in [b'n', 0x6e]:            # Expecting #define A2C_PRINT 'n' (py2 'n', py3 0x6e
+        if rx[4] not in ['n', 0x6e]:            # Expecting #define A2C_PRINT 'n' (py2 'n', py3 0x6e
             print(hexdump(rx))
-            raise TypeError(u"Not QW Server!")
+            raise TypeError("Not QW Server!")
 
         rx = rx[6:]                         # skip the header, between here and \0a is key-value pairs
         first_lf = rx.find('\x0a')
-        print(hexdump(rx))
-        print("first_lf = ",first_lf, " len = ",len(rx))
 
         set_buf = rx[:first_lf]
         sx = set_buf.split('\x5c')
-
         settings = AttrDict(dict(zip(sx[::2], sx[1::2])))
-        pprint(settings)
 
         # list of [player-id, frags, connect_time, ping, name, skin, shirt_color, pants_color] entries.
         playbuf = rx[first_lf+1:]           # player info after first LF
-        # print("Player buf:")
-        # print(hexdump(playbuf))
         playinfo = [[int(j) if j.replace('-','').isdigit() else j for j in shlex.split(i)] for i in playbuf.splitlines() if len(i) > 1]
         playinfo = sorted(playinfo, key=itemgetter(1), reverse=True)
         players = [AttrDict(dict(zip(play_fields, play_ent))) for play_ent in playinfo]
@@ -78,9 +73,6 @@ class QwServer(object):
         client_time_hex = ''.join(textwrap.wrap('%08X' % (math.trunc(time.time())), 2)[::-1])
         before = "rcon "
         after  = client_time_hex + " " + cmdline.strip() + " "
-        print('before   ',before.__class__)
-        print('after    ',after.__class__)
-        print('password ',s.password.__class__)
         inner  = before + s.password + after
         inner_hash = hashlib.sha1(inner).hexdigest().upper()
         outer  = before + inner_hash + after
@@ -96,13 +88,21 @@ class QwServer(object):
 # ======================================================================================================================
 
 
+
 class PrintTable(object):
     def __init__(s):
         s.max_field_lens = {}
         s.data = []
 
     def AddLine(s, field_list):
-        f2 = [str(i) for i in field_list]
+        f2 = []
+        for i in field_list:
+            if isinstance(i, int):
+                f2.append(str(i))
+            else:
+                f2.append(''.join([j if 31 < ord(j) < 127 else '.' for j in i]))
+
+        #f2 = [str(i) for i in field_list]
         s.data.append(f2)
         for i,f in enumerate(f2):
             if len(f) > s.max_field_lens.get(i,0):
