@@ -1,6 +1,8 @@
 
+import struct
 from six import PY2
 from datetime import datetime
+
 
 # --- Bag end marker ---
 B3_END = 0        # end marker. Always 1 byte, always \x00
@@ -22,7 +24,7 @@ B3_VARINT   = 8    # signed varint, zigzag encoded.        slower & small/large 
 B3_UVARINT  = 9    # unsigned varint                       slower & small/large for ints.
 
 B3_FLOAT64  = 10   # IEEE754 64bit signed float.           faster & medium      for floats.
-B3_BIGDEC   = 11   # Arbitrary Precision decimals.         slower & small/large for floats.
+B3_DECIMAL  = 11   # Arbitrary Precision decimals.         slower & small/large for floats.
 
 B3_STAMP64  = 12   # Signed 64bit unix ns, no TZ           faster & medium      for datetime. (yr 1678-2262)
 B3_SCHED    = 13   # Arb Prec unix sec, opt ns,offset,TZ.  slower & small/large for datetime.
@@ -48,51 +50,50 @@ def GuessType(obj):
     if isinstance(obj, str):                    # Py3 unicode str only, py2 str/bytes is caught by above test.
         return B3_UTF8
 
-    # todo: optimal selection for the types below here, depending on value
+    # todo: optimal selection for the types below here, depending on value, needs to be standardized.
 
-
-    # todo: selecting optimal B3 type from integer value
     if isinstance(obj, int):                    # py2: 32bit,  py3: arb prec
         if obj >= 0:    return B3_UVARINT
         else:           return B3_VARINT
         # return B3_INT64
 
-    # todo: selecting optimal B3 type from integer value
     if PY2 and isinstance(obj, long):           # py2 arb prec
         return B3_VARINT                        # the zigzag size diff is only noticeable with small numbers.
 
-    # todo: selection logic,  decimal library support
     if isinstance(obj, float):
         return B3_FLOAT64
         # return B3_BIGDEC
 
     if isinstance(obj, datetime):
-        return B3_SCHED
-        # return B3_STAMP64
-
-
-
+        return B3_STAMP64
+        # return B3_SCHED
 
     raise NotImplementedError('Unknown type %r' % type(obj))
 
 # todo: do we want to support python's complex number type?
 
+# --- Packers by B3 Type ---
+
+def PackNull(itm):
+    return b''                                  # shouldnt get called
+
+def PackBool(itm):
+    if itm:     return b'\x01'
+    else:       return b'\x00'
+
+def PackBytes(itm):                             # aduh, bytes are already bytes ^-^
+    return itm
+
+def PackUtf8(itm):
+    return itm.encode('utf8')
+
+def PackInt64(itm):
+    return struct.pack("<q", itm)               # little endian. todo: benchmark
+
+def PackFloat64(itm):
+    return struct.pack("d", itm)
 
 
-def PackBasicType(itm):
-    if isinstance(itm, bytes):                  # pass through.
-        return TYPE_BYTES, itm                  # Note this will catch also *str* on python2. If you want unicode out, pass unicode in.
 
-    if PY2 and isinstance(itm, unicode):
-        return TYPE_UTF8, itm.encode('utf8')
-
-    if isinstance(itm, str):                    # Py3 unicode str only, py2 done by the bytes check above.
-        return TYPE_UTF8, itm.encode('utf8')
-
-    if isinstance(itm, int):
-        return TYPE_VARINT, encode_varint(itm)
-
-    # ... Moar Types ...
-    if isinstance(itm, (list, dict)):   raise TypeError('Pack does not accept composite types, please use one of the composite APIs')
-    raise NotImplementedError('PackBasicType Unknown type %r' % type(itm))
+# we can use struct to pack ieee754 floats too
 
