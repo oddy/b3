@@ -24,12 +24,14 @@ B3_VARINT   = 8    # signed varint, zigzag encoded.        slower & small/large 
 B3_UVARINT  = 9    # unsigned varint                       slower & small/large for ints.
 
 B3_FLOAT64  = 10   # IEEE754 64bit signed float.           faster & medium      for floats.
-B3_DECIMAL  = 11   # Arbitrary Precision decimals.         slower & small/large for floats.
+B3_DECIMAL  = 11   # Arbitrary Precision decimals.         slower & small/large for decimal.
+B3_DECIFLOAT = 12  # Arb Prec Dec which yields as a float on the parser side.   for floats.
 
-B3_STAMP64  = 12   # Signed 64bit unix ns, no TZ           faster & medium      for datetime. (yr 1678-2262)
-B3_SCHED    = 13   # Arb Prec unix sec, opt ns,offset,TZ.  slower & small/large for datetime.
+B3_STAMP64  = 13   # Signed 64bit unix ns, no TZ           faster & medium      for datetime. (yr 1678-2262) (yields to time.time on python if using automode)
+B3_SCHED    = 14   # Arb Prec unix sec, opt ns,offset,TZ.  slower & small/large for datetime.                (yields to
 
-
+B3_CCOMPLEX = 15
+# consider complex numbrs.
 
 # in: some object
 # out: type code or NotImplementedError
@@ -52,12 +54,12 @@ def GuessType(obj):
 
     # todo: optimal selection for the types below here, depending on value, needs to be standardized.
 
-    if isinstance(obj, int):                    # py2: 32bit,  py3: arb prec
+    if isinstance(obj, int):
         if obj >= 0:    return B3_UVARINT
         else:           return B3_VARINT
         # return B3_INT64
 
-    if PY2 and isinstance(obj, long):           # py2 arb prec
+    if PY2 and isinstance(obj, long):
         return B3_VARINT                        # the zigzag size diff is only noticeable with small numbers.
 
     if isinstance(obj, float):
@@ -88,12 +90,13 @@ def PackUtf8(itm):
     return itm.encode('utf8')
 
 def PackInt64(itm):
-    return struct.pack("<q", itm)               # little endian. todo: benchmark
+    return struct.pack("<q", itm)               # little endian.
 
 def PackFloat64(itm):
     return struct.pack("d", itm)
 
 
+# python arb prec to decimal.Decimal.  coeff.scaleb(exponent)
 
 # we can use struct to pack ieee754 floats too
 
