@@ -1,9 +1,9 @@
-
 import struct
 #from six import PY2\
 import six
 from datetime import datetime
 
+# Note: do NOT have a module named types.py. Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
 # --- Bag end marker ---
 B3_END = 0        # end marker. Always 1 byte, always \x00
