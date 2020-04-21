@@ -14,20 +14,34 @@ def encode_uvarint(num):
     return b''.join(values)
 
 
+# def decode_uvarint(data, index):
+#     item = 128
+#     num = 0
+#     left = 0
+#     while item & 128:
+#         item = data[index]
+#         if PY2: item = ord(item)
+#         index += 1
+#         value = (item & 127) << left
+#         num += value
+#         left += 7
+#     return num, index
+
+
+
 def decode_uvarint(data, index):
     item = 128
     num = 0
     left = 0
     while item & 128:
-        item = data[index]
-        if PY2: item = ord(item)
+        item = indexbytes(data, index)      # TODO: benchmark
+        # item = data[index]
+        # if PY2: item = ord(item)
         index += 1
         value = (item & 127) << left
         num += value
         left += 7
     return num, index
-
-
 
 
 

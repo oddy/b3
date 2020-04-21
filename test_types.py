@@ -26,6 +26,10 @@ def test_uvarint_enc():
     assert encode_uvarint(500)   == SBytes("f4 03")         # note: skipping 5000, its still 2 bytes
     assert encode_uvarint(50000) == SBytes("d0 86 03")
 
+def test_uvarint_dec():
+    assert decode_uvarint(SBytes("32"), 0)       == (50, 1)
+    assert decode_uvarint(SBytes("f4 03"), 0)    == (500, 2)
+    assert decode_uvarint(SBytes("d0 86 03"), 0) == (50000, 3)
 
 
 def test_example():
