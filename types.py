@@ -1,6 +1,7 @@
 
 import struct
-from six import PY2
+#from six import PY2\
+import six
 from datetime import datetime
 
 
@@ -46,7 +47,7 @@ def GuessType(obj):
     if isinstance(obj, bytes):                  # Note this will catch also *str* on python2. If you want unicode out, pass unicode in.
         return B3_BYTES
 
-    if PY2 and isinstance(obj, unicode):        # py2 unicode string
+    if six.PY2 and isinstance(obj, unicode):        # py2 unicode string
         return B3_UTF8
 
     if isinstance(obj, str):                    # Py3 unicode str only, py2 str/bytes is caught by above test.
@@ -59,7 +60,7 @@ def GuessType(obj):
         else:           return B3_VARINT
         # return B3_INT64
 
-    if PY2 and isinstance(obj, long):
+    if six.PY2 and isinstance(obj, long):
         return B3_VARINT                        # the zigzag size diff is only noticeable with small numbers.
 
     if isinstance(obj, float):
