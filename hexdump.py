@@ -2,7 +2,10 @@
 import sys
 from   six import PY2
 
+# --- Ansi Color Codes ---
 # Win10 has support for ANSI sequences in its cmd terminal windows finally. This works in cmd and clink.
+# Note: we dont get a tty in pytest unless pytest -s
+colOK = False
 if hasattr(sys.stdout,'isatty') and sys.stdout.isatty():
     if not hasattr(sys,'winver'):               # linux/mac
         colOK = True
@@ -10,7 +13,6 @@ if hasattr(sys.stdout,'isatty') and sys.stdout.isatty():
         import ctypes                           # https://docs.microsoft.com/en-us/windows/console/setconsolemode
         kernel32 = ctypes.windll.kernel32       # # -11 is STD_OUTPUT_HANDLE,
         ret = kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)   # 7 is enable processed_output and VT processing
-        print('set console mode ret',ret)
         colOK = (ret != 0)                      # If 'turn on ansi' succeeded in windows
 
 # --- Hexdump ---
@@ -63,6 +65,6 @@ def hexdump(src, prefix='', length=16):
 
 
 if __name__ == '__main__':
-    foo = "hello \x01\x02\x07\x0f\x12world\nThis is a drill\034\x67\x21\x08\x09\x10\x11\x12\x13\x14 this is a drill, good morning vietnam!"
+    foo = b"hello \x01\x02\x07\x0f\x12world\nThis is a drill\034\x67\x21\x08\x09\x10\x11\x12\x13\x14 this is a drill, good morning vietnam!"
     #print(hexdump('+', b'hello world\r\nFoo Bar\xff\xff\xff\xff testing 1 2 3 is this thing on testing'))
     print(hexdump(foo))
