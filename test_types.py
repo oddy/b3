@@ -2,7 +2,7 @@
 from six import PY2
 from hexdump import hexdump
 
-from varint import encode_uvarint, decode_uvarint, encode_svarint
+from varint import encode_uvarint, decode_uvarint, encode_svarint, decode_svarint
 
 if PY2:
     def SBytes(hex_bytes_str):               # in: textual hexdump, out: byte-string
@@ -32,10 +32,12 @@ def test_uvarint_dec():
     assert decode_uvarint(SBytes("d0 86 03"), 0) == (50000, 3)
 
 def test_svarint_enc():
-    print hexdump( encode_svarint(-49) )  #   == SBytes("32")
-    print hexdump( encode_svarint(-499) ) #   == SBytes("f4 03")         # note: skipping 5000, its still 2 bytes
-    print hexdump( encode_svarint(-4999) ) #   == SBytes("f4 03")         # note: skipping 5000, its still 2 bytes
-    print hexdump( encode_svarint(-49999) ) # == SBytes("d0 86 03")
+    assert encode_svarint(50)   == SBytes("64")
+    assert encode_svarint(-50)  == SBytes("63")
+
+def test_svarint_dec():
+    assert decode_svarint(SBytes("64"), 0)       == (50, 1)
+    assert decode_svarint(SBytes("63"), 0)       == (-50, 1)
 
 
 def test_example():

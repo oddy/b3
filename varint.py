@@ -3,8 +3,30 @@ import struct
 import six
 from   six import PY2, indexbytes, int2byte
 
+# API level - unsigned (guard against negatives)
 def encode_uvarint(num):
-    # todo: add a check for negative numbers here. Currently it infinite-loops.
+    if num < 0:     raise ValueError("encode_uvarint called with negative number")
+    return encode_uvarint_actual(num)
+
+# API level - signed (for negatives)
+# ZigZag: bump it left one, and xor -1 with it IF its negative.
+# lol if you dont xor it, uvarint does an infinite loop (because we're feeding uvarint a negative number)
+# so the xor makes the number positive, i think
+def encode_svarint(num):
+    num = num << 1
+    if num < 0:
+        num = -1 ^ num
+    return encode_uvarint_actual(num)
+
+# API level - choose between signed and unsigned
+def encode_varint(num):
+    if num < 0:
+        return encode_svarint(num)
+    else:
+        return encode_uvarint(num)
+
+# Actual worker
+def encode_uvarint_actual(num):                     # actual worker (also called by encode_svarint)
     _next = 1
     values = []
     while _next:
@@ -17,45 +39,7 @@ def encode_uvarint(num):
         num = _next
     return b''.join(values)
 
-# ZigZag: bump it left one, and xor -1 with it IF its negative.
-# lol if you dont xor it, uvarint does an infinite loop (because we're feeding uvarint a negative number)
-# so the xor makes the number positive
-def encode_svarint(num):
-    num = num << 1
-    if num < 0:
-        num = -1 ^ num
-    return encode_uvarint(num)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def decode_uvarint(data, index):
-#     item = 128
-#     num = 0
-#     left = 0
-#     while item & 128:
-#         item = data[index]
-#         if PY2: item = ord(item)
-#         index += 1
-#         value = (item & 127) << left
-#         num += value
-#         left += 7
-#     return num, index
 
 # 3-byte input: py2 six 1.07us nosix 0.82us,  py3 six 1.14us nosix 1.1us
 
@@ -72,60 +56,14 @@ def decode_uvarint(data, index):
     return num, index
 
 
+def decode_svarint(data, index):
+    ux,index = decode_uvarint(data, index)
+    x = ux >> 1
+    if ux & 0x01 != 0:
+        x = -1 ^ x
+    return x,index
 
 
 
 
-#
-# # from protobuf
-#
-#   def DecodeVarint(buffer, pos):
-#     result = 0
-#     shift = 0
-#     while 1:
-#       b = six.indexbytes(buffer, pos)
-#       result |= ((b & 0x7f) << shift)
-#       pos += 1
-#       if not (b & 0x80):
-#         result &= mask
-#         result = result_type(result)
-#         return (result, pos)
-#       shift += 7
-#       if shift >= 64:
-#         raise _DecodeError('Too many bytes when decoding varint.')
-#   return DecodeVarint
-#
-#
-# def _SignedVarintDecoder(bits, result_type):
-#   """Like _VarintDecoder() but decodes signed values."""
-#
-#   signbit = 1 << (bits - 1)
-#   mask = (1 << bits) - 1
-#
-#   def DecodeVarint(buffer, pos):
-#     result = 0
-#     shift = 0
-#     while 1:
-#       b = six.indexbytes(buffer, pos)
-#       result |= ((b & 0x7f) << shift)
-#       pos += 1
-#       if not (b & 0x80):
-#         result &= mask
-#         result = (result ^ signbit) - signbit
-#         result = result_type(result)
-#         return (result, pos)
-#       shift += 7
-#       if shift >= 64:
-#         raise _DecodeError('Too many bytes when decoding varint.')
-#   return DecodeVarint
-#
-#
-# def encode_varint(num):
-#
-#
-#
-#
-#
-# def decode_varint(data, index):
-#
-#
+
