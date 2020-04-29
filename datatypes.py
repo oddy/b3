@@ -1,6 +1,7 @@
 import struct, decimal
 #from six import PY2\
 import six
+from   six import int2byte
 from datetime import datetime
 
 from varint import encode_uvarint
@@ -27,8 +28,7 @@ B3_UVARINT  = 9    # unsigned varint                       slower & small/large 
 B3_SVARINT  = 10   # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
 
 B3_FLOAT64  = 10   # IEEE754 64bit signed float.           faster & medium      for floats.
-B3_DECIMAL  = 11   # Arbitrary Precision decimals.         slower & small/large for decimal.
-B3_DECIFLOAT = 12  # Arb Prec Dec which yields as a float on the parser side.   for floats.
+B3_DECIMAL  = 11   # Arbitrary Precision decimals.         slower & compact     for decimal.
 
 B3_STAMP64  = 13   # Signed 64bit unix ns, no TZ           faster & medium      for datetime. (yr 1678-2262) (yields to time.time on python if using automode)
 B3_SCHED    = 14   # Arb Prec unix sec, opt ns,offset,TZ.  slower & small/large for datetime.                (yields to
@@ -82,9 +82,13 @@ def GuessType(obj):
 
 # All these Out bytes.
 
+# i say we DONT take floats if it's too hard to convert them / get the info we need out of them
+# / have to get precision out of them.
 
 # In: num - a float/double or decimal.Decimal type
 def encode_decimal(num):
+    if not isinstance(num, decimal.Decimal):
+        raise TypeError("only accepts decimal.Decimal objects")
 
     # Top 4bits:
     # bit 4 (0x80) : 0=number, 1=special
@@ -96,41 +100,48 @@ def encode_decimal(num):
     # [number]  exponent if top bit1=0, unused otherwise
     # [special] unused.
 
+    sign,digits,exp = num.as_tuple()
+    special   = not num.is_finite()
 
-    # bits: sign                | number-or-special | infinity-or-nan | reserved(qnan-or-snan)
-    # aka   is_signed (or sign) | is_finite()       | is_infinite     | is_snan probably (0=qnan)
+    # --- Control bits & special values (inf, nan) ---
+    bits = 0x00
+    if special:                                     # bit 4 (0x80) : 0=number, 1=special
+        bits |= 0x80
 
-    if isinstance(num, decimal.Decimal):
-        sign,digits,expo = num.as_tuple()
-        bits = 0x00
-        if sign:                                    # sign = 1=-ve numbers, 0=+ve
-            bits |= 0x80
+    if sign:                                        # bit 3 (0x40) : 0=+ve number, 1=-ve number
+        bits |= 0x40
 
-        if not num.is_finite():                     # 1=special (inf, nan), 0= finite number
-            bits |= 0x40
-            if not num.is_infinite():               # 0=infinity, 1=NaN
-                bits |= 0x20
-                if num.is_snan():                   # 0=qNaN, 1=sNaN
-                    bits |= 0x10
+    if special:                                     # bit 2 (0x20) : [special] 0=nan 1=infinity
+        if num.is_infinite():
+            bits |= 0x20
+    else:                                           # bit 2 (0x20) : [number] 0=+ve expo 1=-ve expo
+        if exp < 0:
+            bits |= 0x20
 
-        else:                                           # it is a finite number
-            coef = int(''.join(map(str, digits)))      # [screaming intensifies]
+    if special:                                     # bit 1 (0x10) : [special] 0=qnan 1=snan
+        if num.is_snan():
+            bits |= 0x10
+        return int2byte(bits)                       # *** Special only, we're done ***
 
-    # exponent:
-    # sign | exp1 | exp2 | exp3   where if exp123 == 7 (b111) then the exp is a varint that follows this.
-    if expo < 0:
-        bits |= 0x08                                # 1=-ve exponent
-    aexp = abs(expo)
-    if aexp <= 7:
-        bits |= (aexp & 0x07)                       # Store exponent in the lower 3 bits
-    else:
-        bits |= 0x07                                # store "7", signal that actual aexp comes in following varint
-        out2 = encode_uvarint(aexp)
+    # --- Exponent ---
+    exp_abs   = abs(exp)
+
+    if exp_abs > 0x0f:                              # bit 1 (0x10) : [number] 0=expo bottom-4bits 1=expo varint follows
+        bits |= 0x10                                # exponent > 15, store it in varint
+        out = [int2byte(bits), encode_uvarint(exp_abs)]      # uv b/c exp sign already done & we're trying to be compact
+    else:                                           # exponent =< 15, store it in low nibble
+        bits |= (exp_abs & 0x0f)
+        out = [int2byte(bits)]
+
+    # --- Significand ---
+    if digits:
+        signif = int(''.join(map(str, digits)))     # [screaming intensifies]
+        if signif:                                  # Note that 0 = no signif bytes at all.
+            out.append(encode_uvarint(signif))
+
+    return b''.join(out)
 
 
-
-
-    return b'\x69'
 
 # do math using decimal context or 'normal' float math, depending on what comes in.
 

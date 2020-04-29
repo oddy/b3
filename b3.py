@@ -35,7 +35,6 @@ PACK_FNS = {
 
     B3_FLOAT64  : lambda x : struct.pack("d", x),
     B3_DECIMAL  : encode_decimal,                           # takes decimal types and float types
-    B3_DECIFLOAT: encode_decimal,
 
     B3_STAMP64  : encode_stamp64,
     B3_SCHED    : encode_sched,
