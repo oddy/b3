@@ -40,7 +40,6 @@ def encode_uvarint_actual(num):                     # actual worker (also called
     return b''.join(values)
 
 
-
 # 3-byte input: py2 six 1.07us nosix 0.82us,  py3 six 1.14us nosix 1.1us
 
 def decode_uvarint(data, index):

@@ -3,6 +3,9 @@ from six import PY2
 from hexdump import hexdump
 
 from varint import encode_uvarint, decode_uvarint, encode_svarint, decode_svarint
+from datatypes import *
+
+# --- Bytes visualising helper ---
 
 if PY2:
     def SBytes(hex_bytes_str):               # in: textual hexdump, out: byte-string
@@ -20,6 +23,7 @@ def test_sbytes():
     """
     assert SBytes(bar) == b"\x64\x65\x66\x67\x68\x69\x70\x71\x72\x73\x74\x75\x76\x77"
 
+# --- Varint API itself ---
 
 def test_uvarint_enc():
     assert encode_uvarint(50)    == SBytes("32")
@@ -34,11 +38,22 @@ def test_uvarint_dec():
 def test_svarint_enc():
     assert encode_svarint(50)   == SBytes("64")
     assert encode_svarint(-50)  == SBytes("63")
+    assert encode_svarint(123456789)  == SBytes("aa b4 de 75")
+    assert encode_svarint(-123456789) == SBytes("a9 b4 de 75")
 
 def test_svarint_dec():
     assert decode_svarint(SBytes("64"), 0)       == (50, 1)
     assert decode_svarint(SBytes("63"), 0)       == (-50, 1)
+    assert decode_svarint(SBytes("aa b4 de 75"), 0)  == (123456789, 4)
+    assert decode_svarint(SBytes("a9 b4 de 75"), 0)  == (-123456789, 4)
 
+# --- Basic types ---
+
+# def test_pack_null():
+#    assert PackNull(None)
+
+
+# BCD vs Arb Prec we actually have to code that shit up and test it.
 
 def test_example():
     assert True
