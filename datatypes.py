@@ -1,5 +1,5 @@
 import struct, decimal, zlib
-#from six import PY2\
+from six import PY2
 import six
 from   six import int2byte
 from datetime import datetime
@@ -166,11 +166,11 @@ def encode_stamp64(timestamp):
 
 MINUTE_BITS = {'00':0x00, '15':0x10, '30':0x20, '45':0x30}
 
-def encode_sched_gen(num, is_days=False, subsec_exp=0, tzoff='', tzname=''):
+def encode_sched(num, is_days=False, subsec_exp=0, offset='', tzname=''):
     bits = 0x00
     if is_days:                         # bit 4 days-or-seconds
         bits |= 0x80
-    if tzoff:                           # bit 4 timezone offset present
+    if offset:                           # bit 4 timezone offset present
         bits |= 0x40
     if tzname:                          # bit 2 tzname present
         bits |= 0x20
@@ -180,23 +180,24 @@ def encode_sched_gen(num, is_days=False, subsec_exp=0, tzoff='', tzname=''):
     subsec_exp = abs(subsec_exp)        # it's ALWAYS to the -ve so we dont actually need a sign for it.
     bits |= (subsec_exp & 0x0f)         # likewise we can cram this to sec/milli/micro/nano if we need more bits.
 
-    print 'bits = ',bits
-    out = [int2byte(bits), encode_uvarint(num)]
+    # print('bits = %02x' % bits)
+    out = [int2byte(bits), encode_uvarint(abs(num))]
 
     # d.tzinfo.utcoffset(d) gives a timedelta in seconds. e.g. nepal Asia/Kathmandu is 20700 sec
     # d.strftime("%z")  gives utcoffset string "+hhmm", assume we're using that for now.
-    if tzoff:
+    if offset:
         offbyte = 0x00
-        if tzoff[0] == "-":
+        if offset[0] == "-":
             offbyte |= 0x80                         # sign bit
         # ??? dst bit ??? would go here.
-        min_str = tzoff[3:5]
+        min_str = offset[3:5]
         offbyte |= (0x30 & MINUTE_BITS[min_str])    # minutes bits
-        hour_str = tzoff[1:3]
+        hour_str = offset[1:3]
         offbyte |= (0x0f & int(hour_str))           # hour bits
         out.append(int2byte(offbyte))
 
     if tzname:
+        if not PY2:     tzname = bytes(tzname, 'ascii')     # iana says they're ascii.
         ncrc = zlib.crc32(tzname) & 0xffffffff
 
         out.append(struct.pack('<L', ncrc))
@@ -213,7 +214,7 @@ def encode_sched_gen(num, is_days=False, subsec_exp=0, tzoff='', tzname=''):
     # >>> pytz.timezone('US/Samoa').localize(datetime.datetime.now()).strftime("%z")
 
 
-    # TEST: datatypes.encode_sched_gen(44, False, -9, '+1145', 'Asia/Kathmandu' )
+    # TEST: datatypes.encode_sched(44, False, -9, '+1145', 'Asia/Kathmandu' )
 
 
 # when do varints jump to 3 bytes.  uvarint: 16384  svarint: 8192
