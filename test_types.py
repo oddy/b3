@@ -16,8 +16,6 @@ from test_util import SBytes
 
 
 
-
-
 def test_example():
     assert True
 
@@ -48,10 +46,14 @@ def test_gen_offset():
     assert encode_sched(42, offset="+1100") == SBytes("40 2a 0b")
 
 def test_gen_tzname():
-    assert encode_sched(42, tzname="Pacific/Auckland") == SBytes("20 2a b9 f8 32 9f")
+    assert encode_sched(42, tzname="Pacific/Auckland")               == SBytes("20 2a b9 f8 32 9f")
     assert encode_sched(42, tzname="America/Argentina/Buenos_Aires") == SBytes("20 2a 1e 59 9d e4")
 
 def test_gen_xmas():
-    assert encode_sched(177794, is_days=True, subsec_exp=)
+    assert encode_sched(-177794, is_days=True, subsec_exp=9, offset="-1045", tzname="Fred") == SBytes("f9 82 ed 0a ba 60 5e 1b 9a")
+
+
+
+
 
 
