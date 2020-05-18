@@ -4,22 +4,27 @@ from   collections import namedtuple
 import datetime
 from   pprint import pprint
 
-from   six import PY2, int2byte
+from   six import PY2, int2byte, byte2int
 
-from   varint import encode_uvarint, encode_svarint
+from   varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
 
 
-# In:  python date, time or datetime objects.
+########################################################################################################################
+# Encode
+########################################################################################################################
+
+# In:  python date, time or datetime objects.  Optional tzname.
 # Out: bytes
 
-HAS = {datetime.date : (True,False), datetime.time : (False,True), datetime.datetime : (True,True) }
-def encode_sched_dt(dt):
+CLS_TO_PROPS = {datetime.date: (True, False), datetime.time: (False, True), datetime.datetime: (True, True)}
+
+def encode_sched_dt(dt, tzname=''):
     if isinstance(dt, datetime.time):                    # ugh datetime.time doesnt have timetuple!?
         tms = namedtuple('tms','tm_hour tm_min tm_sec tm_isdst')(dt.hour, dt.minute, dt.second, -1)
     else:
         tms = dt.timetuple()
 
-    is_date, is_time = HAS[dt.__class__]
+    is_date, is_time = CLS_TO_PROPS[dt.__class__]
 
     if hasattr(dt,'microsecond') and dt.microsecond:
         micro = dt.microsecond
@@ -27,7 +32,6 @@ def encode_sched_dt(dt):
         micro = 0
 
     offset = dt.strftime('%z')              # blank if no tzinfo
-    tzname = dt.strftime('%Z')              # blank if no tzinfo
 
     return encode_sched(tms, is_date, is_time, offset=offset, tzname=tzname, sub_exp=6 if micro else 0, sub=micro)
 
@@ -45,14 +49,14 @@ def encode_sched(tm, is_date, is_time, offset='', tzname='', sub_exp=0, sub=0):
     flags = 0x00
     if is_date:    flags |= 0x80
     if is_time:    flags |= 0x40
-    if offset:     flags |= 0x10
-    if tzname:     flags |= 0x20
-    flags |= ((abs(sub_exp) / 3) & 0x03)    # 0 3 6 9 only legal sub_exps.  always -ve so we dont need a sign for it.
+    if offset:     flags |= 0x20
+    if tzname:     flags |= 0x10
+    if sub:        flags |= ((abs(sub_exp) / 3) & 0x03)    # 0 3 6 9 only legal sub_exps.  always -ve so we dont need a sign for it.
 
     # --- Data bytes ---
     out = [int2byte(flags)]
     if is_date:     out.extend([encode_svarint(tm.tm_year), int2byte(tm.tm_mon), int2byte(tm.tm_mday)])
-    if is_time:     out.extend([int2byte(tm.tm_hour), int2byte(tm.tm_min), int2byte(tm.tm_sec)])
+    if is_time:     out.extend([int2byte(tm.tm_hour), int2byte(tm.tm_min), int2byte(tm.tm_sec)])  # note 24hr hour
     if offset:      out.append(encode_offset(offset, tm))   # dst on, vs dst off *or not present*. This may not be useful.
     if tzname:      out.append(encode_tzname(tzname))
     if sub_exp and sub:
@@ -88,56 +92,69 @@ def encode_tzname(tzname):
 # in go: crc32.ChecksumIEEE([]byte("America/North_Dakota/New_Salem")))
 
 ########################################################################################################################
-# NOTES
+# Decode
 ########################################################################################################################
 
-# --- get dict of zones from dateutil. ---
-# from dateutil.zoneinfo import get_zonefile_instance
-# zonenames = list(get_zonefile_instance().zones)
+# Policy: we're not actually going to finish this. Try to create an aware object from the offset, but just make a tool-function
+#         to deal with the incoming tzname but don't actually integrate it.
+
+def decode_sched(buf, index):
+    year=month=day=hour=minute=second=0
+    flags = byte2int(buf[index])                    ;   index += 1
+    is_date = flags & 0x80
+    is_time = flags & 0x40
+    if is_date:
+        year,index  = decode_svarint(buf, index)
+        month       = byte2int(buf[index])          ;   index += 1
+        day         = byte2int(buf[index])          ;   index += 1
+    if is_time:
+        hour        = byte2int(buf[index])          ;   index += 1
+        minute      = byte2int(buf[index])          ;   index += 1
+        second      = byte2int(buf[index])          ;   index += 1
+    if is_date and is_time:
+        dt = datetime.datetime(year,month,day,hour,minute,second)
+    elif is_date:
+        dt = datetime.date(year,month,day)
+    elif is_time:
+        dt = datetime.time(hour,minute,second)
+
+    return dt
 
 
 
 
-# --- Date time notes ---
 
 
 
-# The tm_isdst flag of the result is set according to the dst() method: tzinfo is None or dst() returns None, tm_isdst is set to -1;
-# else if dst() returns a non-zero value, tm_isdst is set to 1; else tm_isdst is set to 0.
+########################################################################################################################
+# Helpers
+########################################################################################################################
 
 
-# Record in the offset if dst was on, *shrug* no idea if this is sufficient.
+# --- Tzname stuff ---
 
-# dst: we dont have to care about it and maybe shouldnt even record it, but we will record dst ON or OFF/UNKNOWN in a bit in the offset.
+# Note: we cant know what the user wants re: preferring offset vs tzname at unpack-time when they clash, so we're not
+#       making that choice for them, instead giving them tools to help.
 
-# The microseconds are legit on linux. They're low-res on windows, particularly python 2.
-# the "offset FROM utc"
+# re: tzname, there's 3 levels of granularity -
+# (3) Olson ("Europe/London") , (2) tzfilename tzfile('GB-Eire') , (1) crappy abbreviation name "GMT" etc.
+# Each one seems to be a many-to-1 from the previous.
+# Level (3) is obv fine, and (2) seems ok too, but (1) is too ambiguous, if you use that you're losing information.
 
-# Policy: re- storing whether dst is in effect - 1) the future doesn't need it, it can be worked out from the given
-#         TZ name and system resources at the time. and its orthogonal to someone requesting "5pm pacific auckland time" anyway.
-#         2) the past may find it useful? i'm not sure? so we'll store it using that bit in the offset.
-# So not storing How Much DST is a Limitation, and not storing with finer granularity than 15-minute intervals is a Limitation.
-# Current research bears these limitations out.
+# Paul Ganssle the smart timezone pycon (and pytz footgun) guy says never rely on the abbreviations, they're too ambiguous.
 
-# Never use .utcnow, because it returns the currentl UTC time but as a naive object so you can't tell if it's UTC or what.
+# Try and get a granular-as-possible tzname out of the tzinfo struct.
+# do we do this property-ologically or concretely by type, given that the 2 libs that usually make these are 3rd party to begin with..
+# The below is property-esque and intended as a tool for the user.
 
-# python (2) says "objects of the date type are always naive."  So no tzinfo, no dst.
+def GranularTzName(dt):
+    tzx = dt.tzinfo
+    if not tzx:                     return ''                   # non-aware dt
+    if hasattr(tzx, 'zone'):        return tzx.zone             # pytz
+    if hasattr(tzx, '_filename'):   return tzx._filename        # dateutil.tz tzfile
+    if len(tzx.tzname) > 4:         return tzx.tzname           # windows names etc.
 
-
-
-# Note note: you take some datetimes, and perform your calculations, and the calculations e.g. move the date into a different DST, what do?
-# Note note: in pytz your screwed (you have to call normalize all the time), with dateutil it does the tz calcs lazily on-access, so at the "last minute"
-# Note note: dateutil has a lot of good stuff. e.g.
-# "Because Windows does not have an equivalent of time.tzset(), on Windows, dateutil.tz.tzlocal instances will always
-#  reflect the time zone settings //at the time that the process was started//, meaning changes to the machine's time
-#  zone settings during the run of a program on Windows will not be reflected by dateutil.tz.tzlocal. Because tzwinlocal
-#  reads the registry directly, it is unaffected by this issue."
+    return ''                       # note: policy: send nothing if its an abbreviated name
+    # raise NotImplementedError("There is only the abbreviated tzname, what do?")
 
 
-# *** USE DATE UTIL NOT PYTZ ***
-# dateutil.tz performs calculations lazily, only when they are needed.
-# pytz performs tz-calculations when localize called, which means you have to call normalize() on all calculation outputs, to get it to *perform the calculations again*
-# (because the result may be e.g in daylight savings now when it wasn't before.
-
-# from the tz database people:
-# The POSIX tzname variable does not suffice and is no longer needed. To get a timestamp's time zone abbreviation, consult the tm_zone member if available; otherwise, use strftime's "%Z" conversion specification.
