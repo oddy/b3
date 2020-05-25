@@ -79,72 +79,14 @@ def GuessType(obj):
     raise NotImplementedError('Unknown type %r' % type(obj))
 
 
-# ---------------------------------- Decimal --------------------------------------------------------
 
-# i say we DONT take floats if it's too hard to convert them / get the info we need out of them
-# / have to get precision out of them.
+# Like six.byte2int but buffer-aware and actually works
+def IntByteAt(buf, index):
+    if not PY2:
+        return buf[index], index+1
+    else:
+        return ord(buf[index]), index+1
 
-# Top 4bits:
-# bit 4 (0x80) : 0=number, 1=special
-# bit 3 (0x40) : 0=+ve number, 1=-ve number
-# bit 2 (0x20) : [number] 0=+ve expo 1=-ve expo   [special] 0=nan 1=infinity
-# bit 1 (0x10) : [number] 0=expo bottom-4bits 1=expo varint follows  [special] 0=qnan 1=snan
-
-# Bottom 4bits:
-# [number]  exponent if top bit1=0, unused otherwise
-# [special] unused.
-
-# In:  num - a decimal.Decimal type ONLY
-# Out: bytes
-def encode_decimal(num):
-    if not isinstance(num, decimal.Decimal):
-        raise TypeError("only accepts decimal.Decimal objects")
-
-    sign,digits,exp = num.as_tuple()
-    special   = not num.is_finite()
-
-    # --- Control bits & special values (inf, nan) ---
-    bits = 0x00
-    if special:                                     # bit 4 (0x80) : 0=number, 1=special
-        bits |= 0x80
-
-    if sign:                                        # bit 3 (0x40) : 0=+ve number, 1=-ve number
-        bits |= 0x40
-
-    if special:                                     # bit 2 (0x20) : [special] 0=nan 1=infinity
-        if num.is_infinite():
-            bits |= 0x20
-    else:                                           # bit 2 (0x20) : [number] 0=+ve expo 1=-ve expo
-        if exp < 0:
-            bits |= 0x20
-
-    if special:                                     # bit 1 (0x10) : [special] 0=qnan 1=snan
-        if num.is_snan():
-            bits |= 0x10
-        return int2byte(bits)                       # *** Special only, we're done ***
-
-    # --- Exponent ---
-    exp_abs   = abs(exp)
-
-    if exp_abs > 0x0f:                              # bit 1 (0x10) : [number] 0=expo bottom-4bits 1=expo varint follows
-        bits |= 0x10                                # exponent > 15, store it in varint
-        out = [int2byte(bits), encode_uvarint(exp_abs)]      # uv b/c exp sign already done & we're trying to be compact
-    else:                                           # exponent =< 15, store it in low nibble
-        bits |= (exp_abs & 0x0f)
-        out = [int2byte(bits)]
-
-    # --- Significand ---
-    if digits:
-        signif = int(''.join(map(str, digits)))     # [screaming intensifies]
-        if signif:                                  # Note that 0 = no signif bytes at all.
-            out.append(encode_uvarint(signif))
-
-    return b''.join(out)
-
-# In:  bytes
-# Out: a decimal.Decimal
-def decode_decimal(buf):
-    return None
 
 
 # In:  time.time-style float.

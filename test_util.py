@@ -1,4 +1,5 @@
 
+from collections import namedtuple
 from six import PY2
 
 # --- Bytes visualising helper ---
@@ -18,3 +19,17 @@ def test_sbytes():
     71 72 73 74 75 76 77
     """
     assert SBytes(bar) == b"\x64\x65\x66\x67\x68\x69\x70\x71\x72\x73\x74\x75\x76\x77"
+
+
+# --- timetuple helper for sched ---
+
+TMX = namedtuple("tmx","tm_year tm_mon tm_mday tm_hour tm_min tm_sec tm_isdst")
+def TmTime(hms_str):    return TMX(*[int(i) for i in ("0 0 0 "+hms_str+" -1").split()])
+def TmDate(ymd_str):    return TMX(*[int(i) for i in (ymd_str+" 0 0 0 -1").split()])
+def TmDateTime(ymdhms): return TMX(*[int(i) for i in (ymdhms+" -1").split()])
+
+def test_tmfuncs():
+    assert TmTime("13 37 20").tm_min == 37
+    assert TmTime("13 37 20").tm_isdst == -1
+    assert TmDate("2020 01 16").tm_year == 2020
+    assert TmDateTime("2020 01 16 13 37 29").tm_mday == 16

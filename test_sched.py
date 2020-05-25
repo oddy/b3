@@ -4,21 +4,10 @@ import datetime
 
 from   six import PY2
 
-from   test_util import SBytes
+from   test_util import SBytes, TmTime, TmDate, TmDateTime, TMX
 from   type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
 
 
-# --- timetuple helper for sched ---
-TMX = namedtuple("tmx","tm_year tm_mon tm_mday tm_hour tm_min tm_sec tm_isdst")
-def TmTime(hms_str):    return TMX(*[int(i) for i in ("0 0 0 "+hms_str+" -1").split()])
-def TmDate(ymd_str):    return TMX(*[int(i) for i in (ymd_str+" 0 0 0 -1").split()])
-def TmDateTime(ymdhms): return TMX(*[int(i) for i in (ymdhms+" -1").split()])
-
-def test_tmfuncs():
-    assert TmTime("13 37 20").tm_min == 37
-    assert TmTime("13 37 20").tm_isdst == -1
-    assert TmDate("2020 01 16").tm_year == 2020
-    assert TmDateTime("2020 01 16 13 37 29").tm_mday == 16
 
 
 # --- Testing the general-purpose encode API ---
@@ -53,12 +42,12 @@ def test_enc_gen_tzname():
     assert encode_sched_gen(None, False, False, tzname="America/Argentina/Buenos_Aires") == SBytes("10 1e 59 9d e4")
 
 def test_enc_gen_subsec():
-    assert encode_sched_gen(None, False, False, sub_exp=0, sub=69) == SBytes("00")           # no sub_exp
-    assert encode_sched_gen(None, False, False, sub_exp=3, sub=0) == SBytes("00")           # no sub
-    assert encode_sched_gen(None, False, False, sub_exp=3, sub=69) == SBytes("01 45")        # 69 ms
+    assert encode_sched_gen(None, False, False, sub_exp=0, sub=69)  == SBytes("00")           # no sub_exp
+    assert encode_sched_gen(None, False, False, sub_exp=3, sub=0)   == SBytes("00")           # no sub
+    assert encode_sched_gen(None, False, False, sub_exp=3, sub=69)  == SBytes("01 45")        # 69 ms
     assert encode_sched_gen(None, False, False, sub_exp=-3, sub=69) == SBytes("01 45")        # 69 ms (exponent always -ve so we dont actually need the sign)
-    assert encode_sched_gen(None, False, False, sub_exp=6, sub=69) == SBytes("02 45")        # 69 us
-    assert encode_sched_gen(None, False, False, sub_exp=9, sub=69) == SBytes("03 45")        # 69 ns
+    assert encode_sched_gen(None, False, False, sub_exp=6, sub=69)  == SBytes("02 45")        # 69 us
+    assert encode_sched_gen(None, False, False, sub_exp=9, sub=69)  == SBytes("03 45")        # 69 ns
 
 
 # --- Testing the Python Datetime encode API ---

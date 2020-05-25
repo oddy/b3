@@ -2,14 +2,15 @@
 import struct, zlib, time
 from   collections import namedtuple
 import datetime
-from   pprint import pprint
 
 from   six import PY2, int2byte, byte2int
 
 from   varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
+from   datatypes import IntByteAt
+
 
 ########################################################################################################################
-# Packing Standard
+# Data Format Standard
 ########################################################################################################################
 
 # --- Sched Flags/Control byte ---
@@ -96,7 +97,6 @@ def encode_offset(offset, tm=None):
     offbyte |= (OFFS_HOUR_BITS & int(hour_str))
     return int2byte(offbyte)
 
-
 def encode_tzname(tzname):
     if not PY2:             tzname = bytes(tzname, 'ascii')     # iana says they're ascii.
     ncrc = zlib.crc32(tzname) & 0xffffffff
@@ -107,15 +107,6 @@ def encode_tzname(tzname):
 # Decode
 ########################################################################################################################
 
-def IntByteAt(buf, index):
-    if not PY2:
-        return buf[index], index+1
-    else:
-        return ord(buf[index]), index+1
-
-
-# Policy: we're not actually going to finish this. Try to create an aware object from the offset, but just make a tool-function
-#         to deal with the incoming tzname but don't actually integrate it.
 
 # In: buf & index of offset-byte
 # Out: offset string, dst-is-on bool
@@ -136,10 +127,6 @@ def decode_sched(buf, index):
     offstr = ''
 
     flags,index = IntByteAt(buf, index)
-    is_date     = flags & 0x80
-    is_time     = flags & 0x40
-    is_offset   = flags & 0x20
-    is_tzname   = flags & 0x10
 
     if flags & FLAG_DATE:
         year, index     = decode_svarint(buf, index)
@@ -160,7 +147,7 @@ def decode_sched(buf, index):
 
     if flags & FLAG_DATE and flags & FLAG_TIME:
         # Note: exploiting strptime %z format in py3 to parse offset & create a tzinfo'ed datetime
-        if not PY2 and is_offset and offstr:
+        if not PY2 and (flags & FLAG_OFFS) and offstr:
             strval = '%s %s %s %s %s %s' % (year, month, day, hour, minute, second)
             fmt = '%Y %m %d %H %M %S'
             if sub:
