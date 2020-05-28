@@ -26,11 +26,11 @@ def decode_null(buf, index, end):
 
 def encode_bool(value):
     value = bool(value)
-    return b'0x01' if value else b'0x00'
+    return b'\x01' if value else b'\x00'
 
 def decode_bool(buf, index, end):
-    x = IntByteAt(buf, index)
-    return {0:False, 1:True}[x], index+1
+    x,index = IntByteAt(buf, index)
+    return {0:False, 1:True}[x], index
 
 
 
