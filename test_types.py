@@ -2,7 +2,7 @@
 from six import PY2
 from hexdump import hexdump
 
-from varint import encode_uvarint, decode_uvarint, encode_svarint, decode_svarint
+from type_varint import encode_uvarint, decode_uvarint, encode_svarint, decode_svarint
 from datatypes import *
 from decimal import Decimal
 

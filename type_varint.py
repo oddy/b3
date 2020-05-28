@@ -30,7 +30,6 @@ def encode_uvarint_actual(num):                     # actual worker (also called
     _next = 1
     values = []
     while _next:
-
         _next = num >> 7
         shift = 128 if _next else 0
         part = (num & 127) | shift
@@ -42,7 +41,7 @@ def encode_uvarint_actual(num):                     # actual worker (also called
 
 # 3-byte input: py2 six 1.07us nosix 0.82us,  py3 six 1.14us nosix 1.1us
 
-def decode_uvarint(data, index):
+def decode_uvarint(data, index, end=None):
     item = 128
     num = 0
     left = 0
@@ -55,7 +54,7 @@ def decode_uvarint(data, index):
     return num, index
 
 
-def decode_svarint(data, index):
+def decode_svarint(data, index, end=None):
     ux,index = decode_uvarint(data, index)
     x = ux >> 1
     if ux & 0x01 != 0:

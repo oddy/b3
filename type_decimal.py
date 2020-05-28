@@ -4,7 +4,7 @@ import decimal
 
 from   six import int2byte
 
-from   varint import encode_uvarint, decode_uvarint
+from   type_varint import encode_uvarint, decode_uvarint
 from   datatypes import IntByteAt
 
 ########################################################################################################################

@@ -1,7 +1,7 @@
 
 from test_util import SBytes
 from datatypes import *
-from varint import *
+from type_varint import *
 
 
 # --- Varint API ---

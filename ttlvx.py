@@ -51,7 +51,7 @@ TYPE_DICT_BAG = 9
 import struct
 from   pprint import pprint
 
-from   varint import encode_varint, decode_varint
+from   type_varint import encode_varint, decode_varint
 from   hexdump import hexdump
 from   six import PY2
 

@@ -1,5 +1,5 @@
 d
-from   varint import encode_varint, decode_varint
+from   type_varint import encode_varint, decode_varint
 from hexdump import hexdump                         # note this wraps stdout
 from pprint import pprint
 

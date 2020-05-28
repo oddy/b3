@@ -1,4 +1,4 @@
-from   varint import encode_varint, decode_varint
+from   type_varint import encode_varint, decode_varint
 
 END = '\x00'          # The one 'type' that has no key and no value. Type 0 with the high bit set is illegal.
 TYPE_END = 0          # - bag level type that says this bag is done. (only need it for nested bags) Note: now we have types without lengths.

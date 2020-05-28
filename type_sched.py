@@ -5,7 +5,7 @@ import datetime
 
 from   six import PY2, int2byte, byte2int
 
-from   varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
+from   type_varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
 from   datatypes import IntByteAt
 
 

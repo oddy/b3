@@ -11,7 +11,7 @@
 import struct
 
 from datatypes import *
-from varint import *
+from type_varint import *
 
 
 # "single-item ToBytes packer"
