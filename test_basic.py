@@ -40,9 +40,25 @@ def test_base_utf8_enc():
     for tstr,tbytes in TEST_UNISTRS:
         assert encode_utf8(tstr)   == tbytes
 
+def test_base_utf8_dec():
+    for tstr,tbytes in TEST_UNISTRS:
+        assert decode_utf8(tbytes,0,len(tbytes)) == (tstr,len(tbytes))
 
 
+TEST_INT64S = (
+    ( 123456789,  SBytes("15 cd 5b 07 00 00 00 00") ),
+    ( -123456789, SBytes("eb 32 a4 f8 ff ff ff ff") ),
 
+)
+
+def test_base_int64_enc():
+    for tint,tbytes in TEST_INT64S:
+        assert encode_int64(tint) == tbytes
+
+
+def test_base_int64_dec():
+    for tint,tbytes in TEST_INT64S:
+        assert decode_int64(tbytes,0,8) == (tint, 8)
 
 
 
