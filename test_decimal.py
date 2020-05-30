@@ -100,18 +100,18 @@ def test_dec_deci_sci():
 
 def test_deci_roundtrip_0():
     buf = encode_decimal(Decimal('1.01'))
-    print(hexdump(buf))
+    # print(hexdump(buf))
     assert decode_decimal(buf,0,len(buf))  == Decimal('1.01')
 
 
 def test_deci_roundtrip_1():
     buf = encode_decimal(Decimal('13.37'))
-    print(hexdump(buf))
+    # print(hexdump(buf))
     assert decode_decimal(buf,0,len(buf))  == Decimal('13.37')
 
 def test_deci_roundtrip_2():
     buf = encode_decimal(Decimal('-0.0000000006789'))
-    print(hexdump(buf))
+    # print(hexdump(buf))
     assert decode_decimal(buf,0,len(buf))  == Decimal('-0.0000000006789')
 
 

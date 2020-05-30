@@ -30,7 +30,7 @@ B3_INT64    = 8    # signed 64bit integer                  faster & medium      
 B3_UVARINT  = 9    # unsigned varint                       slower & small/large for ints.
 B3_SVARINT  = 10   # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
 B3_FLOAT64  = 10   # IEEE754 64bit signed float.           faster & medium      for floats.
-B3_STAMP64  = 13   # Signed 64bit unix ns, UTC (because unix time IS UTC)  for now-time. (ie, timestamps gotten with now() and friends) time.time()
+B3_STAMP64  = 13   # Signed 64bit unix ns, UTC (because unix time IS UTC)  for now-time. (ie, timestamps gotten with now() and friends) time.time() (yr 1678-2262)
 B3_COMPLEX  = 15    # encoded as 2 float64s.
 
 # --- TESTS DONE ---

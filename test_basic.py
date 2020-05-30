@@ -61,5 +61,42 @@ def test_base_int64_dec():
         assert decode_int64(tbytes,0,8) == (tint, 8)
 
 
+TEST_FLOAT64S = (
+    ( 12345.6789,   SBytes("a1 f8 31 e6 d6 1c c8 40") ),
+)
+
+def test_base_float64_enc():
+    for tflo,tbytes in TEST_FLOAT64S:
+        assert encode_float64(tflo) == tbytes
+
+
+def test_base_float64_dec():
+    for tflo,tbytes in TEST_FLOAT64S:
+        assert decode_float64(tbytes,0,8) == (tflo, 8)
+
+
+# stamp64 is signed, so it's 2**63 ns / 1000 / 1000 / 1000 / 60 / 60 / 24 / 365 = about 292.5 years each side of 1970
+# which is about yr 1678 - 2262
+
+# Operationally the same as int64 itself. Except with the float conversion.
+timNano = 1590845636168000000
+timFlo  = 1590845636.168
+
+def test_base_stamp64_enc():
+    assert encode_stamp64(timFlo)  == SBytes("00 22 46 6c ad d1 13 16")
+    assert encode_stamp64(timNano) == SBytes("00 22 46 6c ad d1 13 16")
+
+def test_base_stamp64_dec():
+    assert decode_stamp64(SBytes("00 22 46 6c ad d1 13 16"),0,8)  == (timNano,8)
+
+
+tcplx = 13.37+42.42j
+tcplx_bytes = SBytes("3d 0a d7 a3 70 bd 2a 40 f6 28 5c 8f c2 35 45 40")
+
+def test_base_complex_enc():
+    assert encode_complex(tcplx) == tcplx_bytes
+
+def test_base_complex_dec():
+    assert decode_complex(tcplx_bytes, 0, 16) == (tcplx, 16)
 
 

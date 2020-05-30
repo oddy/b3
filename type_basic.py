@@ -75,7 +75,7 @@ def decode_float64(buf, index, end):
 
 
 
-# In:  time.time-style float, OR integer which is interpreted as unix-epoch-nanoseconds.
+# In:  unix-epoch-nanoseconds integer. Note: we also accept floats for convenience with e.g. time.time.
 def encode_stamp64(value):
     if isinstance(value, float):
         value = math.trunc(value * 1e9)
@@ -83,8 +83,10 @@ def encode_stamp64(value):
         raise TypeError("stamp64 only accepts float or integer values")
     return struct.pack("<q", value)
 
+# Note: we only yield integer nanoseconds. Up to the caller to float-er-ize it if they need.
+
 def decode_stamp64(buf, index, end):
-    return struct.unpack("<d", buf[index:index+8])[0], index+8
+    return struct.unpack("<q", buf[index:index+8])[0], index+8
 
 
 
@@ -93,10 +95,10 @@ def decode_stamp64(buf, index, end):
 def encode_complex(value):
     if not isinstance(value, complex):
         raise TypeError("complex only accepts complex types")
-    return struct.pack("<d<d", value.real, value.imag)
+    return struct.pack("<dd", value.real, value.imag)
 
 def decode_complex(buf, index, end):
-    return complex(struct.unpack("<d<d",buf[index:index+16])[0]), index+16
+    return complex(*struct.unpack("<dd",buf[index:index+16])), index+16
 
 
 
