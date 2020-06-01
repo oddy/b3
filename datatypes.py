@@ -29,7 +29,7 @@ B3_UTF8     = 7    # UTF8 byte strings.                    for str in py3 and un
 B3_INT64    = 8    # signed 64bit integer                  faster & medium      for ints.
 B3_UVARINT  = 9    # unsigned varint                       slower & small/large for ints.
 B3_SVARINT  = 10   # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
-B3_FLOAT64  = 10   # IEEE754 64bit signed float.           faster & medium      for floats.
+B3_FLOAT64  = 12   # IEEE754 64bit signed float.           faster & medium      for floats.
 B3_STAMP64  = 13   # Signed 64bit unix ns, UTC (because unix time IS UTC)  for now-time. (ie, timestamps gotten with now() and friends) time.time() (yr 1678-2262)
 B3_COMPLEX  = 15    # encoded as 2 float64s.
 
@@ -38,6 +38,9 @@ B3_SCHED    = 14   # [some sort of]LOCAL time, offset TO utc, TZname.           
 B3_DECIMAL  = 11   # Arbitrary Precision decimals.         slower & compact     for decimal.
 
 
+VALID_STR_TYPES = (unicode,) if PY2 else (str,)
+if PY2:     VALID_INT_TYPES = (int, long)
+else:       VALID_INT_TYPES = (int,)
 
 
 
