@@ -24,7 +24,7 @@ from type_varint import encode_uvarint, encode_svarint, decode_svarint, decode_u
 # Note: and we will use the C3 standard as our test data for compactifying.
 
 
-def encode_header(key, data_type, data_len):                       # user_bit=0
+def encode_header(data_type, data_len, key):                       # user_bit=0
     key_type_bits, key_bytes = encode_key(key)
     cbyte = 0x00
     cbyte |= key_type_bits & 0xc0                      # top 2 bits key type
