@@ -21,7 +21,7 @@ def encode_schema_comp(schema, data):
 
     # todo: we are assuming schema is sorted by field_number
     for data_type, field_name, field_number in schema:
-
+        pass
 
 
 

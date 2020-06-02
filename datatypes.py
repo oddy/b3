@@ -1,8 +1,5 @@
-import struct, decimal, zlib, time
 import six
-from   six import PY2, int2byte
 import datetime
-from pprint import pprint
 
 # Note: do NOT have a module named types.py. Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
@@ -86,9 +83,4 @@ def GuessType(obj):
 
 
 # Like six.byte2int but buffer-aware and actually works
-def IntByteAt(buf, index):
-    if not PY2:
-        return buf[index], index+1
-    else:
-        return ord(buf[index]), index+1
 

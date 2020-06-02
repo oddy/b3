@@ -3,7 +3,7 @@ import struct, math
 
 from   six import PY2, int2byte
 
-from   datatypes import IntByteAt
+from utils import IntByteAt
 
 VALID_STR_TYPE = unicode if PY2 else str
 if PY2:     VALID_INT_TYPES = (int, long)
