@@ -1,14 +1,12 @@
 
-from item_header import encode_header, decode_header
-
 # Packer Architecture:
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
+from datatypes import CODECS
+from item_header import encode_header, decode_header
 
 # Schema-style composite types. (as opposed to json-style composite types)
-
-# make dict of B3_TYPE_number : encoder_function and B3_TYPE_number : decoder_function
 
 
 # In: schema - tuple of (type, name, number) tuples,   data - dict
@@ -21,18 +19,14 @@ def encode_schema_comp(schema, data):
 
     # todo: we are assuming schema is sorted by field_number
     for data_type, field_name, field_number in schema:
-        pass
+        field_data = data[field_name]
+        EncoderFn,_ = CODECS[data_type]
+        field_bytes = EncoderFn(field_data)
+        header_bytes = encode_header(data_type=data_type, data_len=len(field_bytes), key=field_number)
+        out.append(header_bytes)
+        out.append(field_bytes)
 
-
-
-    return
-
-
-
-
-
-
-
+    return b"".join(out)
 
 
 

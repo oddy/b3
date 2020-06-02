@@ -8,6 +8,7 @@ import datetime
 # todo: really its do we take end as a parameter or return it out as an updated index? We don't need both.
 # todo: only decimal decode needs end as a parameter. Everything else is either too simple (no optional parts) or too complex (many internal presence flags for optional components)
 
+# Note: Existential: what if B3_NULL is really the Zero Flag ?
 
 # --- Bag end marker ---
 B3_END = 0        # end marker. Always 1 byte, always \x00
@@ -16,8 +17,6 @@ B3_END = 0        # end marker. Always 1 byte, always \x00
 B3_BAG = 1        # Our single multipurpose composite type, structured: [item][item][B3_END]
 B3_BAG_LIST = 2   # same as BAG on wire, acts as hint to parser to yield a list-like obj where possible
 B3_BAG_DICT = 3   # same as BAG on wire, acts as hint to parser to yield a dict-like obj where possible
-
-# Note: Existential: what if B3_NULL is really the Zero Flag ?
 
 # --- datum types ---
 B3_NULL     = 4    # None.                                                      for None.
@@ -38,11 +37,34 @@ B3_SCHED    = 14   # [some sort of]LOCAL time, offset TO utc, TZname.           
 B3_COMPLEX  = 15   # encoded as 2 float64s.
 
 
-# in: some object
-# out: type code or NotImplementedError
+# --- Codec functions ---
+import type_basic
+import type_varint
+import type_decimal
+import type_sched
 
-# do the compact/fast thing here.
-# make it so that the Parser is fan-in only
+CODECS = {
+    B3_NULL     : (type_basic.encode_null,      type_basic.decode_null),
+    B3_BOOL     : (type_basic.encode_bool,      type_basic.decode_bool),
+    B3_BYTES    : (type_basic.encode_bytes,     type_basic.decode_bytes),
+    B3_UTF8     : (type_basic.encode_utf8,      type_basic.decode_utf8),
+    B3_INT64    : (type_basic.encode_int64,     type_basic.decode_int64),
+    B3_FLOAT64  : (type_basic.encode_float64,   type_basic.decode_float64),
+    B3_STAMP64  : (type_basic.encode_stamp64,   type_basic.decode_stamp64),
+    B3_COMPLEX  : (type_basic.encode_complex,   type_basic.decode_complex),
+    B3_UVARINT  : (type_varint.encode_uvarint,  type_varint.decode_uvarint),
+    B3_SVARINT  : (type_varint.encode_svarint,  type_varint.decode_svarint),
+    B3_DECIMAL  : (type_decimal.encode_decimal, type_decimal.decode_decimal),
+    B3_SCHED    : (type_sched.encode_sched,     type_sched.decode_sched),
+}
+
+
+
+
+
+
+
+# This is for the json-composite so we will probably move it there
 
 def GuessType(obj):
     if obj is None:
