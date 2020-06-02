@@ -25,11 +25,11 @@ def encode_item_header(key, data_type, data_len):                       # user_b
 
 
 def decode_item_header(buf, index):
-    cbyte,index = IntByteAt(buf, index)                 # control byte
-    key,index = decode_key(cbyte & 0xc0, buf, index)    # key bytes
-    data_len,index = decode_uvarint(buf, index)         # data len bytes
+    cbyte,index = IntByteAt(buf, index)                # control byte
+    key,index = decode_key(cbyte & 0xc0, buf, index)   # key bytes
+    data_len,index = decode_uvarint(buf, index)        # data len bytes
     data_type = cbyte & 0x1f
-    return key, data_type, data_len                     # but not the data bytes themselves, because the decoders nom them.
+    return key, data_type, data_len                    # but not the data bytes themselves, because the decoders nom them.
 
 
 # Out: the key type bits, and the key bytes.
