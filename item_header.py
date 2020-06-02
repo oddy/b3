@@ -1,7 +1,8 @@
 
 from   six import PY2, int2byte, byte2int
 
-from datatypes import IntByteAt, VALID_STR_TYPES, VALID_INT_TYPES
+from datatypes import IntByteAt
+from utils import VALID_STR_TYPES, VALID_INT_TYPES
 from type_varint import encode_uvarint, encode_svarint, decode_svarint, decode_uvarint
 
 # --- item structure ---

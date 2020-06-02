@@ -1,8 +1,10 @@
 
-from collections import namedtuple
+
 from six import PY2
 
+
 # --- Bytes visualising helper ---
+from six.__init__ import PY2
 
 if PY2:
     def SBytes(hex_bytes_str):               # in: textual hexdump, out: byte-string

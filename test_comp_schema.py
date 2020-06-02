@@ -1,5 +1,5 @@
 
-from test_util import SBytes
+from utils import SBytes
 from datatypes import *
 from composite_schema import *
 
@@ -8,7 +8,7 @@ from composite_schema import *
 TEST_SCHEMA_1 = (
     (B3_UVARINT, u"number1", 1),
     (B3_UTF8,    u"string1", 2),
-    (B3_BOOL,    u"bool1",  3)
+    (B3_BOOL,    u"bool1",   3)
 )
 
 # Bag:

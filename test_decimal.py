@@ -1,7 +1,7 @@
 
 from decimal import Decimal
 
-from test_util import SBytes
+from utils import SBytes
 from hexdump import hexdump
 from type_decimal import encode_decimal, decode_decimal
 

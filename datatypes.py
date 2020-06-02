@@ -41,14 +41,6 @@ B3_SCHED    = 14   # [some sort of]LOCAL time, offset TO utc, TZname.           
 B3_COMPLEX  = 15   # encoded as 2 float64s.
 
 
-
-
-VALID_STR_TYPES = (unicode,) if PY2 else (str,)
-if PY2:     VALID_INT_TYPES = (int, long)
-else:       VALID_INT_TYPES = (int,)
-
-
-
 # in: some object
 # out: type code or NotImplementedError
 

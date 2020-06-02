@@ -1,6 +1,5 @@
 
-from test_util import SBytes
-from datatypes import *
+from utils import SBytes
 from type_varint import *
 
 

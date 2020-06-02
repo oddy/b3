@@ -1,7 +1,7 @@
 
 # -*- coding: UTF-8 -*-
 
-from test_util import SBytes
+from utils import SBytes
 from type_basic import *
 
 def test_base_null_enc():

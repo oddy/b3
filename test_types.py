@@ -3,7 +3,6 @@ from six import PY2
 from hexdump import hexdump
 
 from type_varint import encode_uvarint, decode_uvarint, encode_svarint, decode_svarint
-from datatypes import *
 from decimal import Decimal
 
 from test_util import SBytes
