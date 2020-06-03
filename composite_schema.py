@@ -6,17 +6,25 @@
 from datatypes import CODECS
 from item_header import encode_header, decode_header
 
+
+
+def sort_schema(schema):
+    """Sorts schema by tag numbers"""
+    return
+
+def schema_by_numbers(schema):
+    return {n : (typ,name) for typ,name,n in schema}
+
 # Schema-style composite types. (as opposed to json-style composite types)
 
 
 # In: schema - tuple of (type, name, number) tuples,   data - dict
 
 def encode_schema_comp(schema, data):
+    """Takes a schema and a dict, returns bytes"""
     if not isinstance(data, dict):
         raise TypeError("currently only dict input data supported by encode_schema_comp")
-
     out = []
-
     # todo: we are assuming schema is sorted by field_number
     for data_type, field_name, field_number in schema:
         field_data = data[field_name]
@@ -27,6 +35,32 @@ def encode_schema_comp(schema, data):
         out.append(field_bytes)
 
     return b"".join(out)
+
+
+
+def decode_schema_comp(schema, buf, index, end):
+    """Parse through buf, create and return a dict"""
+    out = {}
+    nschema = schema_by_numbers(schema)
+    while index < end:
+        key, data_type, data_len, index = decode_header(buf, index)
+        if data_len:
+            _,DecoderFn = CODECS[data_type]
+            data, index = DecoderFn(buf, index, index+data_len)
+            sch_type, key_name = nschema[key]
+            if sch_type !=
+
+
+
+
+
+
+
+    return
+
+
+
+
 
 
 
