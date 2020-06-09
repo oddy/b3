@@ -129,28 +129,9 @@ def decode_dynrec_comp_recurse(out, buf, index, end):
         elif isinstance(out, dict):
             out[key] = value
 
+        # --- Advance index ---
         if not is_null:
             index += data_len
-
-
-
-
-        if data_type == B3_BAG_DICT:
-            # push the current out-container and index,end values onto our stack
-            # make a new out-container, dict.  set the new end value to size_we_just_had (size of the dict stuff)
-            # just go round the loop again (continue)
-            # adding members to whatever kind of out-container our current one is.
-
-        # when the index hits the current_end,
-        # take our current out-container
-
-
-
-
-        # get the bytes and the len
-        # call ourselves to turn those bytes & len into a list/dict.   but we know the container type up here, so we tell it what container type we want
-        #                                                              and it yields one of those back to us.
-
 
     return
 
