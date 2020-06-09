@@ -3,24 +3,20 @@ import struct, math
 
 from   six import PY2, int2byte
 
-from utils import IntByteAt
-
-VALID_STR_TYPE = unicode if PY2 else str
-if PY2:     VALID_INT_TYPES = (int, long)
-else:       VALID_INT_TYPES = (int,)
+from utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 
 
 # NOTE: we will write these as full functions for now for testing, then shortcut some of the simpler ones later.
 # Note: there's no difference between <q and >q performance-wise on py2 or py3.
-# Note: uvarint and svarint are handled by type_varint.py atm.
 
-def encode_null(value):
-    if value is not None:
-        raise TypeError('value is not None')
-    return b''
-
-def decode_null(buf, index, end):
-    return None,index
+# Note: superceded by control byte null flag
+# def encode_null(value):
+#     if value is not None:
+#         raise TypeError('value is not None')
+#     return b''
+#
+# def decode_null(buf, index, end):
+#     return None,index
 
 
 
@@ -33,19 +29,19 @@ def decode_bool(buf, index, end):
     return {0:False, 1:True}[x], index
 
 
-
-def encode_bytes(value):
-    if not isinstance(value, bytes):                            # todo: bytearray
-        raise TypeError("bytes only accepts byte values")
-    return value
-
-def decode_bytes(buf, index, end):
-    return buf[index:end], end
+# Note: superceded by yield-as-bytes and codec lookup table check. This didn't ever do anything anyway.
+# def encode_bytes(value):
+#     if not isinstance(value, bytes):                            # todo: bytearray
+#         raise TypeError("bytes only accepts byte values")
+#     return value
+#
+# def decode_bytes(buf, index, end):
+#     return buf[index:end], end
 
 
 
 def encode_utf8(value):
-    if not isinstance(value, VALID_STR_TYPE):
+    if not isinstance(value, VALID_STR_TYPES):
         raise TypeError("utf8 only accepts string values")
     return value.encode("utf8")
 

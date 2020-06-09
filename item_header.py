@@ -10,8 +10,9 @@ from type_varint import encode_uvarint, encode_svarint, decode_svarint, decode_u
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
-# | key type   | key type   | ?        ? |  data type | data type  | data type  | data type  | data type  |
+# | key type   | key type   | not-null   | data type? | data type  | data type  | data type  | data type  |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
+
 
 # --- Key bits   &   structure ---
 #     0   0  (0)     no bytes
@@ -19,26 +20,37 @@ from type_varint import encode_uvarint, encode_svarint, decode_svarint, decode_u
 #     1   0  (8)     UTF8 bytes
 #     1   1  (c)     raw bytess
 
-# Note: for now we are keeping it as simple as possible.
-# Note: we can experiment with super-compact options like 'zero flag' and 'size present flag' and 'true type false type' once we're DONE
-# Note: and we will use the C3 standard as our test data for compactifying.
 
+# Policy:  Everything has a size, except B3_END.  If we want B3_END to be 0x00 then the null flag has to be inverted.
+# Policy:  So now its a none-null flag. But only for the wire format, the rest of the code uses is_null so we flip it.
+# Todo:    size of 0 = the zero-value for the type. Do this (much) later.
 
-def encode_header(data_type, data_len, key):                       # user_bit=0
+# We might need a flag for unknown size!
+# OR make sizes an svarint and use -1 to represent unknown size
+
+def encode_header(data_type, key, data_len=0, is_null=False):
     key_type_bits, key_bytes = encode_key(key)
     cbyte = 0x00
     cbyte |= key_type_bits & 0xc0                      # top 2 bits key type
     cbyte |= data_type     & 0x1f                      # bottom 5 bits data type
-    len_bytes = encode_uvarint(data_len)               # size bytes
-    return int2byte(cbyte) + key_bytes + len_bytes
+    if not is_null:
+        cbyte |= 0x20                                  # 3rd bit 0=is null, 1 = NOT null
+    out = [int2byte(cbyte), key_bytes]
+    if not is_null:
+        out.append(encode_svarint(data_len))           # data len bytes
+    return b"".join(out)
 
 
 def decode_header(buf, index):
     cbyte,index = IntByteAt(buf, index)                # control byte
     key,index = decode_key(cbyte & 0xc0, buf, index)   # key bytes
-    data_len,index = decode_uvarint(buf, index)        # data len bytes
+    is_null = not bool(cbyte & 0x20)
+    if not is_null:
+        data_len,index = decode_svarint(buf, index)    # data len bytes
+    else:
+        data_len = 0
     data_type = cbyte & 0x1f
-    return key, data_type, data_len, index                    # but not the data bytes themselves, because the decoders nom them.
+    return key, data_type, data_len, is_null, index    # but not the data bytes themselves, because the decoders nom them.
 
 
 # Out: the key type bits, and the key bytes.
