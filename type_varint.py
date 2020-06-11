@@ -1,5 +1,6 @@
 
-# Signed and unsigned varint encoder/decoder
+# Codec for B3_UVARINT B3_SVARINT Signed and unsigned varint types
+
 # Used as a type codec and also by the header functions and some other type codecs
 # Note: the codec function call API is different to the internal-use call API for DECODERS.
 # Note: internal-use decode returns updated index, whereas codec-use decode takes an end-index parameter.

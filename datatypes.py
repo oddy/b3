@@ -5,10 +5,6 @@
 
 # Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
-# Policy: B3_END is going away because for now at least, we're NOT supporting unknown sizes.
-# Note: however, we'll keep B3_END reserved for now and have sizes be svarints so we can use -1 to
-#       signal "size unknown" in the future maybe.
-
 # --- Bag end marker ---
 # B3_END = 0        # end marker. Always 1 byte, always \x00   # unused currently because not supporting unknown-size items.
 
@@ -18,7 +14,6 @@ B3_BAG_LIST = 2   # same as BAG on wire, acts as hint to parser to yield a list-
 B3_BAG_DICT = 3   # same as BAG on wire, acts as hint to parser to yield a dict-like obj where possible
 
 # --- datum types ---
-# B3_NULL     = 4    # None.                                                      for None.
 B3_BOOL     = 5    # True or False.                                             for bool.
 B3_BYTES    = 6    # List of bytes (bytearray?).           Note: str in py2.    for bytes.
 B3_UTF8     = 7    # UTF8 byte strings.                    for str in py3 and unicode in py2.

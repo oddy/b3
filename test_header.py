@@ -4,6 +4,7 @@
 from utils import SBytes
 from item_header import *
 
+# --- Header key types ---
 
 def test_header_key_enc_none_int():
     assert encode_key(None)         == (0x00, b"")
@@ -18,8 +19,8 @@ def test_header_key_dec_none_int():
 
 def test_header_key_enc_str_bytes():
     assert encode_key(u"foo")       == (0x80, SBytes("03 66 6f 6f"))                                # string
-    assert encode_key(u"Виагра")    == (0x80, SBytes("0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"))     # string
-    assert encode_key(b"foo")       == (0xc0, SBytes("03 66 6f 6f"))                                # bytes
+    assert encode_key(u"Виагра")    == (0x80, SBytes("0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"))     # string key
+    assert encode_key(b"foo")       == (0xc0, SBytes("03 66 6f 6f"))                                # bytes key
 
 def test_header_key_dec_str_bytes():
     assert decode_key(0x80, SBytes("03 66 6f 6f"),0)                                == (u"foo", 4)
@@ -27,13 +28,21 @@ def test_header_key_dec_str_bytes():
     assert decode_key(0xc0, SBytes("03 66 6f 6f"),0)                                == (b"foo", 4)
 
 
+# --- Header type/len/null ---
+
 def test_header_enc():
     assert encode_header(key=None,   data_type=5,  data_len=5)    == SBytes("05 05")
     assert encode_header(key=5,      data_type=5,  data_len=5)    == SBytes("45 05 05")
     assert encode_header(key=u"foo", data_type=28, data_len=1500) == SBytes("9c 03 66 6f 6f dc 0b")
 
+def test_header_enc_null():
+    assert encode_header(key=None,   data_type=5,  data_len=0, is_null=True)  == SBytes("25")       # note no size
+
 def test_header_dec():
-    assert decode_header(SBytes("05 05"),0)                 == (None, 5, 5, 2)
-    assert decode_header(SBytes("45 05 05"),0)              == (5, 5, 5, 3)
-    assert decode_header(SBytes("9c 03 66 6f 6f dc 0b"),0)  == (u"foo", 28, 1500, 7)
+    assert decode_header(SBytes("05 05"),0)                 == (None, 5, False, 5, 2)
+    assert decode_header(SBytes("45 05 05"),0)              == (5, 5, False, 5, 3)
+    assert decode_header(SBytes("9c 03 66 6f 6f dc 0b"),0)  == (u"foo", 28, False, 1500, 7)
+
+def test_header_dec_null():
+    assert decode_header(SBytes("25"),0) == (None, 5, True, 0, 1)       # note no size
 
