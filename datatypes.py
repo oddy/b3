@@ -1,6 +1,10 @@
 
+# todo: end checks and normalizing use of end pointer everywhere.
+# todo: the module's actual UX
+#
+
 # --- Bag end marker ---
-B3_END = 0        # end marker. Always 1 byte, always \x00
+# B3_END = 0        # end marker. Always 1 byte, always \x00
 
 # Policy: B3_END is going away because for now at least, we're NOT supporting unknown sizes.
 # Policy: Keep using end-pointer params everwhere instead because everything is sized and we
@@ -35,6 +39,9 @@ B3_SCHED    = 14   # [some sort of]LOCAL time, offset TO utc, TZname.           
 B3_COMPLEX  = 15   # encoded as 2 float64s.
 
 
+# Policy: the decoders don't need to return an updated index any more because everything is sized, and
+# Policy: both composite decoders ignore it anyway.
+
 # --- Codec functions ---
 import type_basic
 import type_varint
@@ -42,18 +49,15 @@ import type_decimal
 import type_sched
 
 # If there's no codec for a type, then its a yield-as-bytes type. (for e.g. schema-composite)
-
 CODECS = {
-    # B3_NULL     : (type_basic.encode_null,      type_basic.decode_null),
     B3_BOOL     : (type_basic.encode_bool,      type_basic.decode_bool),
-    # B3_BYTES    : (type_basic.encode_bytes,     type_basic.decode_bytes),
     B3_UTF8     : (type_basic.encode_utf8,      type_basic.decode_utf8),
     B3_INT64    : (type_basic.encode_int64,     type_basic.decode_int64),
     B3_FLOAT64  : (type_basic.encode_float64,   type_basic.decode_float64),
     B3_STAMP64  : (type_basic.encode_stamp64,   type_basic.decode_stamp64),
     B3_COMPLEX  : (type_basic.encode_complex,   type_basic.decode_complex),
     B3_UVARINT  : (type_varint.encode_uvarint,  type_varint.decode_uvarint),
-    B3_SVARINT  : (type_varint.encode_svarint,  type_varint.decode_svarint),
+    B3_SVARINT  : (type_varint.encode_svarint,  type_varint.codec_decode_svarint),  # note codec-specific decoder fn
     B3_DECIMAL  : (type_decimal.encode_decimal, type_decimal.decode_decimal),
     B3_SCHED    : (type_sched.encode_sched,     type_sched.decode_sched),
 }
@@ -61,7 +65,6 @@ CODECS = {
 
 # Note: do NOT have a module named types.py. Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
-# So we don't use the end_index here, because varints are self-sizing.
 # todo: the whole thing with end comes down to container-sizing and whether we're security checking known sizes against end or not.
 # todo: really its do we take end as a parameter or return it out as an updated index? We don't need both.
 # todo: only decimal decode and the sized-types (bytes, utf8) needs end as a parameter. Everything else is either too simple (no optional parts) or too complex (many internal presence flags for optional components)

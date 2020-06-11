@@ -1,12 +1,14 @@
 
-import struct, zlib, time
+# Codec for B3_SCHED Schedule (datetime) type
+
+import struct, zlib
 from   collections import namedtuple
 import datetime
 
-from   six import PY2, int2byte, byte2int
+from   six import PY2, int2byte
 
 from   type_varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
-from utils import IntByteAt
+from   utils import IntByteAt
 
 ########################################################################################################################
 # Data Format Standard
@@ -39,7 +41,6 @@ OFFS_HOUR_BITS   = 0x0f
 # Encode
 ########################################################################################################################
 
-
 # In:  python date, time or datetime objects.  Optional tzname.
 # Out: bytes
 
@@ -59,7 +60,6 @@ def encode_sched(dt, tzname=''):
     offset = dt.strftime('%z')              # blank if no tzinfo
 
     return encode_sched_gen(tms, is_date, is_time, offset=offset, tzname=tzname, sub_exp=6 if micro else 0, sub=micro)
-
 
 # In - mandatory: time-tuple (Y/M/D H:M:S) assumed zero-filled, if date date (bool), if time data (bool),
 # In - optional:  offset, tzname, subsecond exponent, and subsecond integer
@@ -110,7 +110,8 @@ def encode_tzname(tzname):
 # In: buf & index of offset-byte
 # Out: offset string, dst-is-on bool
 
-def decode_offset(buf, index):                     # produce string & dst off/on bool, mirror of encode_offset
+def decode_offset(buf, index):
+    """produce string & dst off/on bool, mirror of encode_offset"""
     offbyte, index = IntByteAt(buf, index)
     sign = '-' if offbyte & OFFS_FLAG_SIGN else '+'
     dst  = bool(offbyte & OFFS_FLAG_DST)
@@ -119,7 +120,7 @@ def decode_offset(buf, index):                     # produce string & dst off/on
     return '%s%s%s' % (sign, hour, mins) , dst, index
 
 
-def decode_sched(buf, index):
+def decode_sched(buf, index, end):
     year = month = day = hour = minute = second = sub = 0
     dt = None
     tzname_hash = None
@@ -163,7 +164,7 @@ def decode_sched(buf, index):
     elif flags & FLAG_TIME:
         dt = datetime.time(hour,minute,second,sub)
 
-    return dt               # todo:   also return tzname_hash
+    return dt
 
 
 ########################################################################################################################
@@ -181,6 +182,10 @@ def decode_sched(buf, index):
 # 1) any use of the dst_on flag during decode. We assume the offset is inclusive of dst at all times.
 # 2) using the tzname and tzname_hash on encode and decode. (See below)
 # 3) standardizing the sign of the offset. Currently it's just whatever strptime %z does.
+
+# Policy: being able to construct a datetime utilizing the tzname_hash here is currently (2020-june) dependent on 3rd party libs (pytz, dateutil)
+# Policy: and our policy is "no external 3rd party deps" so we can't finish this right now.
+# todo: full support for return/deliver/use tzname_hash is waiting on python to internalise a TZ database. (3.9 hopefully)
 
 
 ########################################################################################################################

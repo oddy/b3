@@ -5,8 +5,6 @@
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-from six import PY2, int2byte
-
 from datatypes import CODECS, B3_BYTES, B3_BAG_LIST, B3_BAG_DICT, B3_BAG
 from item_header import encode_header, decode_header
 from dynrec_guesstype import guess_type
@@ -49,7 +47,7 @@ def encode_dynrec_comp(item, key=None, with_header=True):
         field_bytes = item
 
     elif isinstance(item, list):
-        field_bytes = b"".join( [ encode_dynrec_comp(i) for i in item ] )        # Note: recursive call
+        field_bytes = b"".join( [ encode_dynrec_comp(i) for i in item ] )               # Note: recursive call
         data_type = B3_BAG_LIST
 
     elif isinstance(item, dict):
@@ -70,20 +68,6 @@ def encode_dynrec_comp(item, key=None, with_header=True):
 
 
 
-# are we assuming that we're always unpacking into a container?  YES
-# what if its just a single item?
-
-# how about if it's not recursive and we push and pop the python data structure references to a little stack?
-
-# can we use len(buf) ?
-# i'm assuming not. The buf may have other shit in it.
-
-# where does that first out-container come from? is a big painful problem.
-# we can't get past needing a starter
-
-# unless the user supplies one!
-# It's Not Like Json Sorry.
-
 # Policy: we turn untyped BAG into a list, currently.
 def new_container(data_type):
     out = { B3_BAG: list(), B3_BAG_LIST : list(),  B3_BAG_DICT : dict() }[data_type]
@@ -93,7 +77,7 @@ def new_container(data_type):
 
 def decode_dynrec_comp(buf, index, end):
     """takes buffer and pointers, returns a container object (list or dict)"""
-    if index >= end:    raise ValueError("index > end")
+    if index >= end:    raise ValueError("index >= end")
     key, data_type, data_len, is_null, index = decode_header(buf, index)        # get the special top level header, to find out if we need to make a list or a dict.
     out = new_container(data_type)
     decode_dynrec_comp_recurse(out, buf, index, index+data_len)
@@ -135,10 +119,4 @@ def decode_dynrec_comp_recurse(out, buf, index, end):
 
     return
 
-
-
-#def decode_dynrec_comp_recurse(buf, index, end, container_type):
-
-
-# todo: return end ?
 

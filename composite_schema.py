@@ -2,31 +2,17 @@
 # Schema-style composite encoder.
 
 # Packer Architecture:
-# |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
+# |Json UX/Composite Packer| ->(dict keynames)-> |Header-encoder| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
 from datatypes import CODECS
 from item_header import encode_header, decode_header
 from utils import VALID_INT_TYPES
 
-
-# --- item structure ---
+# /------------------------ item structure ---------------------\
 # [header BYTE] [key (see below)] [data len UVARINT] [data BYTES]
 # \------------------------------------------------/                            = handled here
 
-# policy: we are currently mostly favouring correctness because schema. Sometimes we favour simplicity or interop tho, as noted below.
-# todo: if there was a switch for "favour correctness vs favour interop" it would
-# todo: control whether missing/incorrect fields blow up or get skipped.  skip_invalid=False = blow up, otherwise continue.
-#       we may be able to get away with just having that as a flag param to the functions.
-# policy: we DONT accept fields with missing keys (e.g. created by dynrec-ing a List) - they will fail key-lookup.
-
-# policy: we do NOT recurse like dynrec does, bytes-ey types are yielded as bytes. Up to the Caller to call us again with those bufs.
-# Policy: favouring simplicity, this involves a buffer copy.
-#         Yielding an index-pair would require the caller to understand that their dict data field was an index pair and not some bytes so we're not doing that for now.
-
-
-# todo: schema caching for fast lookup. and/or a slightly smart schema object.
-# policy: string key search is case-insensitive for simplicity
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
     if isinstance(key, VALID_INT_TYPES):
@@ -40,13 +26,6 @@ def schema_lookup_key(schema, key):
                 return typ,name,n
         return None,None,None
 
-# Policy: outgoing messages ARE sorted by key_number
-#         pretty sure C3 requires this!
-# Policy: if there is no codec for the type, it's a yield-as-bytes-type.
-
-# Policy: No need to support B3_END - everything is sized.
-# if they want to encapsulate, the size is known. They build the sub-object to bytes, then add that item to their
-# dict, then encode that. The sizes are always known because we're building bottom-up.
 
 def encode_schema_comp(schema, data):
     """In: schema - list/tuple of (type, name, number) tuples,   data - dict of key_name or key_number : data_value"""
@@ -84,15 +63,6 @@ def encode_schema_comp(schema, data):
     return b"".join(out_list)
 
 
-# Policy: missing values will be set to None.
-# Policy: favouring correctness, incoming keys that aren't found in the schema are IGNORED.
-# Policy: favouring interop OVER correctness, None values are allowed through even if the schema type and message type DONT match!
-#         because in python the None type is it's own type
-# Policy: when 2+ fields come in that evaluate to the same computed key, we favour SIMPLICITY currently
-#         - the last one in the message is yielded, because that requires no extra code to check and prioritise,
-# todo:   we should maybe log that things are being ignored to help later users, but electing to Not Care for now.
-# todo: if data_len == 0  have the codec return its zero-value. The codecs do this by checking index and end tho so we dont need special handling for it here
-
 def decode_schema_comp(schema, buf, index, end):
     """Parse through buf, create and return a dict"""
     out = {}
@@ -113,9 +83,10 @@ def decode_schema_comp(schema, buf, index, end):
 
             if schema_type in CODECS:
                 _,DecoderFn = CODECS[schema_type]
+                print("key %s decoderfn %r" % (schema_key_name, DecoderFn))
                 data,_ = DecoderFn(buf, index, index + data_len)            # note: we are ignoring the decoderFn's returned index in favour of using data_len from the header
             else:
-                data = buf[index : index + data_len]                      # Favoring simplicity, this is a buffer copy instead of some kind of zero-copy "inflict an index pair on the caller" thing.
+                data = buf[index : index + data_len]                        # Favoring simplicity, this is a buffer copy instead of some kind of zero-copy "inflict an index pair on the caller" thing.
 
             index += data_len                          # todo: this is a bit messy and we will fix it after making the dyn-rec encoders
 
@@ -130,6 +101,36 @@ def decode_schema_comp(schema, buf, index, end):
     return out  # ,end
 
 # todo: return end?
+
+
+# --- Design Policies ---
+# policy: we are currently mostly favouring correctness here because schema. Sometimes we favour simplicity or interop tho, as noted below.
+# todo: if there was a switch for "favour correctness vs favour interop" it would
+# todo: control whether missing/incorrect fields blow up or get skipped.  skip_invalid=False = blow up, otherwise continue.
+#       we may be able to get away with just having that as a flag param to the functions.
+# policy: we DONT accept fields with missing keys (e.g. created by dynrec-ing a List) - they will fail key-lookup.
+# policy: we do NOT recurse like dynrec does, bytes-ey types are yielded as bytes. Up to the Caller to call us again with those bufs.
+# Policy: favouring simplicity, this involves a buffer copy.
+#         Yielding an index-pair would require the caller to understand that their dict data field was an index pair and not some bytes so we're not doing that for now.
+# todo: schema caching for fast lookup. and/or a slightly smart schema object.
+# policy: string key search is case-insensitive for simplicity
+
+# --- Encoder Policies ---
+# Policy: outgoing messages ARE sorted by key_number - pretty sure C3 requires this!
+# Policy: if there is no codec for the type, it's a yield-as-bytes-type.
+# Policy: No need to support B3_END - everything is sized.
+# if they want to encapsulate, the size is known. They build the sub-object to bytes, then add that item to their
+# dict, then encode that. The sizes are always known because we're building bottom-up.
+
+# --- Decoder Policies ---
+# Policy: missing values will be set to None.
+# Policy: favouring correctness, incoming keys that aren't found in the schema are IGNORED.
+# Policy: favouring interop OVER correctness, None values are allowed through even if the schema type and message type DONT match!
+#         because in python the None type is it's own type
+# Policy: when 2+ fields come in that evaluate to the same computed key, we favour SIMPLICITY currently
+#         - the last one in the message is yielded, because that requires no extra code to check and prioritise,
+# todo:   we should maybe log that things are being ignored to help later users, but electing to Not Care for now.
+# todo: if data_len == 0  have the codec return its zero-value. The codecs do this by checking index and end tho so we dont need special handling for it here
 
 
 # * Single level only, nonbasic types get surfaced as bytes. Caller must then call one of our APIs to unpack them in turn.

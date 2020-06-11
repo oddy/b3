@@ -1,11 +1,12 @@
-# python decimal.Decimal to arbitrary-precision value-and-exponent encoding.
+
+# Codec for python decimal.Decimal to arbitrary-precision value-and-exponent encoding.
 
 import decimal
 
 from   six import int2byte
 
 from   type_varint import encode_uvarint, decode_uvarint
-from utils import IntByteAt
+from   utils import IntByteAt
 
 ########################################################################################################################
 # Data Format Standard
@@ -17,7 +18,7 @@ from utils import IntByteAt
 # --- Structure ---
 # [Control byte][optional exponent uvarint][value uvarint]
 # Note: the value varint is allowed to be missing if its zero. We dont have a presence flag for that,
-#       so the parser uses the size of what it's given to determine presence.
+#       so the parser uses the size of what it's given (via end-index) to determine presence.
 
 # --- Control Byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
@@ -34,6 +35,7 @@ BIT_INFINITY = 0x20     # 0 = NaN, 1 = Infinit
 BIT_EXP_EXT  = 0x10     # 0 = exponent is lower 4 bits of control byte, 1 = exponent is a uvarint following control byte
 BIT_SNAN     = 0x10     # 0 = Quiet NaN,  1 = 'Signalling' NaN
 EXPONENT_BITS = 0x0f    # Lower 4 bits of control byte
+
 
 ########################################################################################################################
 # Encode
@@ -86,27 +88,10 @@ def encode_decimal(num):
 
     return b''.join(out)
 
-# --- Note: End-index design ---
-
-# As the item container system sizes everything (even none and bool), we can be supplied with an end_index
-# to error check against, and usefully for us, we can use it to detect the presence/absence of the actual
-# value varint
-
-# if you give it a size it has to record the initial index in a stash variable so it can then compare
-# current index vs stash index vs size, because the buf/index system is buf global (not zero)
-
-# better to send an end_index but is it the plus-one or not?
-# ie, end_index literally the pointer to the start of the next thing?
-# buf + size
-# end_index - index = 1
-
-
-# decimal.Decimal(-1234).scaleb(-2)  ->  Decimal('-12.34')      # using ints
-# decimal.Decimal('-1234e-2')        ->  Decimal('-12.34')            # using strings
 
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal
-def decode_decimal(buf, index, end_index):
+def decode_decimal(buf, index, end):
     bits, index = IntByteAt(buf, index)
 
     # --- Special literals ---
@@ -129,7 +114,7 @@ def decode_decimal(buf, index, end_index):
         exp = bits & EXPONENT_BITS
 
     # --- value ---
-    if index == end_index:
+    if index == end:
         value = 0
     else:
         value,index = decode_uvarint(buf, index)
@@ -141,3 +126,5 @@ def decode_decimal(buf, index, end_index):
     return decimal.Decimal(dec_str)
 
 
+# decimal.Decimal(-1234).scaleb(-2)  ->  Decimal('-12.34')      # using ints
+# decimal.Decimal('-1234e-2')        ->  Decimal('-12.34')      # using strings
