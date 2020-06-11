@@ -1,18 +1,16 @@
 
+# B3 data types & codec import/lookup table
+
 # todo: the module's actual UX
 
-# Note: do NOT have a module named types.py. Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
+# Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
 # Policy: B3_END is going away because for now at least, we're NOT supporting unknown sizes.
-# Policy: Keep using end-pointer params everwhere instead because everything is sized and we always build bottom-up ANYWAY.
-# Rationale - the only use cases blair and i could think of for sizeless are:
-# 1) Huge datastructures (e.g. qsa tables) which will have their own sizing,
-# 2) e.g. sockets big-long-streaming which will always be chunked anyway!
 # Note: however, we'll keep B3_END reserved for now and have sizes be svarints so we can use -1 to
 #       signal "size unknown" in the future maybe.
 
 # --- Bag end marker ---
-# B3_END = 0        # end marker. Always 1 byte, always \x00
+# B3_END = 0        # end marker. Always 1 byte, always \x00   # unused currently because not supporting unknown-size items.
 
 # --- Structure types ---
 B3_BAG = 1        # Our single multipurpose composite type, structured: [item][item] # (not)[B3_END]
@@ -61,5 +59,10 @@ CODECS = {
     B3_SCHED    : (type_sched.encode_sched,     type_sched.decode_sched),
 }
 
+
+# We are using end-pointer params everwhere instead because everything is sized and we always build bottom-up ANYWAY.
+# Rationale - the only use cases blair and i could think of for sizeless are:
+# 1) Huge datastructures (e.g. qsa tables) which will have their own sizing,
+# 2) e.g. sockets big-long-streaming which will always be chunked anyway!
 
 

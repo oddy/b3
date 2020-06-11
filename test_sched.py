@@ -94,16 +94,16 @@ def test_dec_gen_offset():
 # --- Testing the Python Datetime decode API  ---       # Note: there is no general purpose decode API currently.
 
 def test_dec_dt_date_time():
-    assert decode_sched(SBytes("c0 c8 1f 01 10 0d 25 14"),0) == datetime.datetime(2020,1,16,13,37,20)
+    assert decode_sched(SBytes("c0 c8 1f 01 10 0d 25 14"),0,8) == datetime.datetime(2020,1,16,13,37,20)
 
 def test_dec_dt_date():
-    assert decode_sched(SBytes("80 c8 1f 01 10"),0) == datetime.date(2020,1,16)
+    assert decode_sched(SBytes("80 c8 1f 01 10"),0,5) == datetime.date(2020,1,16)
 
 def test_dec_dt_time():
-    assert decode_sched(SBytes("40 0d 25 14"),0) == datetime.time(13,37,20)
+    assert decode_sched(SBytes("40 0d 25 14"),0,4) == datetime.time(13,37,20)
 
 def test_dec_dt_sub():
-    assert decode_sched(SBytes("c2 c8 1f 01 10 0d 25 14 b9 60"),0) == datetime.datetime(2020,1,16,13,37,20,12345)
+    assert decode_sched(SBytes("c2 c8 1f 01 10 0d 25 14 b9 60"),0,10) == datetime.datetime(2020,1,16,13,37,20,12345)
 
 
 # Note: We can only do offsets in the stdlib in py3, py2 doesnt have a builtin concrete tzinfo class
@@ -111,11 +111,11 @@ def test_dec_dt_sub():
 
 if not PY2:
     def test_dec_dt_offset():
-        assert decode_sched(SBytes("e0 c8 1f 01 10 0d 25 14 a2"),0) == \
+        assert decode_sched(SBytes("e0 c8 1f 01 10 0d 25 14 a2"),0,9) == \
             datetime.datetime(2020,1,16,13,37,20, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=77400)))
 
     def test_dec_dt_offset_sub():
-        assert decode_sched(SBytes("e2 c8 1f 01 10 0d 25 14 a2 b9 60"),0) == \
+        assert decode_sched(SBytes("e2 c8 1f 01 10 0d 25 14 a2 b9 60"),0,11) == \
             datetime.datetime(2020,1,16,13,37,20, 12345, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=77400)))
 
     def test_dec_dt_roundtrip():
