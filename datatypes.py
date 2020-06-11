@@ -1,19 +1,18 @@
 
-# todo: end checks and normalizing use of end pointer everywhere.
 # todo: the module's actual UX
-#
 
-# --- Bag end marker ---
-# B3_END = 0        # end marker. Always 1 byte, always \x00
+# Note: do NOT have a module named types.py. Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
 # Policy: B3_END is going away because for now at least, we're NOT supporting unknown sizes.
-# Policy: Keep using end-pointer params everwhere instead because everything is sized and we
-# Policy: always build bottom-up ANYWAY.
-# Note: however, we'll keep B3_END reserved for now and have sizes be svarints so we can use -1 to
-#       signal "size unknown" in the future maybe.
+# Policy: Keep using end-pointer params everwhere instead because everything is sized and we always build bottom-up ANYWAY.
 # Rationale - the only use cases blair and i could think of for sizeless are:
 # 1) Huge datastructures (e.g. qsa tables) which will have their own sizing,
 # 2) e.g. sockets big-long-streaming which will always be chunked anyway!
+# Note: however, we'll keep B3_END reserved for now and have sizes be svarints so we can use -1 to
+#       signal "size unknown" in the future maybe.
+
+# --- Bag end marker ---
+# B3_END = 0        # end marker. Always 1 byte, always \x00
 
 # --- Structure types ---
 B3_BAG = 1        # Our single multipurpose composite type, structured: [item][item] # (not)[B3_END]
@@ -57,33 +56,10 @@ CODECS = {
     B3_STAMP64  : (type_basic.encode_stamp64,   type_basic.decode_stamp64),
     B3_COMPLEX  : (type_basic.encode_complex,   type_basic.decode_complex),
     B3_UVARINT  : (type_varint.encode_uvarint,  type_varint.decode_uvarint),
-    B3_SVARINT  : (type_varint.encode_svarint,  type_varint.codec_decode_svarint),  # note codec-specific decoder fn
+    B3_SVARINT  : (type_varint.encode_svarint,  type_varint.codec_decode_svarint),  # note codec-specific decoder function here
     B3_DECIMAL  : (type_decimal.encode_decimal, type_decimal.decode_decimal),
     B3_SCHED    : (type_sched.encode_sched,     type_sched.decode_sched),
 }
 
-
-# Note: do NOT have a module named types.py. Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
-
-# todo: the whole thing with end comes down to container-sizing and whether we're security checking known sizes against end or not.
-# todo: really its do we take end as a parameter or return it out as an updated index? We don't need both.
-# todo: only decimal decode and the sized-types (bytes, utf8) needs end as a parameter. Everything else is either too simple (no optional parts) or too complex (many internal presence flags for optional components)
-
-
-
-def foo():
-    x = []
-    x.append(1)
-    x.append(2)
-    print repr(x)
-    bar(x)
-    print repr(x)
-
-def bar(z):
-    z.append(9)
-
-
-if __name__ == '__main__':
-    foo()
 
 

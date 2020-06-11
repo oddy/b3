@@ -1,29 +1,22 @@
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+
+import pytest
 
 from utils import SBytes
-from hexdump import hexdump
 from type_decimal import encode_decimal, decode_decimal
 
-# --- Arb Prec Decimal ---
-# the 'significand' is what fancy people call the coef - the number that isn't the exponent.
+# See type_decimal.py for the Data Format Standard
 
+# --- Things to test for ---
 # negative positive infinity  (tests infinity AND significand sign bits)
 # nan and snan
-# negative positive zero (test the no significand at all code path)
+# negative positive zero (test the no value-at-all code path)
 # number 1      (exp 0)
 # number 2.01   (exp -2)                   (internal exp)
 # number .12345678901234567890  (exp -20)  (external exp)
 
-# +------------+------------+------------+------------+------------+------------+------------+------------+
-# | 0:Number   | Sign       | Expo Sign  | Ext exp(1) | exponent   | exponent   | exponent   | exponent   |
-# | 1:Special  | Sign       | Nan/Inf(2) | q/s nan(3) | unused     | unused     | unused     | unused     |
-# +------------+------------+------------+------------+------------+------------+------------+------------+
-# (1) 0 = exponent in bottom 4 bits, 1 = exponent varint follows
-# (2) 0 = NaN, 1 = Infinity
-# (3) 0 = 'Quiet' NaN, 1 = 'Signalling' NaN
-
-# --- Encode ---
+# --- Encoders ---
 
 def test_enc_decni_nans():
     assert encode_decimal( Decimal('nan')  ) == SBytes("80")        # 1000
@@ -34,7 +27,6 @@ def test_enc_decni_nans():
 def test_enc_deci_sign_inf():
     assert encode_decimal( Decimal('+inf') ) == SBytes("a0")        # 1010
     assert encode_decimal( Decimal('-inf') ) == SBytes("e0")        # 1110
-
 
 def test_enc_deci_zeros():
     assert encode_decimal( Decimal('0')  )   == SBytes("00")        # 0000 0000  & no signif
@@ -56,15 +48,17 @@ def test_enc_deci_sci():                                             # 0001 0000
     assert encode_decimal( Decimal('69e49')) == SBytes("10 31 45")
 
 
-# --- Decode ---
+# --- Decoders ---
 
 def test_dec_deci_nans():
-    # assert decode_decimal( SBytes("80"), 0 )    == Decimal('nan')     # can't do because NaN == NaN is FALSE
-    # assert decode_decimal( SBytes("90"), 0 )    == Decimal('snan')    # can't do because sNans raise exceptions
     assert str(decode_decimal(SBytes("80"),0,1)) == 'NaN'
     assert str(decode_decimal(SBytes("90"),0,1)) == 'sNaN'
     assert str(decode_decimal(SBytes("c0"),0,1)) == '-NaN'
     assert str(decode_decimal(SBytes("d0"),0,1)) == '-sNaN'
+
+def test_dec_deci_snan():
+    with pytest.raises(InvalidOperation):
+        assert decode_decimal( SBytes("90"), 0, 1)    == Decimal('snan')    # sNans raise exceptions
 
 def test_dec_deci_sign_inf():
     assert decode_decimal( SBytes("a0"),0,1 )    == Decimal('+inf')
@@ -90,7 +84,6 @@ def test_dec_deci_largeexp():
     assert decode_decimal(buf,0,len(buf))     == Decimal('.1234567890123456789')
     buf = SBytes("70 13 95 82 a6 ef c7 9e 84 91 11")
     assert decode_decimal(buf,0,len(buf))     == Decimal('-.1234567890123456789')
-
 
 def test_dec_deci_sci():
     assert decode_decimal(SBytes("10 31 45"),0,3)  == Decimal('69e49')
