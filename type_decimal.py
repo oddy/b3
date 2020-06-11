@@ -92,6 +92,7 @@ def encode_decimal(num):
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal
 def decode_decimal(buf, index, end):
+    if end-index < 1:    raise ValueError("B3_DECIMAL data size must be at least 1 byte")
     bits, index = IntByteAt(buf, index)
 
     # --- Special literals ---

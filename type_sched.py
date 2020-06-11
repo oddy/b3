@@ -120,7 +120,7 @@ def decode_offset(buf, index):
     return '%s%s%s' % (sign, hour, mins) , dst, index
 
 
-def decode_sched(buf, index, end):
+def decode_sched(buf, index, end):                                  # todo: we are not currently supporting a zero-value
     year = month = day = hour = minute = second = sub = 0
     dt = None
     tzname_hash = None

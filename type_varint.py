@@ -49,6 +49,8 @@ def encode_uvarint_actual(num):                     # actual worker (also called
 
 # --- Internal-use Decoders ---
 
+# todo: we should probably end-cap these.
+
 def decode_uvarint(data, index):
     item = 128
     num = 0
@@ -72,9 +74,11 @@ def decode_svarint(data, index):
 # --- Codec-use Decoders ---
 
 def codec_decode_uvarint(data, index, end):
+    if index == end:    raise ValueError("B3_UVARINT data size must be at least 1 byte")
     return decode_uvarint(data, index)[0]
 
 def codec_decode_svarint(data, index, end):
+    if index == end:    raise ValueError("B3_SVARINT data size must be at least 1 byte")
     return decode_svarint(data, index)[0]
 
 

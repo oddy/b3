@@ -9,18 +9,22 @@ from utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 #         so yes, decode(blah, 0, len(blah)) is correct when testing.
 #         and index==end does mean there is no data at all.
 
-# Note: Endianness - there's no difference between <q and >q performance-wise on py2 or py3.
+# Note: Endianness - there appears to be no difference between <q and >q performance-wise on py2 or py3.
 # Note: there is no Null type or null-type codec, instead item headers have a null-flag. See item_header module for more info.
 # Policy: Favouring simplicity over performance by having the type safety checks here.
 # i.e. dynamic shouldn't need type safety checks because it's types are aquired from the guess_type() function rather than directly from the user
 # but splitting out the type checks from the codecs will bloat the code so we're not doing that.
-# todo: length checks with the end parameter.
+
+
+# todo: length checks with the end parameter?  we're mostly EAFP-ing this for now.
 
 def encode_bool(value):
     value = bool(value)
     return b"\x01" if value else b"\x00"
 
 def decode_bool(buf, index, end):
+    if end-index != 1:
+        raise ValueError("B3_BOOL data size isnt 1 byte")
     x,index = IntByteAt(buf, index)
     return {0:False, 1:True}[x]
 
@@ -30,7 +34,7 @@ def encode_utf8(value):
         raise TypeError("utf8 only accepts string values")
     return value.encode("utf8")
 
-def decode_utf8(buf, index, end):
+def decode_utf8(buf, index, end):                   # zero-size is ok
     return buf[index:end].decode("utf8")
 
 
@@ -40,8 +44,9 @@ def encode_int64(value):
     return struct.pack("<q", value)
 
 def decode_int64(buf, index, end):
+    if end-index != 8:
+        raise ValueError("B3_INT64 data size isn't 8 bytes")
     return struct.unpack("<q", buf[index:index+8])[0]
-
 
 
 def encode_float64(value):
@@ -50,6 +55,8 @@ def encode_float64(value):
     return struct.pack("<d", value)
 
 def decode_float64(buf, index, end):
+    if end-index != 8:
+        raise ValueError("B3_FLOAT64 data size isn't 8 bytes")
     return struct.unpack("<d", buf[index:index+8])[0]
 
 
@@ -65,6 +72,8 @@ def encode_stamp64(value):
 
 # Note: we only yield integer nanoseconds. Up to the caller to float-er-ize it if they need.
 def decode_stamp64(buf, index, end):
+    if end-index != 8:
+        raise ValueError("B3_STAMP64 data size isn't 8 bytes")
     return struct.unpack("<q", buf[index:index+8])[0]
 
 
@@ -75,6 +84,8 @@ def encode_complex(value):
     return struct.pack("<dd", value.real, value.imag)
 
 def decode_complex(buf, index, end):
+    if end-index != 16:
+        raise ValueError("B3_COMPLEX data size isn't 16 bytes")
     return complex(*struct.unpack("<dd",buf[index:index+16]))
 
 

@@ -46,6 +46,7 @@ def test_base_int64_enc():
 def test_base_int64_dec():
     for tint,tbytes in TEST_INT64S:
         assert decode_int64(tbytes,0,8) == tint
+    # todo: test size checking
 
 
 TEST_FLOAT64S = (
@@ -60,6 +61,7 @@ def test_base_float64_enc():
 def test_base_float64_dec():
     for tflo,tbytes in TEST_FLOAT64S:
         assert decode_float64(tbytes,0,8) == tflo
+    # todo: test size checking
 
 
 # stamp64 is signed, so it's 2**63 ns / 1000 / 1000 / 1000 / 60 / 60 / 24 / 365 = about 292.5 years each side of 1970
@@ -75,6 +77,7 @@ def test_base_stamp64_enc():
 
 def test_base_stamp64_dec():
     assert decode_stamp64(SBytes("00 22 46 6c ad d1 13 16"),0,8)  == timNano
+    # todo: test size checking
 
 
 tcplx = 13.37+42.42j
@@ -85,5 +88,6 @@ def test_base_complex_enc():
 
 def test_base_complex_dec():
     assert decode_complex(tcplx_bytes, 0, 16) == tcplx
+    # todo: test size checking
 
 
