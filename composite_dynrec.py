@@ -5,7 +5,7 @@
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-from datatypes import CODECS, B3_BYTES, B3_BAG_LIST, B3_BAG_DICT, B3_BAG
+from datatypes import CODECS, B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, B3_BAG
 from item_header import encode_header, decode_header
 from dynrec_guesstype import guess_type
 
@@ -31,7 +31,7 @@ from dynrec_guesstype import guess_type
 #       - thats also completely wrong in terms of actual usability, sigh.
 
 
-def encode_dynrec_comp(item, key=None, with_header=True):
+def pack(item, key=None, with_header=True):
     """takes a datastructure (list or dict), returns bytes"""
     # while its possible to use this to convert a single type/value, its assumed that we never do that.
 
@@ -47,12 +47,12 @@ def encode_dynrec_comp(item, key=None, with_header=True):
         field_bytes = item
 
     elif isinstance(item, list):
-        field_bytes = b"".join( [ encode_dynrec_comp(i) for i in item ] )               # Note: recursive call
-        data_type = B3_BAG_LIST
+        field_bytes = b"".join([pack(i) for i in item])               # Note: recursive call
+        data_type = B3_COMPOSITE_LIST
 
     elif isinstance(item, dict):
-        field_bytes = b"".join( [ encode_dynrec_comp(v, k) for k, v in item.items()])   # Note: recursive call
-        data_type = B3_BAG_DICT
+        field_bytes = b"".join([pack(v, k) for k, v in item.items()])   # Note: recursive call
+        data_type = B3_COMPOSITE_DICT
 
     else:
         data_type = guess_type(item)            # may blow up encountering unknown type
@@ -70,27 +70,28 @@ def encode_dynrec_comp(item, key=None, with_header=True):
 
 # Policy: we turn untyped BAG into a list, currently.
 def new_container(data_type):
-    out = { B3_BAG: list(), B3_BAG_LIST : list(),  B3_BAG_DICT : dict() }[data_type]
+    out = {B3_BAG: list(), B3_COMPOSITE_LIST: list(), B3_COMPOSITE_DICT: dict()}[data_type]
     return out
 
-# This one is the counterpart of encode_dynrec_comp with with_header=True (the default)
+# This one is the counterpart of pack with with_header=True (the default)
 
-def decode_dynrec_comp(buf, index, end):
+# was "decode_dynrec_comp"
+def unpack(buf, index, end):
     """takes buffer and pointers, returns a container object (list or dict)"""
     if index >= end:    raise ValueError("index >= end")
-    key, data_type, data_len, is_null, index = decode_header(buf, index)        # get the special top level header, to find out if we need to make a list or a dict.
+    key, data_type, is_null, data_len, index = decode_header(buf, index)        # get the special top level header, to find out if we need to make a list or a dict.
     out = new_container(data_type)
-    decode_dynrec_comp_recurse(out, buf, index, index+data_len)
+    unpack_recurse(out, buf, index, index + data_len)
     return out
 
 # users can call this one directly if they already have a container to put things into.
-# This one is the counterpart of encode_dynrec_comp with with_header=False (not the default)
+# This one is the counterpart of pack with with_header=False (not the default)
 
-def decode_dynrec_comp_recurse(out, buf, index, end):
+def unpack_recurse(out, buf, index, end):
     """takes container, buffer, pointers, and adds items to the container."""
     while index < end:
         # --- do header ---
-        key, data_type, data_len, is_null, index = decode_header(buf, index)
+        key, data_type, is_null, data_len, index = decode_header(buf, index)
 
         # --- get data value ---
         if is_null:
@@ -99,13 +100,13 @@ def decode_dynrec_comp_recurse(out, buf, index, end):
         elif data_type == B3_BYTES:
             value = buf[index : index+data_len]
 
-        elif data_type in (B3_BAG_LIST, B3_BAG, B3_BAG_DICT):
+        elif data_type in (B3_COMPOSITE_LIST, B3_BAG, B3_COMPOSITE_DICT):
             value = new_container(data_type)
-            decode_dynrec_comp_recurse(value, buf, index, index+data_len)       # note recursive
+            unpack_recurse(value, buf, index, index + data_len)       # note recursive
 
         else:
             _,DecoderFn = CODECS[data_type]
-            value,_ = DecoderFn(buf, index, index+data_len)            # note: we are ignoring the decoderFn's returned index in favour of using data_len from the header
+            value = DecoderFn(buf, index, index+data_len)
 
         # --- Put data value into container ---
         if isinstance(out, list):

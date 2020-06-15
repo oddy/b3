@@ -2,11 +2,11 @@
 from   six import PY2, int2byte, byte2int
 
 from utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
-from type_varint import encode_uvarint, encode_svarint, decode_svarint, decode_uvarint
+from type_varint import encode_uvarint, decode_uvarint
 
-# --- item structure ---
-# [header BYTE] [key (see below)] [data len UVARINT] [data BYTES]
-# \------------------------------------------------/                            = handled here
+# Item:
+# [header BYTE] [key (see below)] [data len UVARINT]  [ data BYTES ]
+# -------------- item_header -----------------------  --- codecs ---
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+

@@ -31,10 +31,10 @@ def guess_type(obj):
         return B3_SVARINT                        # the zigzag size diff is only noticeable with small numbers.
 
     if isinstance(obj, dict):
-        return B3_BAG_DICT
+        return B3_COMPOSITE_DICT
 
     if isinstance(obj, list):
-        return B3_BAG_LIST
+        return B3_COMPOSITE_LIST
 
     # we dont use B3_BAG here
 

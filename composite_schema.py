@@ -9,9 +9,9 @@ from datatypes import CODECS
 from item_header import encode_header, decode_header
 from utils import VALID_INT_TYPES
 
-# /------------------------ item structure ---------------------\
-# [header BYTE] [key (see below)] [data len UVARINT] [data BYTES]
-# \------------------------------------------------/                            = handled here
+# Nested composite item structure is
+# [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
+#                          [hdr|data][hdr|data]
 
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
@@ -26,17 +26,31 @@ def schema_lookup_key(schema, key):
                 return typ,name,n
         return None,None,None
 
+# policy: favouring correctness, incoming fields that aren't found in the schema cause an error
+#         User has to delete keys before presenting the data. This could be quite annoying. Should we just ignore them?
+# policy: ?? maybe we should have a strictness flag for this instead.
 
-def encode_schema_comp(schema, data):
+
+# policy: favouring interop, schema fields that aren't in the incoming obj are sent out with None values
+#         So that the other end, if its a dynamic comp, still gets those keys present.
+
+# policy: External API uses schema_pack (schema) and pack (dynamic), vs internal datatype stuff, which uses encode/decode.
+
+class UnwantedFieldError(KeyError): pass
+class MissingFieldError(KeyError):  pass
+
+def schema_pack(schema, data, strict=False):
     """In: schema - list/tuple of (type, name, number) tuples,   data - dict of key_name or key_number : data_value"""
     if not isinstance(data, dict):
-        raise TypeError("currently only dict input data supported by encode_schema_comp")
+        raise TypeError("currently only dict input data supported by schema_pack")
     out = {}                            # header and data items schema_key_number
     for key, value in data.items():
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
         if schema_type is None:
-            # policy: favouring correctness, incoming keys that aren't found in the schema cause an error
-            raise KeyError("Supplied key %r is not in the schema" % (key,))
+            if strict:
+                raise UnwantedFieldError("Supplied key %r is not in the schema" % (key,))
+            else:
+                continue
 
         if value is None:
             header_bytes = encode_header(data_type=schema_type, key=schema_key_number, is_null=True)
@@ -50,7 +64,7 @@ def encode_schema_comp(schema, data):
             header_bytes = encode_header(data_type=schema_type, key=schema_key_number, data_len=len(field_bytes))
             out[schema_key_number] = (header_bytes, field_bytes)
 
-    # Check for schema fields that are missing from supplied data. Policy: Do it by NUMBER.
+    # Check schema fields that are missing from supplied data. Policy: Do it by NUMBER.
     for mtyp,mname,mnum in schema:
         if mnum not in out:
             print("schema field %i missing from supplied, adding it with value None" % (mnum,))
@@ -63,11 +77,11 @@ def encode_schema_comp(schema, data):
     return b"".join(out_list)
 
 
-def decode_schema_comp(schema, buf, index, end):
+def schema_unpack(schema, buf, index, end):
     """Parse through buf, create and return a dict"""
     out = {}
     while index < end:
-        key, data_type, data_len, is_null, index = decode_header(buf, index)
+        key, data_type, is_null, data_len, index = decode_header(buf, index)
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
 
         if schema_type is None:
@@ -84,11 +98,11 @@ def decode_schema_comp(schema, buf, index, end):
             if schema_type in CODECS:
                 _,DecoderFn = CODECS[schema_type]
                 print("key %s decoderfn %r" % (schema_key_name, DecoderFn))
-                data,_ = DecoderFn(buf, index, index + data_len)            # note: we are ignoring the decoderFn's returned index in favour of using data_len from the header
+                data = DecoderFn(buf, index, index + data_len)
             else:
-                data = buf[index : index + data_len]                        # Favoring simplicity, this is a buffer copy instead of some kind of zero-copy "inflict an index pair on the caller" thing.
+                data = buf[index : index + data_len]        # buffer copy for simplicity.
 
-            index += data_len                          # todo: this is a bit messy and we will fix it after making the dyn-rec encoders
+            index += data_len
 
         out[schema_key_name] = data
 
