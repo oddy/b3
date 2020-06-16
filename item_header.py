@@ -19,11 +19,20 @@ from type_varint import encode_uvarint, decode_uvarint
 #     1   0  (8)     UTF8 bytes
 #     1   1  (c)     raw bytess
 
+
+# +------------+------------+------------+------------+------------+------------+------------+------------+
+# | key type   | key type   | has data   | is null    | data type  | data type  | data type  | data type  |
+# +------------+------------+------------+------------+------------+------------+------------+------------+
+
+
+
+
+
 # Todo:   Possible Compactness optimization - make size of 0 = the zero-value for the type, where applicable?
 # Policy: we are NOT doing unknown size. Which means no B3_END.
 # Policy: we are no longer inverting the null bit.
-# Policy: we are NOT stealing a data type bit to do zero-value signalling.
-#         If users want super compactness they can send Nones for values.
+# Policy: we ARE doing zero-value signalling.
+
 
 
 def encode_header(data_type, key, data_len=0, is_null=False):

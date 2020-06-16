@@ -27,7 +27,7 @@ def encode_svarint(num):
         num = -1 ^ num
     return encode_uvarint_actual(num)
 
-# API level - choose between signed and unsigned
+# API level - choose between signed and unsigned,
 def encode_varint(num):
     if num < 0:
         return encode_svarint(num)
@@ -50,8 +50,6 @@ def encode_uvarint_actual(num):                     # actual worker (also called
 
 # --- Internal-use Decoders ---
 
-# todo: we should probably end-cap these.
-
 def decode_uvarint(data, index):
     item = 128
     num = 0
@@ -71,15 +69,32 @@ def decode_svarint(data, index):
         x = -1 ^ x
     return x,index
 
+# --- Codec-use Encoders ---
+
+# Policy: Codec Encoders MAY return no bytes to signify a Zero Value (optional)
+# Policy: Codec Decoders MUST accept if index==end and return a Zero value (mandatory)
+
+def codec_encode_uvarint(num):
+    if num == 0:
+        return b""
+    return encode_uvarint(num)
+
+def codec_encode_svarint(num):
+    if num == 0:
+        return b""
+    return encode_svarint(num)
+
 
 # --- Codec-use Decoders ---
 
 def codec_decode_uvarint(data, index, end):
-    if index == end:    raise ValueError("B3_UVARINT data size must be at least 1 byte")
+    if index == end:
+        return 0
     return decode_uvarint(data, index)[0]
 
 def codec_decode_svarint(data, index, end):
-    if index == end:    raise ValueError("B3_SVARINT data size must be at least 1 byte")
+    if index == end:
+        return 0
     return decode_svarint(data, index)[0]
 
 

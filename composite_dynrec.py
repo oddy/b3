@@ -23,7 +23,7 @@ from dynrec_guesstype import guess_type
 
 
 # You know maybe we DO want the header surfaced, because then we can have list or dict top-level items...
-# There's no way for it to know what the top-level item actuall is otherwise!
+# There's no way for it to know what the top-level item actually is otherwise!
 # Policy: we're not hardwiring it to a list like the old code did, so we HAVE to have the top-level header at the front anyway?
 # Policy: the users just want to throw a dict in, get a dict out, etc.
 # Note: its up to them to indicate that they DONT want a header on the very top then, if they already know "its always a dict" or whatever
@@ -47,7 +47,7 @@ def pack(item, key=None, with_header=True):
         field_bytes = item
 
     elif isinstance(item, list):
-        field_bytes = b"".join([pack(i) for i in item])               # Note: recursive call
+        field_bytes = b"".join([pack(i) for i in item])                 # Note: recursive call
         data_type = B3_COMPOSITE_LIST
 
     elif isinstance(item, dict):
@@ -66,6 +66,7 @@ def pack(item, key=None, with_header=True):
     else:
         return field_bytes
 
+# zero value is easy here.
 
 
 # Policy: we turn untyped BAG into a list, currently.

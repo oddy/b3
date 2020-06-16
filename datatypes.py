@@ -30,23 +30,15 @@ B3_STAMP64  = 11   # Signed 64bit unix ns, UTC (because unix time IS UTC)  for n
 B3_SCHED    = 13   # [some sort of]LOCAL time, offset TO utc, TZname.              for user-schedule local time. (ie, times gotten from user input,
                    # appointments and schedules, future times.)
 
+
+
+# I say complex should be up in the higher register
 B3_COMPLEX  = 14   # encoded as 2 float64s.
 
 # Blair's idea:
+
 # 15 = EXT_TYPE         with a varint after for the extended type numbers.
 
-# User defined types become a range in that range.
-
-# Actually how would these 2 different ranges be handled in code? This is probably a bad idea.
-# ONE range would be ok, with a designated area for user-defined.
-
-# two ranges = we need a flag as well as the number. bad bad bad.
-
-
-# But we dont need these unless we're grabbing that item_header bit back from the zero-value stuff.
-#
-
-# Maybe eat COMPLEX into an EXT_TYPE
 
 # --- Codec functions ---
 import type_basic

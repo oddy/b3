@@ -52,6 +52,43 @@ def schema_pack(schema, data, strict=False):
             else:
                 continue
 
+
+
+        # =================== PROPOSED ==================================================================================
+
+        # know data type, key
+
+        # if value isnt none, call the encoder, get the bytes
+        # - the bytes may be no bytes because of the codec zero-value contract.
+
+        # then one call to encode_header
+        # data_len 0, is_null=bool(value is None)
+
+        if value is not None:
+            if schema_type in CODECS:
+                EncoderFn,_ = CODECS[schema_type]
+                field_bytes = EncoderFn(value)
+            else:
+                field_bytes = bytes(value)              # Note: value should be bytes already anyway at this point.
+        else:
+            field_bytes = b""
+
+        header_bytes = encode_header(data_type=schema_type, key=schema_key_number, data_len=len(field_bytes), is_null=bool(value is None))
+
+
+        # then in encode_header
+
+        if data_len == 0 and not is_null:
+            cbyte |= 0x10                               # set the Zero Flag
+
+
+        # =================== PROPOSED ==================================================================================
+
+
+
+
+        # =================== CURRENT ==================================================================================
+
         if value is None:
             header_bytes = encode_header(data_type=schema_type, key=schema_key_number, is_null=True)
             out[schema_key_number] = (header_bytes, b"")
@@ -63,6 +100,8 @@ def schema_pack(schema, data, strict=False):
                 field_bytes = bytes(value)              # Note: value should be bytes already anyway at this point.
             header_bytes = encode_header(data_type=schema_type, key=schema_key_number, data_len=len(field_bytes))
             out[schema_key_number] = (header_bytes, field_bytes)
+
+        # =================== CURRENT ==================================================================================
 
     # Check schema fields that are missing from supplied data. Policy: Do it by NUMBER.
     for mtyp,mname,mnum in schema:
