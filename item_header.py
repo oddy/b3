@@ -36,7 +36,7 @@ from type_varint import encode_uvarint, decode_uvarint
 
 
 def encode_header(data_type, key, data_len=0, is_null=False):
-    ext_type_bytes = len_bytes = b""
+    ext_data_type_bytes = len_bytes = b""
     cbyte = 0x00
 
     # --- Null & data len ---
@@ -53,26 +53,37 @@ def encode_header(data_type, key, data_len=0, is_null=False):
 
     # --- Data type ---
     if data_type > 14:
-        ext_type_bytes = encode_uvarint(data_type)      # 'extended' data types 15 and up are a seperate uvarint
+        ext_data_type_bytes = encode_uvarint(data_type) # 'extended' data types 15 and up are a seperate uvarint
         cbyte |= 0x0f                                   # control byte data_typeck bits set to all 1's to signify this
     else:
         cbyte |= (data_type & 0x0f)                     # 'core' data types live in the control byte's bits only.
 
     # --- Build header ---
-    out = [int2byte(cbyte), ext_type_bytes, key_bytes, len_bytes]
+    out = [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
     return b"".join(out)
 
 
 def decode_header(buf, index):
     cbyte,index = IntByteAt(buf, index)                # control byte
-    key,index = decode_key(cbyte & 0xc0, buf, index)   # key bytes
-    is_null = bool(cbyte & 0x20)
-    if not is_null:
-        data_len,index = decode_uvarint(buf, index)    # data len bytes
-    else:
-        data_len = 0
-    data_type = cbyte & 0x1f
+
+    # --- data type ---
+    data_type = cbyte & 0x0f
+    if data_type == 15:
+        data_type,index = decode_uvarint(buf, index)   # 'extended' data types 15 and up follow the control byte
+
+    # --- Key ---
+    key_type_bits = cbyte & 0x30
+    key,index = decode_key(key_type_bits, buf, index)  # key bytes
+
+    # --- Null & Data Len ---
+    data_len = 0
+    is_null  = bool(cbyte & 0x80)
+    has_data = bool(cbyte & 0x40)
+    if (not is_null) and has_data:
+        data_len, index = decode_uvarint(buf, index)   # data len bytes
+
     return key, data_type, is_null, data_len, index
+
 
 
 # Out: the key type bits, and the key bytes.
@@ -82,13 +93,15 @@ def encode_key(key):
     if key is None:               # this is more idiomatic python than 'NoneType' (which is gone from types module in py3)
         return 0x00, b""
     if ktype in VALID_INT_TYPES:
-        return 0x40, encode_uvarint(key)
+        return 0x10, encode_uvarint(key)
     if ktype in VALID_STR_TYPES:
         keybytes = key.encode("utf8","replace")
-        return 0x80, encode_uvarint(len(keybytes)) + keybytes
+        return 0x20, encode_uvarint(len(keybytes)) + keybytes
     if ktype == bytes:
-        return 0xc0, encode_uvarint(len(key)) + key
+        return 0x30, encode_uvarint(len(key)) + key
     raise TypeError("Key type must be None, int, str or bytes, not %s" % ktype)
+
+
 
 
 # Out: the key, and the new index
@@ -96,13 +109,13 @@ def encode_key(key):
 def decode_key(key_type_bits, buf, index):
     if key_type_bits == 0x00:
         return None, index
-    if key_type_bits == 0x40:
+    if key_type_bits == 0x10:
         return decode_uvarint(buf, index)            # note returns number, index
-    if key_type_bits == 0x80:
+    if key_type_bits == 0x20:
         klen,index = decode_uvarint(buf, index)
         key_str_bytes = buf[index:index+klen]
         return key_str_bytes.decode("utf8"), index+klen
-    if key_type_bits == 0xc0:
+    if key_type_bits == 0x30:
         klen,index = decode_uvarint(buf, index)
         key_bytes = buf[index:index+klen]
         return key_bytes, index+klen
