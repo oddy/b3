@@ -79,11 +79,10 @@ def decode_header(buf, index):
     data_len = 0
     is_null  = bool(cbyte & 0x80)
     has_data = bool(cbyte & 0x40)
-    if (not is_null) and has_data:
+    if (not is_null) and has_data:                      # all other cases, data len will be 0
         data_len, index = decode_uvarint(buf, index)   # data len bytes
 
     return key, data_type, is_null, data_len, index
-
 
 
 # Out: the key type bits, and the key bytes.
@@ -102,8 +101,6 @@ def encode_key(key):
     raise TypeError("Key type must be None, int, str or bytes, not %s" % ktype)
 
 
-
-
 # Out: the key, and the new index
 
 def decode_key(key_type_bits, buf, index):
@@ -120,11 +117,4 @@ def decode_key(key_type_bits, buf, index):
         key_bytes = buf[index:index+klen]
         return key_bytes, index+klen
     raise TypeError("Invalid key type in control byte")
-
-
-# Note: discussion about size bits and zero bits and funky stuff like that
-# Size bit keeps us future proof! WHILE enabling the option of some types having no size!
-# Currently the only types that have no size are None and B3_END
-# (Actually if we have a size bit, we can have a whole different registry of unsized types!  This is more complex tho.)
-# if we can make 'true type' and 'false type' work in code without it being really shit, then give that a go.
 
