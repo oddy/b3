@@ -4,47 +4,62 @@ from   six import PY2, int2byte, byte2int
 from utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from type_varint import encode_uvarint, decode_uvarint
 
+# Policy: we are NOT doing unknown sizes. Which means no B3_END.
+# Policy: we are no longer inverting the null bit.
+# Policy: we ARE doing zero-value signalling.
+# Policy: data types 15 and up are encoded as a seperate uvarint immediately following the control byte,
+#         and the control byte's data type bits are set to all 1 (x0f) to signify this.
+
 # Item:
-# [header BYTE] [key (see below)] [data len UVARINT]  [ data BYTES ]
-# -------------- item_header -----------------------  --- codecs ---
+# [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
+# ---------------------------- item_header -----------------------------  --- codecs ---
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
-# | key type   | key type   | null value | data type  | data type  | data type  | data type  | data type  |
+# | is null    | has data   | key type   | key type   | data type  | data type  | data type  | data type  |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 
-# --- Key bits   &   structure ---
-#     0   0  (0)     no bytes
-#     0   1  (4)     UVARINT
-#     1   0  (8)     UTF8 bytes
-#     1   1  (c)     raw bytess
+# +------------+------------+
+# | is null    | has data   |
+# +------------+------------+
+#     1   x  (2)    Value is None/NULL/nil - data len & has data ignored
+#     0   0  (0)    Codec zero-value for given data type (0, "", 0.0 etc)
+#     0   1  (1)    Data len present, followed by codec'ed data bytes
 
-
-# +------------+------------+------------+------------+------------+------------+------------+------------+
-# | key type   | key type   | has data   | is null    | data type  | data type  | data type  | data type  |
-# +------------+------------+------------+------------+------------+------------+------------+------------+
-
-
-
-
-
-# Todo:   Possible Compactness optimization - make size of 0 = the zero-value for the type, where applicable?
-# Policy: we are NOT doing unknown size. Which means no B3_END.
-# Policy: we are no longer inverting the null bit.
-# Policy: we ARE doing zero-value signalling.
-
+# +------------+------------+
+# | key type   | key type   |
+# +------------+------------+
+#     0   0  (0)    no bytes
+#     0   1  (4)    UVARINT
+#     1   0  (8)    UTF8 bytes
+#     1   1  (c)    raw bytess
 
 
 def encode_header(data_type, key, data_len=0, is_null=False):
-    key_type_bits, key_bytes = encode_key(key)
+    ext_type_bytes = len_bytes = b""
     cbyte = 0x00
-    cbyte |= key_type_bits & 0xc0                      # top 2 bits key type
-    cbyte |= data_type     & 0x1f                      # bottom 5 bits data type
+
+    # --- Null & data len ---
     if is_null:
-        cbyte |= 0x20                                  # 3rd bit 1=is null, 0=NOT null
-    out = [int2byte(cbyte), key_bytes]
-    if not is_null:
-        out.append(encode_uvarint(data_len))           # data len bytes
+        cbyte |= 0x80                                   # data value is null. Note: null supercedes has-data
+    else:
+        if data_len:
+            cbyte |= 0x40                               # has data flag on
+            len_bytes = encode_uvarint(data_len)
+
+    # --- Key type ---
+    key_type_bits, key_bytes = encode_key(key)
+    cbyte |= (key_type_bits & 0x30)                     # middle 2 bits for key type
+
+    # --- Data type ---
+    if data_type > 14:
+        ext_type_bytes = encode_uvarint(data_type)      # 'extended' data types 15 and up are a seperate uvarint
+        cbyte |= 0x0f                                   # control byte data_typeck bits set to all 1's to signify this
+    else:
+        cbyte |= (data_type & 0x0f)                     # 'core' data types live in the control byte's bits only.
+
+    # --- Build header ---
+    out = [int2byte(cbyte), ext_type_bytes, key_bytes, len_bytes]
     return b"".join(out)
 
 
