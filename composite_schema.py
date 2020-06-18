@@ -76,7 +76,7 @@ def schema_unpack(schema, buf, index, end):
     """Parse through buf, create and return a dict"""
     out = {}
     while index < end:
-        key, data_type, is_null, data_len, index = decode_header(buf, index)
+        data_type, key, is_null, data_len, index = decode_header(buf, index)
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
 
         if schema_type is None:         # not found

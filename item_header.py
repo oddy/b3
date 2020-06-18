@@ -35,28 +35,28 @@ from .type_varint import encode_uvarint, decode_uvarint
 #     1   1  (c)    raw bytess
 
 
-def encode_header(data_type, key, data_len=0, is_null=False):
+def encode_header(data_type, key=None, is_null=False, data_len=0):
     ext_data_type_bytes = len_bytes = b""
     cbyte = 0x00
 
     # --- Null & data len ---
     if is_null:
-        cbyte |= 0x80                                   # data value is null. Note: null supercedes has-data
+        cbyte |= 0x80                                    # data value is null. Note: null supercedes has-data
     else:
         if data_len:
-            cbyte |= 0x40                               # has data flag on
+            cbyte |= 0x40                                # has data flag on
             len_bytes = encode_uvarint(data_len)
 
     # --- Key type ---
     key_type_bits, key_bytes = encode_key(key)
-    cbyte |= (key_type_bits & 0x30)                     # middle 2 bits for key type
+    cbyte |= (key_type_bits & 0x30)                      # middle 2 bits for key type
 
     # --- Data type ---
     if data_type > 14:
         ext_data_type_bytes = encode_uvarint(data_type)  # 'extended' data types 15 and up are a seperate uvarint
-        cbyte |= 0x0f                                   # control byte data_typeck bits set to all 1's to signify this
+        cbyte |= 0x0f                                    # control byte data_typeck bits set to all 1's to signify this
     else:
-        cbyte |= (data_type & 0x0f)                     # 'core' data types live in the control byte's bits only.
+        cbyte |= (data_type & 0x0f)                      # 'core' data types live in the control byte's bits only.
 
     # --- Build header ---
     out = [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
@@ -64,25 +64,25 @@ def encode_header(data_type, key, data_len=0, is_null=False):
 
 
 def decode_header(buf, index):
-    cbyte,index = IntByteAt(buf, index)                # control byte
+    cbyte,index = IntByteAt(buf, index)                  # control byte
 
     # --- data type ---
     data_type = cbyte & 0x0f
     if data_type == 15:
-        data_type,index = decode_uvarint(buf, index)   # 'extended' data types 15 and up follow the control byte
+        data_type,index = decode_uvarint(buf, index)     # 'extended' data types 15 and up follow the control byte
 
     # --- Key ---
     key_type_bits = cbyte & 0x30
-    key,index = decode_key(key_type_bits, buf, index)  # key bytes
+    key,index = decode_key(key_type_bits, buf, index)    # key bytes
 
     # --- Null & Data Len ---
     data_len = 0
     is_null  = bool(cbyte & 0x80)
     has_data = bool(cbyte & 0x40)
-    if (not is_null) and has_data:                     # all other cases, data len will be 0
-        data_len, index = decode_uvarint(buf, index)   # data len bytes
+    if (not is_null) and has_data:                       # all other cases, data len will be 0
+        data_len, index = decode_uvarint(buf, index)     # data len bytes
 
-    return key, data_type, is_null, data_len, index
+    return data_type, key, is_null, data_len, index
 
 
 # Out: the key type bits, and the key bytes.

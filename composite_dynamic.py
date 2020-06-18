@@ -79,7 +79,7 @@ def unpack(buf, index, end):
     if index >= end:
         raise ValueError("index >= end")
 
-    key, data_type, is_null, data_len, index = decode_header(buf, index)
+    data_type, key, is_null, data_len, index = decode_header(buf, index)
 
     if data_type not in (B3_COMPOSITE_DICT, B3_COMPOSITE_LIST):
         raise TypeError("Expecting list or dict container type first in message, but got %i" % (data_type,))
@@ -97,7 +97,7 @@ def unpack_recurse(out, buf, index, end):
     """takes container object + data buffer & pointers, fills the container object & returns it."""
     while index < end:
         # --- do header ---
-        key, data_type, is_null, data_len, index = decode_header(buf, index)
+        data_type, key, is_null, data_len, index = decode_header(buf, index)
 
         # --- get data value ---
         if is_null:

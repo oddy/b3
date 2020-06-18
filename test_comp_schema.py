@@ -11,8 +11,8 @@ from .hexdump import hexdump
 #                          [hdr|data][hdr|data]
 
 # Item:
-# [header BYTE] [key (see below)] [data len UVARINT]  [ data BYTES ]
-# -------------- item_header -----------------------  --- codecs ---
+# [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
+# ---------------------------- item_header -----------------------------  --- codecs ---
 
 
 # --- Test data ---
@@ -26,11 +26,13 @@ TEST_SCHEMA_1 = (
 test1 = dict(number1=69, string1=u"foo", bool1=True)
 
 number1_data   = u"45"                   # encode_uvarint(69)
-number1_header = u"49 01 01"             # encode_header(B3_UVARINT, 1, 1)
+number1_header = u"57 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)
 string1_data   = u"66 6f 6f"             # encode_utf8(u"foo")
-string1_header = u"47 02 03"             # encode_header(B3_UTF8, 3, 2)
+string1_header = u"54 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)
 bool1_data     = u"01"                   # encode_bool(True)
-bool1_header   = u"45 03 01"             # encode_header(B3_BOOL, 1, 3)
+bool1_header   = u"55 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)
+
+
 
 test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header, bool1_data])
 test1_buf = SBytes(test1_hex)
@@ -48,13 +50,12 @@ def test_schema_pack_dictcheck():
         schema_pack(TEST_SCHEMA_1, [])
 
 # Field found in input dict which does not exist in schema. Default=ignore it, strict=raise exception.
-
+#
 def test_schema_pack_field_unwanted_ignore():
     test2 = copy.copy(test1)
     test2['unwanted_field'] = "hello"
     buf = schema_pack(TEST_SCHEMA_1, test2)             # aka strict=False
     assert buf == test1_buf                             # ensure unwanted field is not in result data.
-
 
 def test_schema_pack_field_unwanted_strict():
     test2 = copy.copy(test1)
@@ -68,16 +69,26 @@ def test_schema_pack_field_missing():
     test2 = copy.copy(test1)
     del test2['bool1']
 
-    bool1_header_null_valued = u"65"
+    bool1_header_null_value   = u"95 03"                # encode_header(B3_BOOL, key=3, is_null=True)
+    test2_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header_null_value])  # note no data for bool1
+    test2_buf = SBytes(test2_hex)
+
+    buf = schema_pack(TEST_SCHEMA_1, test2)
+    assert buf == test2_buf
 
 
 
 
-# --- Unpack/Decoder tests ---
 
-def test_schema_unpack_1():
-    out1 = schema_unpack(TEST_SCHEMA_1, test1_buf, 0, len(test1_buf))
-    assert out1 == test1
+#
+#
+#
+#
+# # --- Unpack/Decoder tests ---
+#
+# def test_schema_unpack_1():
+#     out1 = schema_unpack(TEST_SCHEMA_1, test1_buf, 0, len(test1_buf))
+#     assert out1 == test1
 
 
 
