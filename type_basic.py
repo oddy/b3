@@ -3,7 +3,7 @@
 
 import struct, math
 
-from utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
+from .utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 
 # Note: the 'end' parameter for the decoders is the index of the start of the NEXT object, which == out object's SIZE if index==0
 #         so yes, decode(blah, 0, len(blah)) is correct when testing.
@@ -99,6 +99,8 @@ def decode_stamp64(buf, index, end):
 def encode_complex(value):
     if not isinstance(value, complex):
         raise TypeError("complex only accepts complex types")
+    if value == 0j:
+        return b""
     return struct.pack("<dd", value.real, value.imag)
 
 def decode_complex(buf, index, end):

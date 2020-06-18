@@ -5,9 +5,9 @@
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-from datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT
-from codecs import CODECS, guess_type
-from item_header import encode_header, decode_header
+from .datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT
+from .codecs import CODECS, guess_type
+from .item_header import encode_header, decode_header
 
 
 # Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.

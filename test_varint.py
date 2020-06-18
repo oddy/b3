@@ -1,6 +1,6 @@
 
-from utils import SBytes
-from type_varint import *
+from .utils import SBytes
+from .type_varint import *
 
 
 # --- Varint API ---

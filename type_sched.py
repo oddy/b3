@@ -7,8 +7,8 @@ import datetime
 
 from   six import PY2, int2byte
 
-from   type_varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
-from   utils import IntByteAt
+from   .type_varint import encode_uvarint, encode_svarint, decode_uvarint, decode_svarint
+from   .utils import IntByteAt
 
 ########################################################################################################################
 # Data Format Standard

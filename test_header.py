@@ -1,8 +1,8 @@
 
 # -*- coding: UTF-8 -*-
 
-from utils import SBytes
-from item_header import *
+from .utils import SBytes
+from .item_header import *
 
 # --- Header key types ---
 

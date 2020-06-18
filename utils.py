@@ -5,9 +5,7 @@ VALID_STR_TYPES = (unicode,) if PY2 else (str,)
 if PY2:     VALID_INT_TYPES = (int, long)
 else:       VALID_INT_TYPES = (int,)
 
-
 # --- Bytes visualising helper ---
-from six import PY2
 
 if PY2:
     def SBytes(hex_bytes_str):               # in: textual hexdump, out: byte-string

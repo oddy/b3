@@ -8,9 +8,9 @@
 # Method: Encoders assemble lists of byte-buffers, then b"".join() them. We take advantage of this often for empty/nonexistant fields etc.
 # Method: Decoders always take the whole buffer, and an index, and return an updated index.
 
-from codecs import CODECS
-from item_header import encode_header, decode_header
-from utils import VALID_INT_TYPES
+from .codecs import CODECS
+from .item_header import encode_header, decode_header
+from .utils import VALID_INT_TYPES
 
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc

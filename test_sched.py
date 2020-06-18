@@ -4,8 +4,8 @@ import datetime
 
 from   six import PY2
 
-from   utils import SBytes
-from   type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
+from   .utils import SBytes
+from   .type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
 
 
 # --- timetuple helper ---

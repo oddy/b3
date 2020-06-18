@@ -5,8 +5,8 @@ import decimal
 
 from   six import int2byte
 
-from   type_varint import encode_uvarint, decode_uvarint
-from   utils import IntByteAt
+from   .type_varint import encode_uvarint, decode_uvarint
+from   .utils import IntByteAt
 
 ########################################################################################################################
 # Data Format Standard
