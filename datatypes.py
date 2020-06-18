@@ -22,7 +22,7 @@ B3_SVARINT          = 8     # signed varint, zigzag encoded.        slower & sma
 B3_FLOAT64          = 9     # IEEE754 64bit signed float.           faster & medium      for floats.
 B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & compact     for decimal.
 
-B3_VARSTAMP         = 11    # Proposed varint unix SECONDs.      todo: do we support this??
+# B3_VARSTAMP         = 11    # Proposed varint unix SECONDs.      todo: do we support this??
 B3_STAMP64          = 12    # Signed 64bit unix ns, UTC (because unix time IS UTC)  for now-time.
                             #  (ie, timestamps gotten with now() and friends) time.time() (yr 1678-2262)
 

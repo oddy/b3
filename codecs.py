@@ -23,8 +23,8 @@ CODECS = {
     B3_FLOAT64  : (b3.type_basic.encode_float64,   b3.type_basic.decode_float64),
     B3_STAMP64  : (b3.type_basic.encode_stamp64,   b3.type_basic.decode_stamp64),
     B3_COMPLEX  : (b3.type_basic.encode_complex,   b3.type_basic.decode_complex),
-    B3_UVARINT  : (b3.type_varint.encode_uvarint,  b3.type_varint.codec_decode_uvarint),  # note codec-specific varint decoder function
-    B3_SVARINT  : (b3.type_varint.encode_svarint,  b3.type_varint.codec_decode_svarint),  # note codec-specific varint decoder function
+    B3_UVARINT  : (b3.type_varint.codec_encode_uvarint,  b3.type_varint.codec_decode_uvarint),  # note codec-specific varint decoder function
+    B3_SVARINT  : (b3.type_varint.codec_encode_svarint,  b3.type_varint.codec_decode_svarint),  # note codec-specific varint decoder function
     B3_DECIMAL  : (b3.type_decimal.encode_decimal, b3.type_decimal.decode_decimal),
     B3_SCHED    : (b3.type_sched.encode_sched,     b3.type_sched.decode_sched),
 }

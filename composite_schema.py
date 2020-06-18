@@ -31,7 +31,7 @@ def schema_lookup_key(schema, key):
 
 
 class UnwantedFieldError(KeyError): pass
-class MissingFieldError(KeyError):  pass
+# class MissingFieldError(KeyError):  pass
 
 def schema_pack(schema, data, strict=False):
     """In: schema - list/tuple of (type, name, number) tuples,   data - dict of key_name or key_number : data_value"""
@@ -41,6 +41,7 @@ def schema_pack(schema, data, strict=False):
     for key, value in data.items():
 
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
+        # print("lookup key %r returns typ %r name %r number %r" % (key, schema_type, schema_key_name, schema_key_number))
         if schema_type is None:
             if strict:
                 raise UnwantedFieldError("Supplied key %r is not in the schema" % (key,))
@@ -52,6 +53,7 @@ def schema_pack(schema, data, strict=False):
         if value is not None:
             if schema_type in CODECS:
                 EncoderFn,_ = CODECS[schema_type]
+                print("got encoderfn %r" % EncoderFn)
                 field_bytes = EncoderFn(value)
             else:
                 field_bytes = bytes(value)      # Note: if the data type doesn't have a codec, it should be bytes-able.
@@ -62,8 +64,13 @@ def schema_pack(schema, data, strict=False):
     # Check schema fields that are missing from supplied data. Policy: Do it by NUMBER.
     for mtyp,mname,mnum in schema:
         if mnum not in out:
-            print("schema field %i missing from supplied, adding it with value None" % (mnum,))
             out[mnum] = (encode_header(data_type=mtyp, key=mnum, is_null=True), b"")
+            # print("schema field %i missing from supplied, adding it with value None" % (mnum,))
+
+    print("---out before sorting---")
+    from pprint import pprint
+    pprint(out)
+    print("---")
 
     # Ensure outgoing message is sorted by key_number
     out_list = []
