@@ -1,10 +1,11 @@
 
 # Codec for B3_UVARINT B3_SVARINT Signed and unsigned varint types
 
-# Used as a type codec and also by the header functions and some other type codecs
-# Note: the codec function call API is different to the internal-use call API for DECODERS.
-# Note: internal-use decode returns updated index, whereas codec-use decode takes an end-index parameter.
-# This is because varints are self-sizing, but the codecs always take known-size items because TLV.
+# Note: this module is used internally a lot and also supplies codecs. The APIs are different for internal vs codec.
+# Note: the codec function call API is different to the internal-use call API.
+#       codec-use encode special-cases zero to empty bytes, internal-usew does not.
+#       codec-use decode takes an end-index parameter, internal-use decode returns updated index
+# This is because varints are self-sizing, but the codecs always operate with known-size items because TLV.
 
 from   six import indexbytes, int2byte
 

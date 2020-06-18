@@ -5,9 +5,10 @@
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-from datatypes import CODECS, B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT
+from datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT
+from codecs import CODECS, guess_type
 from item_header import encode_header, decode_header
-from dynrec_guesstype import guess_type
+
 
 # Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
 
@@ -22,6 +23,13 @@ from dynrec_guesstype import guess_type
 #         the users just want list in list out, dict in dict out, etc.
 #         AND this makes the code a LOT simpler.
 # Note:   its up to the users to indicate that they DONT want a header on the very top then, if they already know "its always a dict" or whatever
+
+
+# Policy: small-scale bottom-up-assembly data items.
+# bottom-up-assmbly means the size-in-bytes of everything is always known.
+# Counter-Rationale: the only use cases blair and i could think of for unknown-size items are:
+# 1) Huge datastructures (e.g. qsa tables) which will have their own sizing,
+# 2) e.g. tcp comms big-long-streaming which should always be chunked anyway!
 
 
 def pack(item, key=None, with_header=True):

@@ -1,5 +1,5 @@
 
-from   six import PY2, int2byte, byte2int
+from six import int2byte
 
 from utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from type_varint import encode_uvarint, decode_uvarint
@@ -53,7 +53,7 @@ def encode_header(data_type, key, data_len=0, is_null=False):
 
     # --- Data type ---
     if data_type > 14:
-        ext_data_type_bytes = encode_uvarint(data_type) # 'extended' data types 15 and up are a seperate uvarint
+        ext_data_type_bytes = encode_uvarint(data_type)  # 'extended' data types 15 and up are a seperate uvarint
         cbyte |= 0x0f                                   # control byte data_typeck bits set to all 1's to signify this
     else:
         cbyte |= (data_type & 0x0f)                     # 'core' data types live in the control byte's bits only.

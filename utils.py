@@ -1,6 +1,4 @@
 
-
-
 from six import PY2
 
 VALID_STR_TYPES = (unicode,) if PY2 else (str,)
@@ -19,7 +17,7 @@ else:
         return bytes([int(i,16) for i in hex_bytes_str.split()])
 
 
-
+# Like six's byte2int, but actually works, and also handles index-return.
 def IntByteAt(buf, index):
     if not PY2:
         return buf[index], index+1
