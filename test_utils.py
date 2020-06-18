@@ -12,6 +12,5 @@ def test_utils_sbytes():
     assert SBytes(bar) == b"\x64\x65\x66\x67\x68\x69\x70\x71\x72\x73\x74\x75\x76\x77"
 
 
-
 def test_utils_byte_at():
     assert IntByteAt(b"\x07",0) == (7,1)

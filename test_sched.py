@@ -7,6 +7,7 @@ from   six import PY2
 from   .utils import SBytes
 from   .type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
 
+# todo: rename these tests
 
 # --- timetuple helper ---
 
@@ -25,7 +26,7 @@ def test_tmfuncs():
 
 # --- Testing the general-purpose encode API ---
 
-def test_enc_gen_date():
+def test_sched_gen_date_enc():
     assert encode_sched_gen(TmDate("2020 01 16"), True, False) == SBytes("80 c8 1f 01 10")
     assert encode_sched_gen(TmDate("1984 01 16"), True, False) == SBytes("80 80 1f 01 10")
     assert encode_sched_gen(TmDate("-1984 01 16"), True, False) == SBytes("80 ff 1e 01 10")
@@ -121,7 +122,21 @@ if not PY2:
     def test_dec_dt_roundtrip():
         tzx = datetime.timezone(datetime.timedelta(days=-1, seconds=77400))
         dt_in = datetime.datetime(2020,1,16,13,37,20, 12345, tzinfo=tzx)
-        assert decode_sched(encode_sched(dt_in), 0) == dt_in
+
+        buf = encode_sched(dt_in)
+        assert decode_sched(buf, 0, len(buf)) == dt_in
+
+
+# --- Zero-value mode tests ---
+
+#  Note: sched encoder does not support zero-value mode.
+
+def test_sched_zerovalue_dec():
+    # Policy: somewhat arbitrary, but matches golang zero-value time, except for the Aware and UTC parts.
+    zero_datetime = datetime.datetime(1,1,1)
+    assert decode_sched(SBytes(""),0,0) == zero_datetime
+
+
 
 
 ########################################################################################################################

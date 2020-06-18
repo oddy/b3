@@ -41,11 +41,15 @@ EXPONENT_BITS = 0x0f    # Lower 4 bits of control byte
 # Encode
 ########################################################################################################################
 
+# Note: we're not supporting zero-value mode in the encoder.  It's optional so that's ok.
+
 # In:  num - a decimal.Decimal type ONLY
 # Out: bytes
 def encode_decimal(num):
     if not isinstance(num, decimal.Decimal):
         raise TypeError("only accepts decimal.Decimal objects")
+
+
 
     sign,digits,exp = num.as_tuple()
     special = not num.is_finite()
@@ -88,6 +92,12 @@ def encode_decimal(num):
 
     return b''.join(out)
 
+
+########################################################################################################################
+# Decode
+########################################################################################################################
+
+# Note: we ARE supporting zero-value mode in the decoder, because it's mandatory.
 
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal
