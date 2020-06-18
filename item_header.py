@@ -79,7 +79,7 @@ def decode_header(buf, index):
     data_len = 0
     is_null  = bool(cbyte & 0x80)
     has_data = bool(cbyte & 0x40)
-    if (not is_null) and has_data:                      # all other cases, data len will be 0
+    if (not is_null) and has_data:                     # all other cases, data len will be 0
         data_len, index = decode_uvarint(buf, index)   # data len bytes
 
     return key, data_type, is_null, data_len, index

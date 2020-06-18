@@ -30,8 +30,6 @@ B3_STAMP64  = 11   # Signed 64bit unix ns, UTC (because unix time IS UTC)  for n
 B3_SCHED    = 13   # [some sort of]LOCAL time, offset TO utc, TZname.              for user-schedule local time. (ie, times gotten from user input,
                    # appointments and schedules, future times.)
 
-
-
 # I say complex should be up in the higher register
 B3_COMPLEX  = 14   # encoded as 2 float64s.
 

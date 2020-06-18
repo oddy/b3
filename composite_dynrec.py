@@ -5,42 +5,33 @@
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-from datatypes import CODECS, B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, B3_BAG
+from datatypes import CODECS, B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT
 from item_header import encode_header, decode_header
 from dynrec_guesstype import guess_type
 
+# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
 
-# Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
-
-# todo: recurse limit after which we bail.
+# --- Encoder/Pack policies ---
 # policy: because there's no schema backing us, we dont know what incoming-to-encode missing data types SHOULD be!
-# policy: if we get a None, we consider that B3_BYTES, rather than having a NULL data type just for this one case.
+# policy: Weird edge case: if we get a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
+# policy: in practice None supercedes data-type checking here and in the schema composite, so this should be ok.
 # todo:   test & check the is_null logic supercedes correctly for this.
+# todo:   recurse limit after which we bail.
 
-# At the top level we often just want the [item][item][item] bytes out, without a header-for-that tacked on the front.
-# But recursive operation always needs the header on the front, ("this item that is a dict and its bytes are following")
-# Users can totally call recurse directly and supply a key if they want.
-
-
-# You know maybe we DO want the header surfaced, because then we can have list or dict top-level items...
-# There's no way for it to know what the top-level item actually is otherwise!
-# Policy: we're not hardwiring it to a list like the old code did, so we HAVE to have the top-level header at the front anyway?
-# Policy: the users just want to throw a dict in, get a dict out, etc.
-# Note: its up to them to indicate that they DONT want a header on the very top then, if they already know "its always a dict" or whatever
-#       - this is how i WAS thinking about it back then.
-#       - thats also completely wrong in terms of actual usability, sigh.
+# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have the top-level header at the front anyway
+#         the users just want list in list out, dict in dict out, etc.
+#         AND this makes the code a LOT simpler.
+# Note:   its up to the users to indicate that they DONT want a header on the very top then, if they already know "its always a dict" or whatever
 
 
 def pack(item, key=None, with_header=True):
-    """takes a datastructure (list or dict), returns bytes"""
-    # while its possible to use this to convert a single type/value, its assumed that we never do that.
-
+    """takes a list or dict, returns header & data bytes"""
     is_null = False
-    data_type = B3_BYTES         # policy: if we get a None, we consider that B3_BYTES, rather than having a NULL data type just for this one case.
+    data_type = B3_BYTES
 
     # --- Data ---
     if item is None:
-        is_null = True
+        is_null     = True
         field_bytes = b""
 
     elif isinstance(item, bytes):
@@ -48,14 +39,14 @@ def pack(item, key=None, with_header=True):
 
     elif isinstance(item, list):
         field_bytes = b"".join([pack(i) for i in item])                 # Note: recursive call
-        data_type = B3_COMPOSITE_LIST
+        data_type   = B3_COMPOSITE_LIST
 
     elif isinstance(item, dict):
         field_bytes = b"".join([pack(v, k) for k, v in item.items()])   # Note: recursive call
-        data_type = B3_COMPOSITE_DICT
+        data_type   = B3_COMPOSITE_DICT
 
     else:
-        data_type = guess_type(item)            # may blow up encountering unknown type
+        data_type   = guess_type(item)                    # may blow up here encountering unknown types
         EncoderFn,_ = CODECS[data_type]
         field_bytes = EncoderFn(item)
 
@@ -66,30 +57,36 @@ def pack(item, key=None, with_header=True):
     else:
         return field_bytes
 
-# zero value is easy here.
 
 
-# Policy: we turn untyped BAG into a list, currently.
 def new_container(data_type):
-    out = {B3_BAG: list(), B3_COMPOSITE_LIST: list(), B3_COMPOSITE_DICT: dict()}[data_type]
+    out = { B3_COMPOSITE_LIST:list(), B3_COMPOSITE_DICT: dict() }[data_type]
     return out
 
 # This one is the counterpart of pack with with_header=True (the default)
-
-# was "decode_dynrec_comp"
 def unpack(buf, index, end):
-    """takes buffer and pointers, returns a container object (list or dict)"""
-    if index >= end:    raise ValueError("index >= end")
-    key, data_type, is_null, data_len, index = decode_header(buf, index)        # get the special top level header, to find out if we need to make a list or a dict.
+    """takes data buffer and pointers, returns a filled container object (list or dict).
+    Requires buffer to have container-type header in it at the start.
+    Use as counterpart to pack()"""
+    if index >= end:
+        raise ValueError("index >= end")
+
+    key, data_type, is_null, data_len, index = decode_header(buf, index)
+
+    if data_type not in (B3_COMPOSITE_DICT, B3_COMPOSITE_LIST):
+        raise TypeError("Expecting list or dict container type first in message, but got %i" % (data_type,))
+
     out = new_container(data_type)
     unpack_recurse(out, buf, index, index + data_len)
     return out
+    # todo: handling index==end ? return b"" ?
 
-# users can call this one directly if they already have a container to put things into.
+
+# users can call this one directly if they ** already have a container to put things into. **
 # This one is the counterpart of pack with with_header=False (not the default)
 
 def unpack_recurse(out, buf, index, end):
-    """takes container, buffer, pointers, and adds items to the container."""
+    """takes container object + data buffer & pointers, fills the container object & returns it."""
     while index < end:
         # --- do header ---
         key, data_type, is_null, data_len, index = decode_header(buf, index)
@@ -101,7 +98,7 @@ def unpack_recurse(out, buf, index, end):
         elif data_type == B3_BYTES:
             value = buf[index : index+data_len]
 
-        elif data_type in (B3_COMPOSITE_LIST, B3_BAG, B3_COMPOSITE_DICT):
+        elif data_type in (B3_COMPOSITE_LIST, B3_COMPOSITE_DICT):
             value = new_container(data_type)
             unpack_recurse(value, buf, index, index + data_len)       # note recursive
 
@@ -114,10 +111,11 @@ def unpack_recurse(out, buf, index, end):
             out.append(value)
         elif isinstance(out, dict):
             out[key] = value
+        else:
+            raise TypeError("unpack_recurse only supports list or dict container objects")
 
         # --- Advance index ---
-        if not is_null:
-            index += data_len
+        index += data_len       # decode_header sets data_len=0 for us if is_null is on
 
     return
 
