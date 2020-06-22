@@ -36,6 +36,8 @@ CODECS = {
 # todo: supply fast/compact switch to GuessType, its the only place that needs it.
 # Note no NONE type because that's handled by the is_null bit.
 
+# todo: guess_type should be tested more rigourously
+
 def guess_type(obj):
     if isinstance(obj, bytes):                  # Note this will catch also *str* on python2. If you want unicode out, pass unicode in.
         return B3_BYTES
@@ -46,13 +48,13 @@ def guess_type(obj):
     if isinstance(obj, str):                    # Py3 unicode str only, py2 str/bytes is caught by above test.
         return B3_UTF8
 
+    if obj is True or obj is False:             # Note: make sure this check is BEFORE int checks!
+        return B3_BOOL                          # Note: because bools are a subclass of int (!?) in python :S
+
     if isinstance(obj, int):
         if obj >= 0:    return B3_UVARINT
         else:           return B3_SVARINT
         # return B3_INT64                        # currently unused by dynrec. needs Fast/Compact policy switch.
-
-    if obj in [True, False]:
-        return B3_BOOL
 
     if PY2 and isinstance(obj, long):
         return B3_SVARINT                        # the zigzag size diff is only noticeable with small numbers.

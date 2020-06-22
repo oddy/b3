@@ -3,7 +3,7 @@ import pytest, copy
 
 from .utils import SBytes
 from .datatypes import *
-from .composite_schema import schema_pack, schema_unpack, UnwantedFieldError
+from .composite_schema import schema_pack, schema_unpack
 from .hexdump import hexdump
 
 # Nested composite item structure is
@@ -64,7 +64,7 @@ def test_schema_pack_field_unwanted_ignore():
 def test_schema_pack_field_unwanted_strict():
     test2 = copy.copy(test1)
     test2['unwanted_field'] = "hello"
-    with pytest.raises(UnwantedFieldError):             # Note: catching KeyError also works here.
+    with pytest.raises(KeyError):
         schema_pack(TEST_SCHEMA, test2, strict=True)
 
 # --- Field exists in shcmea, but missing from input dict, output present with null/None value. ---
@@ -86,7 +86,6 @@ def test_schema_pack_field_missing():
 # and the outgoing-field-is-missing-make-it-None thing will kick in and your field data wont get sent.
 # - this is why people should dev with strict ON, then turn it off later. This may in fact be what strict is FOR.
 # - we're not going to try and be more helpful here because we could have to pick an encoding etc to compare the strings. Too much pain.
-
 
 # --- Zero-value compactness check ---
 
@@ -112,7 +111,6 @@ OUTER_SCHEMA = (
     (B3_SVARINT,        "signed1", 2),
     (B3_COMPOSITE_DICT, "inner1",  3)
     )
-
 
 def test_schema_pack_nesting():
     # Testing this buffer...
@@ -175,6 +173,7 @@ def test_schema_unpack_missing_incoming_field():
     null_data = dict(bool1=None, number1=None, string1=None)    # missing incoming fields get created and null-valued.
     assert schema_unpack(TEST_SCHEMA, missing_fields_buf, 0, len(missing_fields_buf)) == null_data
 
+# Policy: its expected that the user would save a copy of incoming messages for cases where there are more fields than there are in the schema.
 
 def test_schema_unpack_nesting():
     # Testing this buffer...
@@ -219,21 +218,6 @@ def test_schema_unpack_nesting():
 
 
 
-#
-# # --- Unpack/Decoder tests ---
-#
-# def test_schema_unpack_1():
-#     out1 = schema_unpack(TEST_SCHEMA, test1_buf, 0, len(test1_buf))
-#     assert out1 == test1
-
-
-
-# things to test:
-# - error of passing an empty schema - actually this will blow up with supplied key not in schema
-
-# supplied key not in schema is good because will force the user to explicitely put in None values.s
-
-# Policy: its up to the user to save a copy of incoming messages for cases where there are more fields than there are in the schema.
 
 
 

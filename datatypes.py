@@ -1,10 +1,10 @@
 
-# B3 data types & their id numbers ONLY
-
-# Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
+# B3 data types & their id numbers
 # Note: The core type numbers are all intended to fit into the lower half of the item header control byte.
+# Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 
-B3_RESERVED         = 0     # unused. todo: error check it?
+B3_RESERVED         = 0     # unused.                               todo: error check it?
+# B3_END = 0        # This used to be a proposed end marker. Now Unused because we dont support unknown-sized items.
 
 # --- Structure types ---
 B3_COMPOSITE_DICT   = 1     # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.
@@ -22,7 +22,7 @@ B3_SVARINT          = 8     # signed varint, zigzag encoded.        slower & sma
 B3_FLOAT64          = 9     # IEEE754 64bit signed float.           faster & medium      for floats.
 B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & compact     for decimal.
 
-# B3_VARSTAMP         = 11    # Proposed varint unix SECONDs.      todo: do we support this??
+# B3_VARSTAMP       = 11    # Proposed varint unix SECONDs.         todo: do we support this??
 B3_STAMP64          = 12    # Signed 64bit unix ns, UTC (because unix time IS UTC)  for now-time.
                             #  (ie, timestamps gotten with now() and friends) time.time() (yr 1678-2262)
 
@@ -38,8 +38,25 @@ B3_RESERVED_15      = 15   # Policy: we could totally use 15, but currently not 
 B3_COMPLEX          = 16   # encoded as 2 float64s.
 
 
+DATATYPE_NAMES = {
+    0 : u"<reserved 0>",
+    1 : u"B3_COMPOSITE_DICT",
+    2 : u"B3_COMPOSITE_LIST",
+    3 : u"B3_BYTES",
+    4 : u"B3_UTF8",
+    5 : u"B3_BOOL",
+    6 : u"B3_INT64",
+    7 : u"B3_UVARINT",
+    8 : u"B3_SVARINT",
+    9 : u"B3_FLOAT64",
+    10: u"B3_DECIMAL",
+    11: u"<unused 11>",            # todo: varstamp?
+    12: u"B3_STAMP64",
+    13: u"B3_SCHED",
+    14: u"<unused 14>",
+    15: u"B3_RESERVED_15",
+    16: u"B3_COMPLEX",
+    }
 
-# B3_END = 0        # This used to be a proposed end marker. Always 1 byte, always \x00. Unused because we dont support unsized items.
-
-
-
+def b3_type_name(data_type):
+    return DATATYPE_NAMES.get(data_type, u"<unknown %i>" % (data_type,))

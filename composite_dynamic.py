@@ -5,7 +5,7 @@
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-from .datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT
+from .datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, b3_type_name
 from .codecs import CODECS, guess_type
 from .item_header import encode_header, decode_header
 
@@ -14,32 +14,25 @@ from .item_header import encode_header, decode_header
 
 # --- Encoder/Pack policies ---
 # policy: because there's no schema backing us, we dont know what incoming-to-encode missing data types SHOULD be!
-# policy: Weird edge case: if we get a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
+# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
 # policy: in practice None supercedes data-type checking here and in the schema composite, so this should be ok.
-# todo:   test & check the is_null logic supercedes correctly for this.
+
 # todo:   recurse limit after which we bail.
 
+# --- Decoder/Unpack policies ---
 # Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have the top-level header at the front anyway
-#         the users just want list in list out, dict in dict out, etc.
-#         AND this makes the code a LOT simpler.
-# Note:   its up to the users to indicate that they DONT want a header on the very top then, if they already know "its always a dict" or whatever
-
-
-# Policy: small-scale bottom-up-assembly data items.
-# bottom-up-assmbly means the size-in-bytes of everything is always known.
-# Counter-Rationale: the only use cases blair and i could think of for unknown-size items are:
-# 1) Huge datastructures (e.g. qsa tables) which will have their own sizing,
-# 2) e.g. tcp comms big-long-streaming which should always be chunked anyway!
+#         the users just want list in list out, dict in dict out, etc.i
+#         AND this actually makes the code a LOT simpler.
+# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
+#         have a container object of their own, they can call the recursive unpacker function directly.
 
 
 def pack(item, key=None, with_header=True):
     """takes a list or dict, returns header & data bytes"""
-    is_null = False
     data_type = B3_BYTES
 
     # --- Data ---
     if item is None:
-        is_null     = True
         field_bytes = b""
 
     elif isinstance(item, bytes):
@@ -60,7 +53,7 @@ def pack(item, key=None, with_header=True):
 
     # --- Header ---
     if with_header:
-        header_bytes = encode_header(data_type=data_type, key=key, is_null=is_null, data_len=len(field_bytes))
+        header_bytes = encode_header(data_type=data_type, key=key, is_null=bool(item is None), data_len=len(field_bytes))
         return b"".join([header_bytes, field_bytes])
     else:
         return field_bytes
@@ -72,26 +65,27 @@ def new_container(data_type):
     return out
 
 # This one is the counterpart of pack with with_header=True (the default)
-def unpack(buf, index, end):
-    """takes data buffer and pointers, returns a filled container object (list or dict).
+# Note: because unpack expects an header first up which has container object type and data len, it doesn't need an end argument.
+
+def unpack(buf, index):
+    """takes data buffer and start-index, returns a filled container object (list or dict).
     Requires buffer to have container-type header in it at the start.
     Use as counterpart to pack()"""
-    if index >= end:
-        raise ValueError("index >= end")
 
     data_type, key, is_null, data_len, index = decode_header(buf, index)
 
     if data_type not in (B3_COMPOSITE_DICT, B3_COMPOSITE_LIST):
-        raise TypeError("Expecting list or dict container type first in message, but got %i" % (data_type,))
+        errmsg = "Expecting list or dict first in message, but got type %s" % (b3_type_name(data_type),)
+        raise TypeError(errmsg)
 
     out = new_container(data_type)
     unpack_recurse(out, buf, index, index + data_len)
     return out
-    # todo: handling index==end ? return b"" ?
-
 
 # users can call this one directly if they ** already have a container to put things into. **
 # This one is the counterpart of pack with with_header=False (not the default)
+
+# Note: recurse however DOES need, and use, an end argument.
 
 def unpack_recurse(out, buf, index, end):
     """takes container object + data buffer & pointers, fills the container object & returns it."""

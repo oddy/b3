@@ -11,6 +11,7 @@
 from .codecs import CODECS
 from .item_header import encode_header, decode_header
 from .utils import VALID_INT_TYPES
+from .datatypes import b3_type_name
 
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
@@ -30,9 +31,6 @@ def schema_lookup_key(schema, key):
         return None,None,None
 
 
-class UnwantedFieldError(KeyError): pass
-# class MissingFieldError(KeyError):  pass
-
 def schema_pack(schema, data, strict=False):
     """In: schema - list/tuple of (type, name, number) tuples,   data - dict of key_name or key_number : data_value"""
     if not isinstance(data, dict):
@@ -44,7 +42,7 @@ def schema_pack(schema, data, strict=False):
         # print("lookup key %r returns typ %r name %r number %r" % (key, schema_type, schema_key_name, schema_key_number))
         if schema_type is None:
             if strict:
-                raise UnwantedFieldError("Supplied key %r is not in the schema" % (key,))
+                raise KeyError("Supplied key %r is not in the schema" % (key,))
             else:
                 continue
 
@@ -89,7 +87,8 @@ def schema_unpack(schema, buf, index, end):
             data = None
         else:
             if schema_type != data_type:        # ensure message type matches schema type
-                type_error_msg = "Type mismatch for field #%d ('%s') - schema wants %d incoming has %d" % (schema_key_number, schema_key_name, schema_type, data_type)
+                type_error_msg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
+                                 % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
                 raise TypeError(type_error_msg)
 
             if schema_type in CODECS:

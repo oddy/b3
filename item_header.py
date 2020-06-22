@@ -62,6 +62,7 @@ def encode_header(data_type, key=None, is_null=False, data_len=0):
     out = [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
     return b"".join(out)
 
+# todo: end checking for decode_header ?
 
 def decode_header(buf, index):
     cbyte,index = IntByteAt(buf, index)                  # control byte
