@@ -199,7 +199,7 @@ def test_schema_unpack_nesting():
 
 
 # ==========
-# = unpack_recurse can unpack the buffer output from test_schema_pack_nesting() !
+# = unpack_into can unpack the buffer output from test_schema_pack_nesting() !
 
 # >>> from b3 import unpack
 # >>> from b3.utils import SBytes
@@ -215,9 +215,9 @@ def test_schema_unpack_nesting():
 #     raise TypeError("Expecting list or dict container type first in message, but got %i" % (data_type,))
 # TypeError: Expecting list or dict container type first in message, but got 3
 
-# >>> from b3.composite_dynamic import unpack_recurse
+# >>> from b3.composite_dynamic import unpack_into
 # >>> out = {}
-# >>> unpack_recurse(out, k, 0, len(k))
+# >>> unpack_into(out, k, 0, len(k))
 # >>> out
 
 # {1: 'outerbytes', 2: -1234, 3: {1: 0, 2: u'', 3: False}}

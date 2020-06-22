@@ -81,15 +81,15 @@ def unpack(buf, index):
         raise TypeError(errmsg)
 
     out = new_container(data_type)
-    unpack_recurse(out, buf, index, index + data_len)
+    unpack_into(out, buf, index, index + data_len)
     return out
 
 # users can call this one directly if they ** already have a container to put things into. **
 # This one is the counterpart of pack with with_header=False (not the default)
 
-# Note: recurse however DOES need, and use, an end argument.
+# Note: unpack_into however DOES need, and use, an end argument.
 
-def unpack_recurse(out, buf, index, end):
+def unpack_into(out, buf, index, end):
     """takes container object + data buffer & pointers, fills the container object & returns it."""
     while index < end:
         # --- do header ---
@@ -104,7 +104,7 @@ def unpack_recurse(out, buf, index, end):
 
         elif data_type in (B3_COMPOSITE_LIST, B3_COMPOSITE_DICT):
             value = new_container(data_type)
-            unpack_recurse(value, buf, index, index + data_len)       # note recursive
+            unpack_into(value, buf, index, index + data_len)       # note recursive
 
         else:
             _,DecoderFn = CODECS[data_type]
@@ -116,7 +116,7 @@ def unpack_recurse(out, buf, index, end):
         elif isinstance(out, dict):
             out[key] = value
         else:
-            raise TypeError("unpack_recurse only supports list or dict container objects")
+            raise TypeError("unpack_into only supports list or dict container objects")
 
         # --- Advance index ---
         index += data_len       # decode_header sets data_len=0 for us if is_null is on

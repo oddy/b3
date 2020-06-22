@@ -3,7 +3,7 @@ import pytest, copy
 
 from .utils import SBytes
 from .datatypes import *
-from .composite_dynamic import pack, unpack, unpack_recurse
+from .composite_dynamic import pack, unpack, unpack_into
 from .hexdump import hexdump
 
 # Nested composite item structure is
@@ -23,7 +23,7 @@ from .hexdump import hexdump
 
 # --- Shared test data ---
 
-# This structure should test all code paths in pack, unpack, and unpack_recurse.
+# This structure should test all code paths in pack, unpack, and unpack_into.
 
 test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:None }
 
@@ -44,8 +44,6 @@ test1_buf = SBytes(" ".join([outer_header, buf10, buf11, buf12, buf13, buf14]))
 
 # --- Pack/Encoder tests ---
 
-# None, bytes, list, dict, a-codec-type, and with-header & without-header are all the code paths in pack().
-
 def test_dyna_pack_kitchen_sink():
     out1_buf = pack(test1_data)
     assert out1_buf == test1_buf
@@ -55,8 +53,8 @@ def test_dyna_pack_kitchen_sink_no_header():
     assert out1_buf == test1_buf[2:]
 
 
-# Unpack calls unpack_recurse once it's read the initial header to see what the topmost container is, and created that.
-# unpack_recurse unpacks the buffer it's given, into the container it's given.
+# Unpack reads the initial header to see what the topmost container is, creates that, then calls unpack_into
+# unpack_into unpacks the buffer it's given, into the container it's given.
 
 # --- Unpack tests ---
 
@@ -79,14 +77,14 @@ def test_dyna_unpack_header_only_invalid_type():
 
 # --- Unpack_recurse tests ---
 
-# This one should test all unpack and unpack_recurse code paths if the data above is used.
+# This one should test all unpack and unpack_into code paths if the data above is used.
 
 def test_dyna_unpack_kitchen_sink():
     assert unpack(test1_buf, 0) == test1_data
 
 def test_dyna_unpack_recurse_invalid_container():
     with pytest.raises(TypeError):
-        unpack_recurse(None, SBytes("93 0e"),0,2)               # passing None instead of a list or dict.
+        unpack_into(None, SBytes("93 0e"), 0, 2)               # passing None instead of a list or dict.
 
 
 # --- Round Trip ---
