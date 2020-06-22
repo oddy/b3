@@ -8,7 +8,7 @@
 # Method: Encoders assemble lists of byte-buffers, then b"".join() them. We take advantage of this often for empty/nonexistant fields etc.
 # Method: Decoders always take the whole buffer, and an index, and return an updated index.
 
-from b3.codecs import CODECS
+from b3.type_codecs import CODECS
 from b3.item_header import encode_header, decode_header
 from b3.utils import VALID_INT_TYPES
 from b3.datatypes import b3_type_name

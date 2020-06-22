@@ -6,7 +6,7 @@
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
 from b3.datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, b3_type_name
-from b3.codecs import CODECS, guess_type
+from b3.type_codecs import CODECS, guess_type
 from b3.item_header import encode_header, decode_header
 
 

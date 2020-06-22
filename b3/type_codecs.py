@@ -33,6 +33,8 @@ CODECS = {
 # --- Python-Obj to B3-Type guesser for dynamic-composite packer ---
 
 # Policy: some types are guessed differently depending on value eg SVARINT for negative numbers.
+# todo: ******* consider 3 options: Fixed, Compact, and Fast. **********
+#       fixed helps interop by not having any "change type on value" choices.
 # todo: supply fast/compact switch to GuessType, its the only place that needs it.
 # Note no NONE type because that's handled by the is_null bit.
 
