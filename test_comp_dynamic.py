@@ -93,3 +93,18 @@ def test_dyna_unpack_recurse_invalid_container():
 def test_dyna_roundtrip():
     assert unpack(pack(test1_data),0) == test1_data
 
+
+# --- Test interop with schema comp ---
+
+# For interop with schema comp you need to use dicts only, with string name keys that match the field names,
+# or number keys that match the field numbers. The schema parser skips anything that doesn't have a key, which means lists are out.
+# interop is limited by guess_type's value-choosing. Types may change depending on the values given (e.g. -ve integers).
+
+# def test_dyna_pack_interop():
+#     inter_data = dict(number1=120, string1=u"hello world", bool1=True)
+#     buf = pack(inter_data)
+#     print()
+#     print(hexdump(buf))
+#     print()
+#     print(repr(buf))
+

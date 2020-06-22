@@ -191,6 +191,12 @@ def test_schema_unpack_nesting():
     assert inner_data == dict(bool1=False, number1=0, string1=u"")
 
 
+# def test_schema_unpack_interop():
+#     buf_from_pack = 'A)t\x07string1\x0bhello worldu\x05bool1\x01\x01w\x07number1\x01x'    # see test_comp_dynamic
+#     buf = buf_from_pack[2:]     # strip pack's outer-header.
+#     from pprint import pprint
+#     pprint(schema_unpack(TEST_SCHEMA, buf, 0, len(buf)))
+
 
 # ==========
 # = unpack_recurse can unpack the buffer output from test_schema_pack_nesting() !
