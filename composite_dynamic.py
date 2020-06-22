@@ -27,8 +27,10 @@ from .item_header import encode_header, decode_header
 #         have a container object of their own, they can call the recursive unpacker function directly.
 
 
-def pack(item, key=None, with_header=True):
+def pack(item, key=None, with_header=True, rlimit=20):
     """takes a list or dict, returns header & data bytes"""
+    if rlimit < 1:
+        raise ValueError("Recurse limit exceeded")
     data_type = B3_BYTES
 
     # --- Data ---
@@ -39,11 +41,11 @@ def pack(item, key=None, with_header=True):
         field_bytes = item
 
     elif isinstance(item, list):
-        field_bytes = b"".join([pack(i) for i in item])                 # Note: recursive call
+        field_bytes = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])                 # Note: recursive call
         data_type   = B3_COMPOSITE_LIST
 
     elif isinstance(item, dict):
-        field_bytes = b"".join([pack(v, k) for k, v in item.items()])   # Note: recursive call
+        field_bytes = b"".join([pack(item=v, key=k, rlimit=rlimit-1) for k, v in item.items()])   # Note: recursive call
         data_type   = B3_COMPOSITE_DICT
 
     else:
