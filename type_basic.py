@@ -7,7 +7,7 @@ from .utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 
 # Note: the 'end' parameter for the decoders is the index of the start of the NEXT object, which == out object's SIZE if index==0
 #         so yes, decode(blah, 0, len(blah)) is correct when testing.
-#         and index==end does mean there is no data at all.
+#         and index==end means there is no data at all.
 
 # Note: Endianness - there appears to be no difference between <q and >q performance-wise on py2 or py3.
 # Note: there is no Null type or null-type codec, instead item headers have a null-flag. See item_header module for more info.
@@ -17,13 +17,13 @@ from .utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 
 # todo: length checks with the end parameter?  we're mostly EAFP-ing this for now.
 
-# Policy: Encoders MAY return no bytes to signify a Zero Value (optional)
+# Policy: Encoders MAY return no bytes to signify a Compact Zero Value (optional)
 # Policy: Decoders MUST accept if index==end and return a Zero value (mandatory)
 
 def encode_bool(value):
     value = bool(value)
     # return b"\x01" if value else b"\x00"
-    return b"\x01" if value else b""
+    return b"\x01" if value else b""                # Compact Zero Value for false.
 
 def decode_bool(buf, index, end):
     if index == end:

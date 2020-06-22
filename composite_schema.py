@@ -53,7 +53,6 @@ def schema_pack(schema, data, strict=False):
         if value is not None:
             if schema_type in CODECS:
                 EncoderFn,_ = CODECS[schema_type]
-                print("got encoderfn %r" % EncoderFn)
                 field_bytes = EncoderFn(value)
             else:
                 field_bytes = bytes(value)      # Note: if the data type doesn't have a codec, it should be bytes-able.
@@ -67,11 +66,6 @@ def schema_pack(schema, data, strict=False):
             out[mnum] = (encode_header(data_type=mtyp, key=mnum, is_null=True), b"")
             # print("schema field %i missing from supplied, adding it with value None" % (mnum,))
 
-    print("---out before sorting---")
-    from pprint import pprint
-    pprint(out)
-    print("---")
-
     # Ensure outgoing message is sorted by key_number
     out_list = []
     for key_number in sorted(out.keys()):
@@ -82,24 +76,25 @@ def schema_pack(schema, data, strict=False):
 def schema_unpack(schema, buf, index, end):
     """Parse through buf, create and return a dict"""
     out = {}
+
     while index < end:
         data_type, key, is_null, data_len, index = decode_header(buf, index)
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
 
-        if schema_type is None:         # not found
-            print("Note: ignoring incoming key %r because its not in the schema" % (key,))
+        if schema_type is None:                 # key not found in schema, ignore and continue
+            index += data_len                   # skip over the unwanted data!
             continue
 
         if is_null:                             # Policy: None supercedes data_len and data type when returning here in python.
             data = None
         else:
             if schema_type != data_type:        # ensure message type matches schema type
-                type_error_msg = "Type mismatch for field %s (%d) - schema %d incoming %d" % (schema_key_name, schema_key_number, schema_type, data_type)
+                type_error_msg = "Type mismatch for field #%d ('%s') - schema wants %d incoming has %d" % (schema_key_number, schema_key_name, schema_type, data_type)
                 raise TypeError(type_error_msg)
 
             if schema_type in CODECS:
                 _,DecoderFn = CODECS[schema_type]
-                print("key %s decoderfn %r" % (schema_key_name, DecoderFn))
+                # print("key %s decoderfn %r" % (schema_key_name, DecoderFn))
                 # Policy: codecs must handle data_len==0 case, and return a zero-value for their type.
                 data = DecoderFn(buf, index, index + data_len)
             else:
@@ -112,7 +107,7 @@ def schema_unpack(schema, buf, index, end):
     # Check if any wanted fields are missing, add them with data=None
     # Policy: do this by whatever key type we are yielding (in this case, COMPUTED key name)  # todo: check this
     for missing_key_name in ( set(i[1] for i in schema) - set(out.keys()) ):
-        print("key %r missing from incoming, adding it with value None" % (missing_key_name))
+        # print("key %r missing from incoming, adding it with value None" % (missing_key_name))
         out[missing_key_name] = None
 
     return out

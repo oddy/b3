@@ -108,9 +108,9 @@ def test_decimal_roundtrip_2():
     assert decode_decimal(buf,0,len(buf))  == Decimal('-0.0000000006789')
 
 
-# --- Zero-value mode ---
+# --- compact zero-value mode ---
 
-# Note: decimal ENcoder does not support zero-value mode.
+# Note: decimal ENcoder does not support compact zero-value mode.
 # def test_deci_zeroval_enc_1():
 #     assert(encode_decimal(Decimal(0.0))) == SBytes("")
 

@@ -127,9 +127,9 @@ if not PY2:
         assert decode_sched(buf, 0, len(buf)) == dt_in
 
 
-# --- Zero-value mode tests ---
+# --- compact zero-value mode tests ---
 
-#  Note: sched encoder does not support zero-value mode.
+#  Note: sched encoder does not support compact zero-value mode.
 
 def test_sched_zerovalue_dec():
     # Policy: somewhat arbitrary, but matches golang zero-value time, except for the Aware and UTC parts.

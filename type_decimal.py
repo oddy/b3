@@ -41,7 +41,7 @@ EXPONENT_BITS = 0x0f    # Lower 4 bits of control byte
 # Encode
 ########################################################################################################################
 
-# Note: we're not supporting zero-value mode in the encoder.  It's optional so that's ok.
+# Note: we're not supporting compact zero-value mode in the encoder.  It's optional so that's ok.
 
 # In:  num - a decimal.Decimal type ONLY
 # Out: bytes
@@ -97,7 +97,7 @@ def encode_decimal(num):
 # Decode
 ########################################################################################################################
 
-# Note: we ARE supporting zero-value mode in the decoder, because it's mandatory.
+# Note: we ARE supporting compact zero-value mode in the decoder, because it's mandatory.
 
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal

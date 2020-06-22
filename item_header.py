@@ -82,6 +82,9 @@ def decode_header(buf, index):
     if (not is_null) and has_data:                       # all other cases, data len will be 0
         data_len, index = decode_uvarint(buf, index)     # data len bytes
 
+    if is_null and has_data:
+        raise ValueError("Item header invalid state - is_null and has_data both ON")
+
     return data_type, key, is_null, data_len, index
 
 

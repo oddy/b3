@@ -16,25 +16,24 @@ from .hexdump import hexdump
 
 # --- Test data schema ---
 
-TEST_SCHEMA_1 = (
+TEST_SCHEMA = (
     (B3_UVARINT, "number1", 1),
     (B3_UTF8,    "string1", 2),
     (B3_BOOL,    "bool1",   3)
     )
 
-# --- Test data manually-built packed-bytes buffer ---
+# --- Shared test data - manually-built packed-bytes buffer ---
 
 number1_data   = "45"                   # encode_uvarint(69)
-number1_header = "57 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)
+number1_header = "57 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "97 01" for null,  17 01 czv
 string1_data   = "66 6f 6f"             # encode_utf8(u"foo")
-string1_header = "54 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)
+string1_header = "54 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "94 02" for null,  14 01 czv
 bool1_data     = "01"                   # encode_bool(True)
-bool1_header   = "55 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)
-
+bool1_header   = "55 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)     # "95 03" for null,  15 01 czv
 test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header, bool1_data])
 test1_buf = SBytes(test1_hex)
 
-# --- Actual test data to pack ---
+# --- Shared test data - actual test data to pack ---
 
 test1 = dict(bool1=True, number1=69)
 # add string1 at the end to try and influence dict ordering. Order-preserving dicts will have string1
@@ -43,33 +42,32 @@ test1 = dict(bool1=True, number1=69)
 test1["string1"] = u"foo"
 
 
-
 # --- Pack/Encoder tests ---
 
-def test_schema_pack_happy():
-    out1_buf = schema_pack(TEST_SCHEMA_1, test1)
-    # print(u"\n%s\n%s\n" % (hexdump(test1_buf), hexdump(out1_buf)))
+def test_schema_pack_nomimal_data():                                     # "Happy path"
+    out1_buf = schema_pack(TEST_SCHEMA, test1)
     assert out1_buf  == test1_buf
 
 def test_schema_pack_dictcheck():
     with pytest.raises(TypeError):
-        schema_pack(TEST_SCHEMA_1, [])
+        schema_pack(TEST_SCHEMA, [])
+
 
 # --- Field found in input dict which does not exist in schema. Default=ignore it, strict=raise exception. ---
 
 def test_schema_pack_field_unwanted_ignore():
     test2 = copy.copy(test1)
     test2['unwanted_field'] = "hello"
-    buf = schema_pack(TEST_SCHEMA_1, test2)             # aka strict=False
+    buf = schema_pack(TEST_SCHEMA, test2)             # aka strict=False
     assert buf == test1_buf                             # ensure unwanted field is not in result data.
 
 def test_schema_pack_field_unwanted_strict():
     test2 = copy.copy(test1)
     test2['unwanted_field'] = "hello"
     with pytest.raises(UnwantedFieldError):             # Note: catching KeyError also works here.
-        schema_pack(TEST_SCHEMA_1, test2, strict=True)
+        schema_pack(TEST_SCHEMA, test2, strict=True)
 
-# --- Field missing from input dict but exists in schema, output present with null/None value. ---
+# --- Field exists in shcmea, but missing from input dict, output present with null/None value. ---
 
 def test_schema_pack_field_missing():
     # Testing this buffer...
@@ -79,16 +77,15 @@ def test_schema_pack_field_missing():
 
     # ...against this data
     test2 = copy.copy(test1)
-    del test2['bool1']
+    del test2['bool1']                              # Missing field should be sent out as present but with a null value.
 
-    buf = schema_pack(TEST_SCHEMA_1, test2)
+    buf = schema_pack(TEST_SCHEMA, test2)
     assert buf == bool1_nulled_buf
 
 # Note: in py3, if you have a u keyname in the schema and a b keyname in the input dict, schema lookup will fail on that keyname
 # and the outgoing-field-is-missing-make-it-None thing will kick in and your field data wont get sent.
 # - this is why people should dev with strict ON, then turn it off later. This may in fact be what strict is FOR.
 # - we're not going to try and be more helpful here because we could have to pick an encoding etc to compare the strings. Too much pain.
-# - just tell devs to dev with strict on.
 
 
 # --- Zero-value compactness check ---
@@ -104,7 +101,7 @@ def test_schema_pack_zeroval():
     # ...against this data
     test_zv_data = dict(bool1=False, number1=0, string1=u"")
 
-    buf = schema_pack(TEST_SCHEMA_1, test_zv_data)
+    buf = schema_pack(TEST_SCHEMA, test_zv_data)
     assert buf_zv == buf
 
 
@@ -119,20 +116,81 @@ OUTER_SCHEMA = (
 
 def test_schema_pack_nesting():
     # Testing this buffer...
-    bytes1_hex  = "53 01 0a 6f 75 74 65 72 62 79 74 65 73"   # header + 'outerbytes'
-    signed1_hex = "58 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_hex   = "51 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
-    test_outer_buf = SBytes(" ".join([bytes1_hex, signed1_hex, inner_hex]))
+    bytes1_hex      = "53 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
+    signed1_hex     = "58 02 02 a3 13"                          # header + encode_svarint(-1234)
+    inner_buf_hex   = "51 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
+    test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # ...against this data
-    inner_data = dict(bool1=False, number1=0, string1=u"")
-    inner1 = schema_pack(TEST_SCHEMA_1, inner_data)
-    outer_data = dict(bytes1=b"outerbytes", signed1=-1234, inner1=inner1)
-    outer_buf = schema_pack(OUTER_SCHEMA, outer_data)
-
-    print(hexdump(outer_buf))
+    inner_data  = dict(bool1=False, number1=0, string1=u"")
+    inner1      = schema_pack(TEST_SCHEMA, inner_data)
+    outer_data  = dict(bytes1=b"outerbytes", signed1=-1234, inner1=inner1)
+    outer_buf   = schema_pack(OUTER_SCHEMA, outer_data)
 
     assert outer_buf == test_outer_buf
+
+
+# --- Unpack/Decoder tests ---
+
+def test_schema_unpack_nominal_data():                                     # "Happy path"
+    out1_data = schema_unpack(TEST_SCHEMA, test1_buf, 0, len(test1_buf))
+    assert out1_data == test1
+
+def test_schema_unpack_dictcheck():
+    out1_data = schema_unpack(TEST_SCHEMA, test1_buf, 0, len(test1_buf))
+    assert isinstance(out1_data, dict)
+
+def test_schema_unpack_unwanted_incoming_field():
+    bool2_buf = SBytes("55 04 01 01")                   # a second B3_BOOL with key=4, len=1, value=True
+    unwantfield_buf = test1_buf + bool2_buf
+    out2_data = schema_unpack(TEST_SCHEMA, unwantfield_buf, 0, len(unwantfield_buf))
+    assert out2_data == test1
+
+def test_schema_unpack_null_data():
+    null_buf = SBytes("97 01 94 02 95 03")
+    null_data = dict(bool1=None, number1=None, string1=None)
+    assert schema_unpack(TEST_SCHEMA, null_buf, 0, len(null_buf)) == null_data
+
+def test_schema_unpack_zero_data():
+    zero_buf = SBytes("17 01 14 02 15 03")
+    zero_data = dict(bool1=False, number1=0, string1=u"")
+    assert schema_unpack(TEST_SCHEMA, zero_buf, 0, len(zero_buf)) == zero_data
+
+def test_schema_unpack_type_mismatch():
+    with pytest.raises(TypeError):
+        mismatch_buf = SBytes("17 01 14 02 14 03")       # field 3 is a utf8 here (x14) when it should be a bool (x15)
+        schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf))
+
+def test_schema_unpack_bytes_yield():
+    BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_COMPOSITE_LIST, 'list1', 2))
+    bytes1_hex = "53 01 03 66 6f 6f"             # b"foo"
+    list1_hex  = "52 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
+    test_buf   = SBytes(" ".join([bytes1_hex, list1_hex]))
+
+    test_data  = dict(bytes1=b"foo", list1=b"foo")
+    assert schema_unpack(BYTES_SCHEMA, test_buf, 0, len(test_buf)) == test_data
+
+def test_schema_unpack_missing_incoming_field():
+    missing_fields_buf = SBytes("97 01")                         # so only field 1 is present (and null)
+    null_data = dict(bool1=None, number1=None, string1=None)    # missing incoming fields get created and null-valued.
+    assert schema_unpack(TEST_SCHEMA, missing_fields_buf, 0, len(missing_fields_buf)) == null_data
+
+
+def test_schema_unpack_nesting():
+    # Testing this buffer...
+    bytes1_hex      = "53 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
+    signed1_hex     = "58 02 02 a3 13"                          # header + encode_svarint(-1234)
+    inner_buf_hex   = "51 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
+    test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
+
+    # Note: It's up to the user to know - presumably using the defined schemas, that inner1 is a
+    # Note: B3_COMPOSITE_DICT type, as the returned dict (outer_data) just has the encoded bytes in that field.
+    outer_data = schema_unpack(OUTER_SCHEMA, test_outer_buf, 0, len(test_outer_buf))
+    inner_len = len(outer_data['inner1'])
+    inner_data = schema_unpack(TEST_SCHEMA, outer_data['inner1'], 0, inner_len)
+
+    assert inner_data == dict(bool1=False, number1=0, string1=u"")
+
 
 
 # ==========
@@ -165,7 +223,7 @@ def test_schema_pack_nesting():
 # # --- Unpack/Decoder tests ---
 #
 # def test_schema_unpack_1():
-#     out1 = schema_unpack(TEST_SCHEMA_1, test1_buf, 0, len(test1_buf))
+#     out1 = schema_unpack(TEST_SCHEMA, test1_buf, 0, len(test1_buf))
 #     assert out1 == test1
 
 

@@ -1,6 +1,8 @@
 
 # -*- coding: UTF-8 -*-
 
+import pytest
+
 from .utils import SBytes
 from .item_header import *
 
@@ -41,14 +43,13 @@ def test_header_hasdata_enc():
     assert encode_header(data_type=0,  data_len=5, is_null=False)  == SBytes("40 05")     # has-data on, size follows
 
 def test_header_zeroval_enc():
-    assert encode_header(data_type=0,  data_len=0, is_null=False)  == SBytes("00")        # not null but no data = zero-value mode
+    assert encode_header(data_type=0,  data_len=0, is_null=False)  == SBytes("00")        # not null but no data = compact zero-value mode
 
+# ENCODER:
+# Policy: Encoder: is_null supercedes any datalen info. If null is on, data_len forced to 0, has_data forced to false.
 
-# * ensure null supercedes any datalen info
-# * this is not a valid state. We want to ensure that null clobbers the datalen stuff if it's on.
-# * with null ON, has-data should be OFF in spite of supplied data_len 1!
 def test_header_hasdata_but_null_enc():
-    assert encode_header(data_type=0,  data_len=5, is_null=True)   == SBytes("80")        # null bit on. has-data OFF, no size.
+   assert encode_header(data_type=0,  data_len=5, is_null=True)   == SBytes("80")        # null bit on. has-data OFF, no size.
 
 
 # --- Header null & has-data bits DEcoder ---
@@ -56,12 +57,20 @@ def test_header_hasdata_but_null_enc():
 # Note: decode_header returns                      (data_type, key, is_null, data_len, index)
 
 def test_header_null_dec():
-    assert decode_header(SBytes("80"),0)        == (0, None, True, 0, 1)            # is_null True
+   assert decode_header(SBytes("80"),0)        == (0, None, True, 0, 1)            # is_null True
 
-# * has-data should never be on if is-null is on. is-null forces has-data off and stops datalen processing.
+# Policy: DEcoder: if is_null is True, and has_data is True, blow up.
+#                  because if data follows and is_null is True, doing null processing will ignore the following data and cause a misparse.
 
-def test_header_hasdata_but_null_dec():
-    assert decode_header(SBytes("c0"),0)        == (0, None, True, 0, 1)            # is_null True, data_len 0
+# The standard says has_data being on when is_null is on, is an Invalid State.
+def test_header_invalid_state_dec():
+    with pytest.raises(ValueError):
+        decode_header(SBytes("c0"),0)
+
+# If instead of blowing up we just force data_len 0 and return that, then use this test instead.
+# def test_header_hasdata_but_null_dec():
+#     assert decode_header(SBytes("c0"),0)        == (0, None, True, 0, 1)            # is_null True, data_len 0
+
 
 def test_header_hasdata_dec():
     assert decode_header(SBytes("40 05"),0)     == (0, None, False, 5, 2)           # with length byte value 5

@@ -7,9 +7,9 @@ from .type_varint import *
 
 def test_uvarint_enc():
     assert encode_uvarint(50)    == SBytes("32")
-    assert encode_uvarint(500)   == SBytes("f4 03")         # note: skipping 5000, its still 2 bytes
+    assert encode_uvarint(500)   == SBytes("f4 03")
     assert encode_uvarint(50000) == SBytes("d0 86 03")
-    assert encode_uvarint(0)     == SBytes("00")                    # note: NOT zero-value mode
+    assert encode_uvarint(0)     == SBytes("00")                    # note: NOT compact zero-value mode
 
 def test_uvarint_dec():
     assert decode_uvarint(SBytes("32"), 0)       == (50, 1)
@@ -33,23 +33,23 @@ def test_svarint_dec():
 
 def test_codec_uvarint_enc():
     assert codec_encode_uvarint(50000) == SBytes("d0 86 03")
-    assert codec_encode_uvarint(0)     == SBytes("")            # Note: zero-value mode
+    assert codec_encode_uvarint(0)     == SBytes("")            # Note: compact zero-value mode
 
 def test_codec_svarint_enc():
     assert codec_encode_svarint(50000) == SBytes("a0 8d 06")
-    assert codec_encode_svarint(0)     == SBytes("")            # Note: zero-value mode
+    assert codec_encode_svarint(0)     == SBytes("")            # Note: compact zero-value mode
 
 
 def test_codec_uvarint_dec():                           # just making sure the index isnt returned
     assert codec_decode_uvarint(SBytes("d0 86 03"), 0, 4) == 50000
-    assert codec_decode_uvarint(SBytes("00"),0,1) == 0                    # note: NOT zero-value mode
-    assert codec_decode_uvarint(SBytes(""),0,0) == 0                      # note: YES zero-value mode
+    assert codec_decode_uvarint(SBytes("00"),0,1) == 0                    # note: NOT compact zero-value mode
+    assert codec_decode_uvarint(SBytes(""),0,0) == 0                      # note: YES compact zero-value mode
 
 def test_codec_svarint_dec():
     assert codec_decode_svarint(SBytes("aa b4 de 75"), 0, 4)  == 123456789
     assert codec_decode_svarint(SBytes("a9 b4 de 75"), 0, 4)  == -123456789
-    assert codec_decode_svarint(SBytes("00"),0,1) == 0                    # note: NOT zero-value mode
-    assert codec_decode_svarint(SBytes(""),0,0) == 0                      # note: YES zero-value mode
+    assert codec_decode_svarint(SBytes("00"),0,1) == 0                    # note: NOT compact zero-value mode
+    assert codec_decode_svarint(SBytes(""),0,0) == 0                      # note: YES compact zero-value mode
 
 
 
