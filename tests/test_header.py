@@ -3,8 +3,8 @@
 
 import pytest
 
-from .utils import SBytes
-from .item_header import *
+from b3.utils import SBytes
+from b3.item_header import *
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+

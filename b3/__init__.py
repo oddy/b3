@@ -4,12 +4,13 @@
 # the packages's actual UX
 
 # --- public ---
-from .datatypes import *
-from .composite_dynamic import pack, unpack
-from .composite_schema import schema_pack, schema_unpack
+from b3.datatypes import *
+from b3.composite_dynamic import pack, unpack
+from b3.composite_schema import schema_pack, schema_unpack
 
 # --- less public ---
-from .item_header import encode_header
+from b3.item_header import encode_header
+
 
 __all__ = [
     # --- Public ---

@@ -3,8 +3,8 @@ from decimal import Decimal, InvalidOperation
 
 import pytest
 
-from .utils import SBytes
-from .type_decimal import encode_decimal, decode_decimal
+from b3.utils import SBytes
+from b3.type_decimal import encode_decimal, decode_decimal
 
 # See type_decimal.py for the Data Format Standard
 

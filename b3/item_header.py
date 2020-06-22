@@ -1,8 +1,8 @@
 
 from six import int2byte
 
-from .utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
-from .type_varint import encode_uvarint, decode_uvarint
+from b3.utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
+from b3.type_varint import encode_uvarint, decode_uvarint
 
 # Policy: we are NOT doing unknown sizes. Which means no B3_END.
 # Policy: we are no longer inverting the null bit.

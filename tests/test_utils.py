@@ -1,5 +1,5 @@
 
-from .utils import SBytes, IntByteAt
+from b3.utils import SBytes, IntByteAt
 
 # todo: these dont get found because the file doensn't start with test
 def test_utils_sbytes():

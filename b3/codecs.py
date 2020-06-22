@@ -5,28 +5,28 @@
 import datetime, decimal
 from six import PY2
 
-from .datatypes import *
+from b3.datatypes import *
 
 # --- Codec functions ---
-import b3.type_basic
-import b3.type_varint
-import b3.type_decimal
-import b3.type_sched
+from b3 import type_basic
+from b3 import type_varint
+from b3 import type_decimal
+from b3 import type_sched
 
 # Policy: If there's no codec for a type, then it's a yield-as-bytes. (for e.g. schema-composite, and the actual B3_BYTES type)
 # Policy: NULL is not a specific type, it is a flag in the item header. (So any item can be NULL and also STILL have a type, on the wire)
 
 CODECS = {
-    B3_BOOL     : (b3.type_basic.encode_bool,      b3.type_basic.decode_bool),
-    B3_UTF8     : (b3.type_basic.encode_utf8,      b3.type_basic.decode_utf8),
-    B3_INT64    : (b3.type_basic.encode_int64,     b3.type_basic.decode_int64),
-    B3_FLOAT64  : (b3.type_basic.encode_float64,   b3.type_basic.decode_float64),
-    B3_STAMP64  : (b3.type_basic.encode_stamp64,   b3.type_basic.decode_stamp64),
-    B3_COMPLEX  : (b3.type_basic.encode_complex,   b3.type_basic.decode_complex),
-    B3_UVARINT  : (b3.type_varint.codec_encode_uvarint,  b3.type_varint.codec_decode_uvarint),  # note codec-specific varint decoder function
-    B3_SVARINT  : (b3.type_varint.codec_encode_svarint,  b3.type_varint.codec_decode_svarint),  # note codec-specific varint decoder function
-    B3_DECIMAL  : (b3.type_decimal.encode_decimal, b3.type_decimal.decode_decimal),
-    B3_SCHED    : (b3.type_sched.encode_sched,     b3.type_sched.decode_sched),
+    B3_BOOL     : (type_basic.encode_bool,      type_basic.decode_bool),
+    B3_UTF8     : (type_basic.encode_utf8,      type_basic.decode_utf8),
+    B3_INT64    : (type_basic.encode_int64,     type_basic.decode_int64),
+    B3_FLOAT64  : (type_basic.encode_float64,   type_basic.decode_float64),
+    B3_STAMP64  : (type_basic.encode_stamp64,   type_basic.decode_stamp64),
+    B3_COMPLEX  : (type_basic.encode_complex,   type_basic.decode_complex),
+    B3_UVARINT  : (type_varint.codec_encode_uvarint,  type_varint.codec_decode_uvarint),  # note codec-specific varint decoder function
+    B3_SVARINT  : (type_varint.codec_encode_svarint,  type_varint.codec_decode_svarint),  # note codec-specific varint decoder function
+    B3_DECIMAL  : (type_decimal.encode_decimal, type_decimal.decode_decimal),
+    B3_SCHED    : (type_sched.encode_sched,     type_sched.decode_sched),
 }
 
 

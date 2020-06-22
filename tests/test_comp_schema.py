@@ -1,10 +1,10 @@
 
 import pytest, copy
 
-from .utils import SBytes
-from .datatypes import *
-from .composite_schema import schema_pack, schema_unpack
-from .hexdump import hexdump
+from b3.utils import SBytes
+from b3.datatypes import *
+from b3.composite_schema import schema_pack, schema_unpack
+from b3.hexdump import hexdump
 
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc

@@ -1,9 +1,11 @@
 
 # -*- coding: UTF-8 -*-
 
-from .utils import SBytes
-from .type_basic import *
+from b3.utils import SBytes
+from b3.type_basic import *
 
+# Note: these above break with ImportError No module named b3, UNLESS i make the tests a package by adding an empty __init__.py
+# Note: once i do that, then everything seems to work perfectly
 
 def test_base_bool_enc():
     assert encode_bool(True)   == SBytes("01")
