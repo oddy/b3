@@ -29,7 +29,7 @@ from b3.type_varint import encode_uvarint, decode_uvarint
 # +------------+------------+
 # | key type   | key type   |
 # +------------+------------+
-#     0   0  (0)    no bytes
+#     0   0  (0)    no key
 #     0   1  (4)    UVARINT
 #     1   0  (8)    UTF8 bytes
 #     1   1  (c)    raw bytess

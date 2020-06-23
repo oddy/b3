@@ -2,7 +2,6 @@
 import pytest, copy
 
 from b3.utils import SBytes
-from b3.datatypes import *
 from b3.composite_dynamic import pack, unpack, unpack_into
 
 # Nested composite item structure is
@@ -113,6 +112,16 @@ def test_dyna_roundtrip_all_types():
         None
         ]
     assert unpack(pack(data_dyna_types),0) == data_dyna_types
+
+
+# --- Weird cases ---
+
+def test_dyna_dict_none_key():
+    c = {None : 3}                  # annoyingly, this is allowed in python
+    buf = pack(c)
+    out = unpack(buf,0)
+    assert out == c                 # but still works fine.
+
 
 
 # --- Test interop with schema comp ---
