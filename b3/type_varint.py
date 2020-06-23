@@ -7,6 +7,8 @@
 #       codec-use decode takes an end-index parameter, internal-use decode returns updated index
 # This is because varints are self-sizing, but the codecs always operate with known-size items because TLV.
 
+# Note: This (followed by item_header) will be the first things to C-ify as they dominate the pyinstrument/cProfile results.
+
 from   six import indexbytes, int2byte
 
 # --- Encoders ---

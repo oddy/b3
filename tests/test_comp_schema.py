@@ -4,7 +4,6 @@ import pytest, copy
 from b3.utils import SBytes
 from b3.datatypes import *
 from b3.composite_schema import schema_pack, schema_unpack
-from b3.hexdump import hexdump
 
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
@@ -190,6 +189,71 @@ def test_schema_unpack_nesting():
 
     assert inner_data == dict(bool1=False, number1=0, string1=u"")
 
+
+def test_schema_nested_errors():
+    # Nested containers e.g. dict1 and list1 need to be explicitely packed to bytes first.
+    # schema_pack should raise an error if it sees un-packed python dicts or lists in the fields.
+    NEST_SCHEMA = (
+        (B3_COMPOSITE_DICT, 'dict1', 1),
+        (B3_COMPOSITE_LIST, 'list1', 2),
+    )
+
+    data = dict(dict1={1:2, 3:4}, list1=[7,8,9])
+
+    with pytest.raises(TypeError):
+        schema_pack(NEST_SCHEMA, data)
+
+
+# --- Roundtrip / all data types testing ---
+
+def test_schema_alltypes_roundtrip():
+    import time, math
+    from decimal import Decimal
+    from datetime import datetime
+
+    ALLTYPES_SCHEMA = (
+        (B3_BYTES, 'bytes1', 3),
+        (B3_UTF8, 'string1', 4),
+        (B3_BOOL, 'bool1', 5),
+        (B3_INT64, 'int641', 6),
+        (B3_UVARINT, 'uvint1', 7),
+        (B3_SVARINT, 'svint1', 8),
+        (B3_FLOAT64, 'float1', 9),
+        (B3_DECIMAL, 'deci1', 10),
+        (B3_STAMP64, 'stamp1', 11),
+        (B3_SCHED,  'date1', 12),
+        (B3_COMPLEX, 'cplx1', 13),
+        )
+
+    now_float = time.time()                     # the STAMP64 encoder takes time.time() floats OR unixnano integers
+    now_ns    = math.trunc(now_float * 1e9)     # but it's decoder always yields unixnano integers.
+
+    data = dict(bytes1=b"foo", string1=u"bar", bool1=True, int641=123, uvint1=456, svint1=-789, float1=13.37,
+                deci1=Decimal("13.37"), stamp1=now_ns, date1=datetime.now(), cplx1=33j)
+
+    buf = schema_pack(ALLTYPES_SCHEMA, data)
+
+    out = schema_unpack(ALLTYPES_SCHEMA, buf, 0, len(buf))
+
+    assert data == out
+
+
+
+    # --- possibly for the nesting example? ---
+    # from b3 import pack
+    # data['dict1'] = pack(data['dict1'], with_header=False)          # todo: this should be embed=True ?
+    # data['list1'] = pack(data['list1'], with_header=False)
+    #
+    # buf = schema_pack(ALLTYPES_SCHEMA, data)
+    # out = schema_unpack(ALLTYPES_SCHEMA, buf, 0, len(buf))
+    #
+    # from pprint import pprint
+    # print("Data:")
+    # pprint(data)
+    # print("Out:")
+    # pprint(out)
+    #
+    # assert out == data
 
 # def test_schema_unpack_interop():
 #     buf_from_pack = 'A)t\x07string1\x0bhello worldu\x05bool1\x01\x01w\x07number1\x01x'    # see test_comp_dynamic

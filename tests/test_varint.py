@@ -42,15 +42,27 @@ def test_codec_svarint_enc():
 
 def test_codec_uvarint_dec():                           # just making sure the index isnt returned
     assert codec_decode_uvarint(SBytes("d0 86 03"), 0, 4) == 50000
-    assert codec_decode_uvarint(SBytes("00"),0,1) == 0                    # note: NOT compact zero-value mode
-    assert codec_decode_uvarint(SBytes(""),0,0) == 0                      # note: YES compact zero-value mode
+    assert codec_decode_uvarint(SBytes("00"),0,1) == 0
+    assert codec_decode_uvarint(SBytes(""),0,0) == 0                      # note: compact zero-value mode
 
 def test_codec_svarint_dec():
     assert codec_decode_svarint(SBytes("aa b4 de 75"), 0, 4)  == 123456789
     assert codec_decode_svarint(SBytes("a9 b4 de 75"), 0, 4)  == -123456789
-    assert codec_decode_svarint(SBytes("00"),0,1) == 0                    # note: NOT compact zero-value mode
-    assert codec_decode_svarint(SBytes(""),0,0) == 0                      # note: YES compact zero-value mode
+    assert codec_decode_svarint(SBytes("00"),0,1) == 0
+    assert codec_decode_svarint(SBytes(""),0,0) == 0                      # note: compact zero-value mode
 
+
+# --- Notes for benchmarking ---
+# https://pypi.org/project/pyinstrument/
+# pip install pyinstrument
+# pyinstrument benchmarks.py
+
+# or..
+# from pyinstrument import Profiler
+# profiler = Profiler()
+# profiler.start()
+# profiler.stop()
+# print(profiler.output_text(unicode=True, color=True))
 
 
 

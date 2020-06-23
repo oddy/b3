@@ -11,6 +11,7 @@ from b3.datatypes import *
 # But that would make interop difficult between the Dynamic and Schema packers, so we've dropped it for now.
 # The 'best type' selector would have 3 settings -
 # 'fixed' (default, as now), 'compact' (e.g. prefer var-types for small numbers), 'fast' (prefer the xxx64 types)
+# The wastefulness of using svarint for everything hurts a little, but compactness-obsessed people should be using schemas anyway.
 
 # Policy: we are NOT auto-converting stuff to DECIMAL, callers responsibility
 # because we'd have to fix a precision for the user and i dont know if we want to be opinionated about that.
@@ -51,7 +52,6 @@ def guess_type(obj):
 
     if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
         return B3_SCHED
-        # return B3_STAMP64                     # stamp64 takes floats and ints, not datetimes. Not used by dynamic.
 
     if isinstance(obj, complex):
         return B3_COMPLEX

@@ -39,7 +39,7 @@ def pack(item, key=None, with_header=True, rlimit=20):
         field_bytes = item
 
     elif isinstance(item, list):
-        field_bytes = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])                 # Note: recursive call
+        field_bytes = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])                     # Note: recursive call
         data_type   = B3_COMPOSITE_LIST
 
     elif isinstance(item, dict):

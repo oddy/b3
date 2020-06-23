@@ -4,7 +4,6 @@ import pytest, copy
 from b3.utils import SBytes
 from b3.datatypes import *
 from b3.composite_dynamic import pack, unpack, unpack_into
-from b3.hexdump import hexdump
 
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
@@ -79,7 +78,7 @@ def test_dyna_unpack_header_only_invalid_type():
 
 # This one should test all unpack and unpack_into code paths if the data above is used.
 
-def test_dyna_unpack_kitchen_sink():
+def test_dyna_unpack_dict():
     assert unpack(test1_buf, 0) == test1_data
 
 def test_dyna_unpack_recurse_invalid_container():
@@ -88,8 +87,32 @@ def test_dyna_unpack_recurse_invalid_container():
 
 
 # --- Round Trip ---
-def test_dyna_roundtrip():
+def test_dyna_roundtrip_dict():
     assert unpack(pack(test1_data),0) == test1_data
+
+def test_dyna_roundtrip_into():
+    buf = pack(test1_data, with_header=False)
+    out = dict()
+    unpack_into(out, buf, 0, len(buf))
+    assert out == test1_data
+
+def test_dyna_roundtrip_list():
+    test_list = [1, 2, 3, 4, 5, u'a', u'b', b'xx']
+    assert unpack(pack(test_list),0)  == test_list
+
+def test_dyna_roundtrip_all_types():
+    import datetime, decimal
+    # dynamic uses dict, list, bytes, utf8, bool, svarint, float64, decimal, sched, complex
+    # dynamic currently does NOT use int64, uvarint, stamp64
+    data_dyna_types = [
+        {1:2}, [3,4],
+        b'foo', u'bar', True,
+        -69, 2.318,
+        decimal.Decimal('3.8'), datetime.datetime.now(),
+        4j,
+        None
+        ]
+    assert unpack(pack(data_dyna_types),0) == data_dyna_types
 
 
 # --- Test interop with schema comp ---

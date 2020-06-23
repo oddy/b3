@@ -2,39 +2,15 @@
 import sys
 from   six import PY2
 
-# --- Ansi Color Codes ---
-# Win10 has support for ANSI sequences in its cmd terminal windows finally. This works in cmd and clink.
-# Note: we dont get a tty in pytest unless pytest -s
+colChecked = False          # do the color check on first run of hexdump, NOT on import.
 colOK = False
-if hasattr(sys.stdout,'isatty') and sys.stdout.isatty():
-    if not hasattr(sys,'winver'):               # linux/mac
-        colOK = True
-    else:                                       # windows - do color only if win10 & its "does ansi if you turn it on" console
-        import ctypes                           # https://docs.microsoft.com/en-us/windows/console/setconsolemode
-        kernel32 = ctypes.windll.kernel32       # # -11 is STD_OUTPUT_HANDLE,
-        ret = kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)   # 7 is enable processed_output and VT processing
-        colOK = (ret != 0)                      # If 'turn on ansi' succeeded in windows
-
-# --- Hexdump ---
-
-cols = { 'rst':'\x1b[0m', 'gry':'\x1b[2;37m', 'red':'\x1b[31m', 'yel':'\x1b[0;33m', 'byel':'\x1b[1;33m',
-         'grn':'\x1b[0;32m', 'bgrn':'\x1b[1;32m', 'blu':'\x1b[0;34m',  'bblu':'\x1b[34;1m' }
-
-# Note: bytes accessess -> int in py3, -> str in py2.
-# todo: in Go we just i > 32 && i < 127, why not just do that?
-if PY2:
-    def dot_str_from_bytes(s):
-        return ''.join([i if 31 < ord(i) < 127 else '.' for i in s])
-else:
-    def dot_str_from_bytes(s):
-        return ''.join([chr(i) if 31 < i < 127 else '.' for i in s])
-
 
 def hexdump(src, prefix='', length=16):
     if not src:
         raise ValueError('Empty input to hexdump')
     if not isinstance(src, bytes):
         raise TypeError('Input to hexdump must be bytes, not %s' % type(src))
+    CheckColorOk()
 
     N = 0; result = ''
     while src:
@@ -62,6 +38,39 @@ def hexdump(src, prefix='', length=16):
         N += length
 
     return result.strip()
+
+
+# --- Ansi Color Codes ---
+# Win10 has support for ANSI sequences in its cmd terminal windows finally. This works in cmd and clink.
+# Note: we dont get a tty in pytest unless pytest -s
+
+def CheckColorOk():
+    global colChecked, colOK
+    if colChecked:  return
+    colChecked = True
+
+    if hasattr(sys.stdout,'isatty') and sys.stdout.isatty():
+        if not hasattr(sys,'winver'):               # linux/mac
+            colOK = True
+        else:                                       # windows - do color only if win10 & its "does ansi if you turn it on" console
+            if hasattr(sys,'ps1'):      return      # Don't go color in windows if inside python or ipython repl.
+            import ctypes                           # https://docs.microsoft.com/en-us/windows/console/setconsolemode
+            kernel32 = ctypes.windll.kernel32       # # -11 is STD_OUTPUT_HANDLE,
+            ret = kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)   # 7 is enable processed_output and VT processing
+            colOK = (ret != 0)                      # If 'turn on ansi' succeeded in windows
+
+
+cols = { 'rst':'\x1b[0m', 'gry':'\x1b[2;37m', 'red':'\x1b[31m', 'yel':'\x1b[0;33m', 'byel':'\x1b[1;33m',
+         'grn':'\x1b[0;32m', 'bgrn':'\x1b[1;32m', 'blu':'\x1b[0;34m',  'bblu':'\x1b[34;1m' }
+
+# Note: bytes accessess -> int in py3, -> str in py2.
+# todo: in Go we just i > 32 && i < 127, why not just do that?
+if PY2:
+    def dot_str_from_bytes(s):
+        return ''.join([i if 31 < ord(i) < 127 else '.' for i in s])
+else:
+    def dot_str_from_bytes(s):
+        return ''.join([chr(i) if 31 < i < 127 else '.' for i in s])
 
 
 if __name__ == '__main__':
