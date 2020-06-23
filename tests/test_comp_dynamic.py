@@ -27,11 +27,11 @@ from b3.hexdump import hexdump
 
 test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:None }
 
-buf10 = "17 0a"                                             #  uvarint, key=10, len=0 (CZV)
+buf10 = "18 0a"                                             #  svarint, key=10, len=0 (CZV)
 buf11 = "53 0b 03 66 6f 6f"                                 #  bytes,   key=11, len 3, b"foo"
 buf12_list_bytes = "45 01 01 05 05 45 01 01"                #  True ends up being "45 01 01" and False is "05" because CZV.
 buf12 = "52 0c 08 " + buf12_list_bytes                      #  list,    key=12, len=8
-buf13_dict_bytes = "57 09 01 08 57 07 01 06"                #  items for 9:8 and 7:6
+buf13_dict_bytes = "58 09 01 10 58 07 01 0c"                #  items for 9:8 and 7:6
 buf13 = "51 0d 08 " + buf13_dict_bytes                      #  dict,    key=13, len=8
 buf14 = "93 0e"                                             #  [bytes]**  key=14, is_null=True
 outer_header = "41 20"                                      #  dict, no key, len=32
@@ -44,11 +44,11 @@ test1_buf = SBytes(" ".join([outer_header, buf10, buf11, buf12, buf13, buf14]))
 
 # --- Pack/Encoder tests ---
 
-def test_dyna_pack_kitchen_sink():
+def test_dyna_pack_dict():
     out1_buf = pack(test1_data)
     assert out1_buf == test1_buf
 
-def test_dyna_pack_kitchen_sink_no_header():
+def t_est_dyna_pack_dict_no_header():
     out1_buf = pack(test1_data, with_header=False)
     assert out1_buf == test1_buf[2:]
 

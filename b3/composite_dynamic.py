@@ -1,14 +1,14 @@
 
-# Dynamic-recursive composite encoder  (like json)
+# Dynamic-recursive composite pack/unpack  (like json)
 
 # Packer Architecture:
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
 from b3.datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, b3_type_name
-from b3.type_codecs import CODECS, guess_type
+from b3.type_codecs import CODECS
+from b3.guess_type import guess_type
 from b3.item_header import encode_header, decode_header
-
 
 # Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
 
@@ -16,8 +16,6 @@ from b3.item_header import encode_header, decode_header
 # policy: because there's no schema backing us, we dont know what incoming-to-encode missing data types SHOULD be!
 # policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
 # policy: in practice None supercedes data-type checking here and in the schema composite, so this should be ok.
-
-# todo:   recurse limit after which we bail.
 
 # --- Decoder/Unpack policies ---
 # Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have the top-level header at the front anyway
