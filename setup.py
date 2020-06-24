@@ -20,7 +20,6 @@ def get_version(rel_path):
 setup(
     name = "b3buf",
     version = get_version("b3/__init__.py"),
-    # packages = ["b3"],
     packages = find_packages(),
     install_requires = ["six"],
 
@@ -41,6 +40,7 @@ setup(
     ],
 
     include_package_data = True,
+    data_files = [("", ["LICENSE.txt", "examples.py"])],
 
     # we want a universal wheel
     options={  'bdist_wheel' : {'universal' : True}  },
