@@ -77,6 +77,7 @@ B3 ships with an extensive test suite, using pytest.
 
 ```
 pip install pytest
+cd /your/site-packages/tests_b3
 pytest -v
 ```
 
