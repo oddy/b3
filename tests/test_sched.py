@@ -7,7 +7,7 @@ from   six import PY2
 from   b3.utils import SBytes
 from   b3.type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
 
-# todo: rename these tests
+# todo: rename these tests to make consistent with rest of tests
 
 # --- timetuple helper ---
 
@@ -140,7 +140,7 @@ def test_sched_zerovalue_dec():
 
 
 ########################################################################################################################
-# NOTES
+# NOTES - WIP - HERE BE DRAGONS
 ########################################################################################################################
 
 # --- get dict of zones from dateutil. ---

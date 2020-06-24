@@ -32,7 +32,7 @@ CLS_TO_PROPS = {datetime.date: (True, False), datetime.time: (False, True), date
 OFFS_FLAG_SIGN   = 0x80
 OFFS_FLAG_DST    = 0x40     #  1=in DST, 0=out DST or DST not present.
 OFFS_MINUTE_BITS = 0x30
-OFFS_MINUTE_VAL  = {'00':0x00, '15':0x10, '30':0x20, '45':0x30}     # 15-minute granularity.
+OFFS_MINUTE_VAL  = {'00':0x00, '15':0x10, '30':0x20, '45':0x30}     # Policy: 15-minute granularity.
 OFFS_MINUTE_REV  = {v:k for k, v in OFFS_MINUTE_VAL.items()}
 OFFS_HOUR_BITS   = 0x0f
 
@@ -60,6 +60,7 @@ def encode_sched(dt, tzname=''):
     offset = dt.strftime('%z')              # blank if no tzinfo
 
     return encode_sched_gen(tms, is_date, is_time, offset=offset, tzname=tzname, sub_exp=6 if micro else 0, sub=micro)
+
 
 # In - mandatory: time-tuple (Y/M/D H:M:S) assumed zero-filled, if date date (bool), if time data (bool),
 # In - optional:  offset, tzname, subsecond exponent, and subsecond integer
@@ -171,7 +172,7 @@ def decode_sched(buf, index, end):
 
 
 ########################################################################################################################
-# Notes
+# NOTES - WIP - HERE BE DRAGONS
 ########################################################################################################################
 
 # --- Limitations ---
@@ -192,7 +193,7 @@ def decode_sched(buf, index, end):
 
 
 ########################################################################################################################
-# TZ Name notes
+# TZ Name (VERY WIP) notes
 ########################################################################################################################
 
 # Note: The standard enables us to efficiently serialize an optional tz name as well as the offset.

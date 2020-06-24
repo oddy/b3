@@ -1,21 +1,11 @@
 
 # Schema-style composite encoder.
 
-# Packer Architecture:
-# |Json UX/Composite Packer| ->(dict keynames)-> |Header-encoder| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
-# |Pbuf UX/Composite Packer| ->(tag numbers)  -^
-
-# Method: Encoders assemble lists of byte-buffers, then b"".join() them. We take advantage of this often for empty/nonexistant fields etc.
-# Method: Decoders always take the whole buffer, and an index, and return an updated index.
-
 from b3.type_codecs import CODECS
 from b3.item_header import encode_header, decode_header
 from b3.utils import VALID_INT_TYPES
 from b3.datatypes import b3_type_name, B3_COMPOSITE_DICT, B3_COMPOSITE_LIST
 
-# Nested composite item structure is
-# [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
-#                          [hdr|data][hdr|data]
 
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
@@ -32,7 +22,14 @@ def schema_lookup_key(schema, key):
 
 
 def schema_pack(schema, data, strict=False):
-    """In: schema - list/tuple of (type, name, number) tuples,   data - dict of key_name or key_number : data_value"""
+    """Packs a dict to bytes using a given schema.
+       schema - list/tuple of (type, name, tag-number) values,
+       data   - dict of data to pack
+       strict - whether to exception or ignore, if input data has keys that are not in the schema.
+       - dict keys can match to schema using both string name or tag number.
+       - nested fields with dicts or lists in them must be packed to bytes first.
+       - schema fields that are missing from input data, are still packed but with value None.
+       - packed data is always sorted by schema key number ascending"""
     if not isinstance(data, dict):
         raise TypeError("currently only dict input data supported by schema_pack")
     out = {}                            # header and data items by schema_key_number
@@ -73,10 +70,20 @@ def schema_pack(schema, data, strict=False):
     return b"".join(out_list)
 
 
-def schema_unpack(schema, buf, index, end):
-    """Parse through buf, create and return a dict"""
-    out = {}
+def schema_unpack(schema, buf, index=0, end=None):
+    """Unpacks bytes to a dict using the given schema.
+        schema - list/tuple of (type, name, tag-number) values,
+        buf    - bytes data,
+        index  - where to start in buf (if not given, defaults to 0)
+        end    - where to stop in buf (if not given, defaults to len(buf)
+        - if an incoming key is not found in the schema it is ignored.
+        - if a schema key is not found in the incoming data it is added with value None.
+        - if incoming data has no keys an error will occur (e.g. from pack()ing a list).
+        - nested fields are returned as byte strings, will need unpacking too."""
+    if end is None:
+        end = len(buf)
 
+    out = {}
     while index < end:
         data_type, key, is_null, data_len, index = decode_header(buf, index)
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
@@ -112,6 +119,8 @@ def schema_unpack(schema, buf, index, end):
         out[missing_key_name] = None
 
     return out
+
+
 
 # --- Outer design policies ---
 # Policy: The null-flag (None in python) is a *seperate and distinct concept* from a type's zero-value

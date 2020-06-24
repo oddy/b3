@@ -1,32 +1,20 @@
 
-# Dynamic-recursive composite pack/unpack  (like json)
-
-# Packer Architecture:
-# |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
-# |Pbuf UX/Composite Packer| ->(tag numbers)  -^
+# Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
 from b3.datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, b3_type_name
 from b3.type_codecs import CODECS
 from b3.guess_type import guess_type
 from b3.item_header import encode_header, decode_header
 
-# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
-
-# --- Encoder/Pack policies ---
-# policy: because there's no schema backing us, we dont know what incoming-to-encode missing data types SHOULD be!
-# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
-# policy: in practice None supercedes data-type checking here and in the schema composite, so this should be ok.
-
-# --- Decoder/Unpack policies ---
-# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have the top-level header at the front anyway
-#         the users just want list in list out, dict in dict out, etc.i
-#         AND this actually makes the code a LOT simpler.
-# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
-#         have a container object of their own, they can call the recursive unpacker function directly.
-
 
 def pack(item, key=None, with_header=True, rlimit=20):
-    """takes a list or dict, returns header & data bytes"""
+    """Packs a list or dict to bytes.
+       item        - the list or dict to pack
+       with_header - returned bytes include a header. unpack() needs this on,
+                     unpack_into() and embedding into schema fields needs it off.
+       key         - key value for the top-level header (optional, typically not needed)
+       rlimit      - recurse limit. Raises ValueError if limit exceeded.
+       - see guess_type.py for the B3 types chosen, given certain Python types."""
     if rlimit < 1:
         raise ValueError("Recurse limit exceeded")
     data_type = B3_BYTES
@@ -59,18 +47,17 @@ def pack(item, key=None, with_header=True, rlimit=20):
         return field_bytes
 
 
-
 def new_container(data_type):
     out = { B3_COMPOSITE_LIST:list(), B3_COMPOSITE_DICT: dict() }[data_type]
     return out
 
-# This one is the counterpart of pack with with_header=True (the default)
-# Note: because unpack expects an header first up which has container object type and data len, it doesn't need an end argument.
 
-def unpack(buf, index):
-    """takes data buffer and start-index, returns a filled container object (list or dict).
-    Requires buffer to have container-type header in it at the start.
-    Use as counterpart to pack()"""
+def unpack(buf, index=0):
+    """Unpacks byte data to a new filled container object (list or dict).
+       buf    - bytes data,
+       index  - where to start in buf (defaults to 0)
+       - as unpack expects a header which has container object type
+         and data length, it doesn't need an end argument. """
 
     data_type, key, is_null, data_len, index = decode_header(buf, index)
 
@@ -82,13 +69,16 @@ def unpack(buf, index):
     unpack_into(out, buf, index, index + data_len)
     return out
 
-# users can call this one directly if they ** already have a container to put things into. **
-# This one is the counterpart of pack with with_header=False (not the default)
-
-# Note: unpack_into however DOES need, and use, an end argument.
 
 def unpack_into(out, buf, index, end):
-    """takes container object + data buffer & pointers, fills the container object & returns it."""
+    """Unpacks bytes data to a given container object.
+       out   - container (list or dict) to fill with data,
+       buf   - bytes data,
+       index - where to start in buf,
+       end   - where to stop in buf
+       - use this function directly if you already have a container to put things into.
+       - or if you want to specify start and end explicitly."""
+
     while index < end:
         # --- do header ---
         data_type, key, is_null, data_len, index = decode_header(buf, index)
@@ -119,6 +109,22 @@ def unpack_into(out, buf, index, end):
         # --- Advance index ---
         index += data_len       # decode_header sets data_len=0 for us if is_null is on
 
-    return
+    return out
+
+
+
+# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
+
+# --- Encoder/Pack policies ---
+# policy: because there's no schema backing us, we dont know what incoming-to-pack missing data types SHOULD be!
+# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
+# policy: in practice None supercedes data-type checking here and in the schema packer, so this should be ok.
+
+# --- Decoder/Unpack policies ---
+# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have a top-level header at the front anyway
+#         the users just want list in list out, dict in dict out, etc.i
+#         AND this actually makes the code a LOT simpler.
+# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
+#         have a container object of their own, they can call the recursive unpacker function directly.
 
 

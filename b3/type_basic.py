@@ -5,20 +5,13 @@ import struct, math
 
 from b3.utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 
-# Note: the 'end' parameter for the decoders is the index of the start of the NEXT object, which == out object's SIZE if index==0
-#         so yes, decode(blah, 0, len(blah)) is correct when testing.
-#         and index==end means there is no data at all.
-
-# Note: Endianness - there appears to be no difference between <q and >q performance-wise on py2 or py3.
-# Note: there is no Null type or null-type codec, instead item headers have a null-flag. See item_header module for more info.
-# Policy: Favouring simplicity over performance by having the type safety checks here.
-# i.e. dynamic shouldn't need type safety checks because it's types are aquired from the guess_type() function rather than directly from the user
-# but splitting out the type checks from the codecs will bloat the code so we're not doing that.
-
-# todo: length checks with the end parameter?  we're mostly EAFP-ing this for now.
+# Method: Encoders assemble lists of byte-buffers, then b"".join() them. We take advantage of this often for empty/nonexistant fields etc.
+# Method: Decoders always take the whole buffer, and an index, and return an updated index.
 
 # Policy: Encoders MAY return no bytes to signify a Compact Zero Value (optional)
 # Policy: Decoders MUST accept if index==end and return a Zero value (mandatory)
+# Policy: Favouring simplicity over performance by having the type safety checks here.
+
 
 def encode_bool(value):
     value = bool(value)
@@ -111,5 +104,16 @@ def decode_complex(buf, index, end):
     return complex(*struct.unpack("<dd",buf[index:index+16]))
 
 
+# Note: the 'end' parameter for the decoders is the index of the start of the NEXT object, which == out object's SIZE if index==0
+#         so yes, decode(blah, 0, len(blah)) is correct when testing.
+#         and index==end means there is no data at all.
+
+# Note: Endianness - there appears to be no difference between <q and >q performance-wise on py2 or py3.
+# Note: there is no Null type or null-type codec, instead item headers have a null-flag. See item_header module for more info.
+# Policy: Favouring simplicity over performance by having the type safety checks here.
+# i.e. dynamic shouldn't need type safety checks because it's types are aquired from the guess_type() function rather than directly from the user
+# but splitting out the type checks from the codecs will bloat the code so we're not doing that.
+
+# todo: length checks with the end parameter?  we're mostly EAFP-ing this for now.
 
 

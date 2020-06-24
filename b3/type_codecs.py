@@ -9,9 +9,6 @@ from b3 import type_varint
 from b3 import type_decimal
 from b3 import type_sched
 
-# Policy: If there's no codec for a type, then it's a yield-as-bytes. (for e.g. schema-composite, and the actual B3_BYTES type)
-# Policy: NULL is not a specific type, it is a flag in the item header. (So any item can be NULL and also STILL have a type, on the wire)
-
 CODECS = {
     B3_BOOL     : (type_basic.encode_bool,      type_basic.decode_bool),
     B3_UTF8     : (type_basic.encode_utf8,      type_basic.decode_utf8),
@@ -24,4 +21,8 @@ CODECS = {
     B3_DECIMAL  : (type_decimal.encode_decimal, type_decimal.decode_decimal),
     B3_SCHED    : (type_sched.encode_sched,     type_sched.decode_sched),
 }
+
+# Policy: If there's no codec for a type, then it's a yield-as-bytes. (for e.g. schema-composite, and the actual B3_BYTES type)
+# Policy: NULL is not a specific type, it is a flag in the item header. (So any item can be NULL and also STILL have a type, on the wire)
+
 

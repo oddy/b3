@@ -1,10 +1,6 @@
 
 # B3 data types & their id numbers
 
-# Note: The core type numbers are all intended to fit into the lower half of the item header control byte.
-#       Extended type numbers are encoded in a varint following the header control byte.
-# Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
-
 # --- Core types ---
 
 B3_RESERVED_0       = 0     # Probably permanently unused.
@@ -32,9 +28,16 @@ B3_RESERVED_14      = 14    # Currently unused.
 
 # --- Extended types ---
 
-B3_RESERVED_15      = 15   # Policy: we could totally use 15, but currently not to avoid confusion with the ext-type format.
-B3_COMPLEX          = 16   # encoded as 2 float64s.
+B3_RESERVED_15      = 15    # Policy: we could totally use 15, but currently not to avoid confusion with the ext-type format.
+B3_COMPLEX          = 16    # encoded as 2 float64s.
 
+
+# Note: The core type numbers are all intended to fit into the lower half of the item header control byte.
+#       Extended type numbers are encoded in a varint following the header control byte.
+# Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
+
+# Policy: Numbers 96 to 8191 reserved for User-Defined Types
+#         That's 1/4 of the one-byte space, and 1/2 of the two-byte space.
 
 # --- Name reverse lookup (for friendly error messages) ---
 

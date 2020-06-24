@@ -18,7 +18,7 @@ from   b3.utils import IntByteAt
 # --- Structure ---
 # [Control byte][optional exponent uvarint][value uvarint]
 # Note: the value varint is allowed to be missing if its zero. We dont have a presence flag for that,
-#       so the parser uses the size of what it's given (via end-index) to determine presence.
+#       so the decoder uses the size of what it's given (via end-index) to determine presence.
 
 # --- Control Byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
@@ -41,15 +41,13 @@ EXPONENT_BITS = 0x0f    # Lower 4 bits of control byte
 # Encode
 ########################################################################################################################
 
-# Note: we're not supporting compact zero-value mode in the encoder.  It's optional so that's ok.
+# Note: we're not supporting compact zero-value mode in the encoder.  CZV is optional for encoders so that's ok.
 
 # In:  num - a decimal.Decimal type ONLY
 # Out: bytes
 def encode_decimal(num):
     if not isinstance(num, decimal.Decimal):
         raise TypeError("only accepts decimal.Decimal objects")
-
-
 
     sign,digits,exp = num.as_tuple()
     special = not num.is_finite()
@@ -102,7 +100,7 @@ def encode_decimal(num):
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal
 def decode_decimal(buf, index, end):
-    if index == end:                                # Support mandatory no-data zero-value. (positive zero)
+    if index == end:                                # no data = zero-value
         return decimal.Decimal('0.0')
 
     bits, index = IntByteAt(buf, index)

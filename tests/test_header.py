@@ -6,10 +6,30 @@ import pytest
 from b3.utils import SBytes
 from b3.item_header import *
 
+# Item:
+# [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
+# ---------------------------- item_header -----------------------------  --- codecs ---
+
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 # | is null    | has data   | key type   | key type   | data type  | data type  | data type  | data type  |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
+
+# +------------+------------+
+# | is null    | has data   |
+# +------------+------------+
+#     1   x  (2)    Value is None/NULL/nil - data len & has data ignored
+#     0   0  (0)    Codec zero-value for given data type (0, "", 0.0 etc)
+#     0   1  (1)    Data len present, followed by codec'ed data bytes
+
+# +------------+------------+
+# | key type   | key type   |
+# +------------+------------+
+#     0   0  (0)    no key
+#     0   1  (4)    UVARINT
+#     1   0  (8)    UTF8 bytes
+#     1   1  (c)    raw bytess
+
 
 # --- key types ---
 

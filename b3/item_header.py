@@ -4,11 +4,6 @@ from six import int2byte
 from b3.utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from b3.type_varint import encode_uvarint, decode_uvarint
 
-# Policy: we are NOT doing unknown sizes. Which means no B3_END.
-# Policy: we are no longer inverting the null bit.
-# Policy: we ARE doing zero-value signalling.
-# Policy: data types 15 and up are encoded as a seperate uvarint immediately following the control byte,
-#         and the control byte's data type bits are set to all 1 (x0f) to signify this.
 
 # Item:
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
@@ -62,7 +57,6 @@ def encode_header(data_type, key=None, is_null=False, data_len=0):
     out = [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
     return b"".join(out)
 
-# todo: end checking for decode_header ?
 
 def decode_header(buf, index):
     cbyte,index = IntByteAt(buf, index)                  # control byte
@@ -121,4 +115,10 @@ def decode_key(key_type_bits, buf, index):
         key_bytes = buf[index:index+klen]
         return key_bytes, index+klen
     raise TypeError("Invalid key type in control byte")
+
+
+# Policy: we ARE doing zero-value signalling.
+# Policy: data types 15 and up are encoded as a seperate uvarint immediately following the control byte,
+#         and the control byte's data type bits are set to all 1 (x0f) to signify this.
+
 

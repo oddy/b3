@@ -1,8 +1,12 @@
 
-import pytest, copy
+import pytest
 
 from b3.utils import SBytes
 from b3.composite_dynamic import pack, unpack, unpack_into
+
+# B3 software Architecture:
+# |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
+# |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
@@ -11,6 +15,7 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 # Item:
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
 # ---------------------------- item_header -----------------------------  --- codecs ---
+
 
 # Policy: small-scale bottom-up-assembly data items.
 # bottom-up-assmbly means the size-in-bytes of everything is always known.
@@ -55,10 +60,6 @@ def t_est_dyna_pack_dict_no_header():
 # unpack_into unpacks the buffer it's given, into the container it's given.
 
 # --- Unpack tests ---
-
-# def test_dyna_unpack_index_over_end():            # todo: currently n/a as unpack isn't taking an end argument.
-#     with pytest.raises(ValueError):
-#         unpack(b"", 0, 0)
 
 def test_dyna_unpack_header_only_list():
     hdr_buf = SBytes("02")              # no key, no data, list type.

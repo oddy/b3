@@ -3,7 +3,7 @@
 
 # Note: this module is used internally a lot and also supplies codecs. The APIs are different for internal vs codec.
 # Note: the codec function call API is different to the internal-use call API.
-#       codec-use encode special-cases zero to empty bytes, internal-usew does not.
+#       codec-use encode special-cases zero to empty bytes, internal-use does not.
 #       codec-use decode takes an end-index parameter, internal-use decode returns updated index
 # This is because varints are self-sizing, but the codecs always operate with known-size items because TLV.
 

@@ -1,13 +1,11 @@
 
 # B3 Public API
 
-# --- public ---
 from b3.datatypes import *
 from b3.composite_dynamic import pack, unpack, unpack_into
 from b3.composite_schema import schema_pack, schema_unpack
 
 __all__ = [
-    # --- Public ---
     u"pack", u"unpack", u"unpack_into",
     u"schema_pack", u"schema_unpack",
 
@@ -19,3 +17,8 @@ __all__ = [
     u"B3_COMPLEX",
 ]
 
+# Note: In the comments throughout we use "Encode" and "Pack" terminology interchaneably. Sorry about it.
+
+# B3 software Architecture:
+# |Dynamic Composite Packer| ->(dict keynames)-> |Header-encoder| <-(bytes)<- |Datatype codecs|
+# |Schema  Composite Packer| ->(tag numbers)  -^

@@ -6,19 +6,6 @@ from six import PY2
 
 from b3.datatypes import *
 
-# Policy: Currently guessed types are fixed and 1:1 with python types.
-# There is/was an idea to have guess_type select the 'best' type based on value (e.g. SVARINT or UVARINT depending on sign)
-# But that would make interop difficult between the Dynamic and Schema packers, so we've dropped it for now.
-# The 'best type' selector would have 3 settings -
-# 'fixed' (default, as now), 'compact' (e.g. prefer var-types for small numbers), 'fast' (prefer the xxx64 types)
-# The wastefulness of using svarint for everything hurts a little, but compactness-obsessed people should be using schemas anyway.
-
-# Policy: we are NOT auto-converting stuff to DECIMAL, callers responsibility
-# because we'd have to fix a precision for the user and i dont know if we want to be opinionated about that.
-# just because I hate IEEE754 doesnt mean any one else does.
-
-# Note: no NULL type - the item header has a NULL flag instead. More info there.
-
 def guess_type(obj):
     if isinstance(obj, bytes):                  # Note this will catch also *str* on python2. If you want unicode out, pass unicode in.
         return B3_BYTES
@@ -57,4 +44,18 @@ def guess_type(obj):
         return B3_COMPLEX
 
     raise TypeError('Could not map type of object %r to a viable B3 type' % type(obj))
+
+
+# Policy: Currently guessed types are fixed and 1:1 with python types.
+# - There is/was an idea to have guess_type select the 'best' type based on value (e.g. SVARINT or UVARINT depending on sign)
+# - But that would make interop difficult between the Dynamic and Schema packers, so we've dropped it for now.
+# The 'best type' selector would have 3 settings -
+# 'fixed' (default, as now), 'compact' (e.g. prefer var-types for small numbers), 'fast' (prefer the xxx64 types)
+# The wastefulness of using svarint for everything hurts a little, but compactness-obsessed people should be using schemas anyway.
+
+# Policy: we are NOT auto-converting stuff to DECIMAL, callers responsibility
+# - because we'd have to fix a precision for the user and i dont know if we want to be opinionated about that.
+# - just because I hate IEEE754 doesnt mean any one else does.
+
+# Note: no NULL type - the item header has a NULL flag instead. More info in item_header.
 
