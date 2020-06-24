@@ -1,5 +1,5 @@
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import codecs
 import os.path
 
@@ -20,7 +20,8 @@ def get_version(rel_path):
 setup(
     name = "b3buf",
     version = get_version("b3/__init__.py"),
-    packages = ["b3"],
+    # packages = ["b3"],
+    packages = find_packages(),
     install_requires = ["six"],
 
     description = "B3 is a binary serializer which is easy like json, compact like msgpack, powerful like protobuf, and handles datetimes in python",
@@ -36,6 +37,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
+        "Development Status :: 4 - Beta",
     ],
 
     include_package_data = True,
