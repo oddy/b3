@@ -11,8 +11,8 @@ With B3 you can fast-start with schema-less data (like json), and move to schema
 
 The small number of lovingly-handcrafted data types means often the only choice you need make is between Fast or Compact.
 
-This version is pure python, no dependencies apart from Six (and pytest for the tests)
-
+This version is pure python, no dependencies apart from Six (and pytest for the tests).
+Tested working in python 3.8 & 2.7 on windows & linux.
 
 ## Installing
 
@@ -70,10 +70,23 @@ sch_buf = b3.schema_pack(SCHEMA, sch_data)
 out_sch = b3.schema_unpack(SCHEMA, sch_buf)
 ```
 
-See examples.py for more examples (including nesting schemas)
+
+## Tests
+
+B3 ships with an extensive test suite, using pytest. 
+
+```
+pip install pytest
+pytest -v
+```
+
+## More Info
+
+See examples.py for more examples (including how to nest schemas)
 
 See datatypes.py for the available data types.
 
+
 ## Licensing
 
-The code in this project is licensed under MIT license. See LICENSING.
+The code in this project is licensed under MIT license. See LICENSE.txt.
