@@ -17,6 +17,7 @@ def get_version(rel_path):
     else:
         raise RuntimeError("Unable to find version string.")
 
+
 setup(
     name = "b3buf",
     version = get_version("b3/__init__.py"),
@@ -40,7 +41,7 @@ setup(
     ],
 
     include_package_data = True,
-    data_files = [("", ["LICENSE.txt", "examples.py"])],
+    data_files = [("", ["LICENSE.txt",])],
 
     # we want a universal wheel
     options={  'bdist_wheel' : {'universal' : True}  },

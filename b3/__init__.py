@@ -1,7 +1,7 @@
 
 # B3 Public API
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 from b3.datatypes import *
 from b3.composite_dynamic import pack, unpack, unpack_into
