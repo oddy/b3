@@ -17,7 +17,9 @@ This version is pure python, no dependencies apart from Six (and pytest for the 
 ## Installing
 
 ```
-pip install b3buffers
+pip install b3buf
+
+>>> import b3
 ```
 
 ### Getting Started
