@@ -17,8 +17,9 @@ __all__ = [
     u"B3_COMPLEX",
 ]
 
+# B3 software Architecture:
+# |Dynamic Composite encoder| ->(dict keynames)-> |Header-encoder| <-(bytes)<- |Datatype codecs|
+# |Schema  Composite encoder| ->(tag numbers)  -^
+
 # Note: In the comments throughout we use "Encode" and "Pack" terminology interchaneably. Sorry about it.
 
-# B3 software Architecture:
-# |Dynamic Composite Packer| ->(dict keynames)-> |Header-encoder| <-(bytes)<- |Datatype codecs|
-# |Schema  Composite Packer| ->(tag numbers)  -^
