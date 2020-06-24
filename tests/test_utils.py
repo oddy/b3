@@ -1,7 +1,7 @@
 
 from b3.utils import SBytes, IntByteAt
 
-# todo: these dont get found because the file doensn't start with test
+
 def test_utils_sbytes():
     foo = "0a 0a 40 40 64 64"
     assert SBytes(foo) == b"\x0a\x0a\x40\x40\x64\x64"

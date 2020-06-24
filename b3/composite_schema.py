@@ -113,7 +113,7 @@ def schema_unpack(schema, buf, index=0, end=None):
         out[schema_key_name] = data
 
     # Check if any wanted fields are missing, add them with data=None
-    # Policy: do this by whatever key type we are yielding (in this case, COMPUTED key name)  # todo: check this
+    # Policy: do this by whatever key type we are yielding (in this case, COMPUTED key name)
     for missing_key_name in ( set(i[1] for i in schema) - set(out.keys()) ):
         # print("key %r missing from incoming, adding it with value None" % (missing_key_name))
         out[missing_key_name] = None

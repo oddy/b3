@@ -241,7 +241,7 @@ def test_schema_alltypes_roundtrip():
 
     # --- possibly for the nesting example? ---
     # from b3 import pack
-    # data['dict1'] = pack(data['dict1'], with_header=False)          # todo: this should be embed=True ?
+    # data['dict1'] = pack(data['dict1'], with_header=False)
     # data['list1'] = pack(data['list1'], with_header=False)
     #
     # buf = schema_pack(ALLTYPES_SCHEMA, data)

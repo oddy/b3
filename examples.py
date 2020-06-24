@@ -96,7 +96,7 @@ print("outer ",repr(outer_data == ret_outer))
 # Going the other way (schema_pack() -> unpack()) is harder but doable if you're prepared to accept tag numbers as keys instead of string names.
 
 source_data = dict(tom=u"hello", dick=u"world", harry=777)
-source_buf  = b3.pack(source_data, with_header=False)           # todo: this should still be embed=True
+source_buf  = b3.pack(source_data, with_header=False)
 
 DEST_SCHEMA = ((b3.B3_UTF8, "tom", 1), (b3.B3_UTF8, "dick", 2), (b3.B3_SVARINT, "harry", 3))
 dest_data   = b3.schema_unpack(DEST_SCHEMA, source_buf)
