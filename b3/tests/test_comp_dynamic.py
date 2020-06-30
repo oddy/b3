@@ -17,11 +17,7 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 # ---------------------------- item_header -----------------------------  --- codecs ---
 
 
-# Policy: small-scale bottom-up-assembly data items.
-# bottom-up-assmbly means the size-in-bytes of everything is always known.
-# Counter-Rationale: the only use cases blair and i could think of for unknown-size items are:
-# 1) Huge datastructures (e.g. qsa tables) which will have their own sizing,
-# 2) e.g. tcp comms big-long-streaming which should always be chunked anyway!
+# Policy: small-scale bottom-up-assembly. (See format doc)
 
 
 # --- Shared test data ---
@@ -51,7 +47,7 @@ def test_dyna_pack_dict():
     out1_buf = pack(test1_data)
     assert out1_buf == test1_buf
 
-def t_est_dyna_pack_dict_no_header():
+def test_dyna_pack_dict_no_header():
     out1_buf = pack(test1_data, with_header=False)
     assert out1_buf == test1_buf[2:]
 
