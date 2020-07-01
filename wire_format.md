@@ -7,6 +7,7 @@ This document describes the B3 binary format, including data type formats, the s
 These are in rough order of priority. 
 * Simplicity & Correctness -> Security
 * Interoperability & Compatibility (forward & backward)
+* Easy to install and use (no 3rd party libraries)
 * Flexibility
 * Compactness
 * Performance
@@ -24,45 +25,32 @@ B3 uses LEB128-format variable length encoded integers in a number of places, un
 ## Item format
 Units of data are encoded as "Items".
 
-An item consists of a header, usually followed by the item value's encoded bytes.
+An item consists of a mandatory control byte, followed by some optional header components, followed by the item value's encoded bytes, as follows:
 
-The header consists of a mandatory control byte followed by some optional header components, as follows:
+### Item component structure
+1. The **control byte** begins the item, and is always present.
+2. The **data type number** (if any) immediately follows (1) and is encoded as a UVARINT.
+3. The **key** (if any) follows (2) and is encoded as described below.
+4. The **data length** (if any) follows (2) and is encoded as a UVARINT.
+5. The item **value**'s data bytes follow (4).
 
+On the wire, this looks like:
 ```text
-<BYTE control> [UVARINT 15+ type#] [BYTES key] [UVARINT data length]  [BYTES data]
---------------------------- item_header ----------------------------  -- codecs --
+<BYTE control> [UVARINT type] [BYTES key] [UVARINT data length]  [BYTES data]
+------------------------ item_header --------------------------  -- codecs --
 ```
 
 ### Control Byte
-The control byte bits are:
+The control byte dictates the presence/absence of item components, and also holds the data type number for types 0-15.
+It's bits are as follows:
 ```text
 +------------+------------+------------+------------+------------+------------+------------+------------+
 | is_null    | has_data   | key type   | key type   | data type  | data type  | data type  | data type  |
 +------------+------------+------------+------------+------------+------------+------------+------------+
 ```
 
-#### Is_null
-If this bit is 1, the item's data value is NULL (None in Python). has_data is ignored and must be 0, and the data length and data bytes components must be absent.
-If this bit is 0, then has_data is processed.
-
-#### Has_data
-If this bit is 0, then the data length and data bytes components must be absent, and the item's data value is the zero-value for it's type.
-
-If this bit is 1, then the data length and data bytes components must be present. 
-
-> has_data 1 and is_null 1 is an invalid state.
-
-#### Key type
-These two bits control the key component's presence and type, as follows:
-```text
-    0   0  no key
-    0   1  integer key UVARINT encoded
-    1   0  string key size in bytes UVARINT encoded, then string key encoded to UTF8 bytes
-    1   1  bytes key size UVARINT encoded, then key bytes
-```
-
-#### Data type
-These bits form an integer from 0-15, which is the items data type number. 
+### Data type
+The lower 4 bits of the control byte form an integer from 0-15, which is the items data type number.
 
 Values 0-14 correspond to the core data types documented in the Data Types section below. 
 
@@ -71,7 +59,19 @@ Value 15 means the actual data type number is encoded as a UVARINT immediately f
 > Data type numbers __96 through 8191__ inclusive, are open for use as User-Defined Types. All other type numbers are reserved for the use of the B3 standard.
 
 ### Key
-As above (key type).
+There are 4 possible types of key:
+1. No key at all 
+2. Integer key - UVARINT encoded
+3. String key - UTF8 encoded, with the UTF8 size in bytes first, UVARINT encoded.
+4. Bytes key - the raw bytes, with the byte size first, UVARINT encoded.
+
+Control byte 'key type' bits select which is present, as follows:
+```text
+    0   0  no key
+    0   1  integer key 
+    1   0  string key
+    1   1  bytes key
+```
 
 ### Data length
 The data length is encoded as a UVARINT. 
@@ -79,18 +79,27 @@ The data length is encoded as a UVARINT.
 If the data length can be absent altogether only when is_null is 1 or has_data is 0. 
 > This means no bytes are wasted if encoding NULLS or zero values for items.
 
-### Item component structure
-1. The control byte begins the item, and is always present.
-2. The "15+ data type number" (if any) immediately follows (1) and is encoded as a UVARINT.
-3. The key (if any) follows (1) and is encoded according to the key type bits as above.
-4. The data length (if any) follows (2) and is encoded as a UVARINT.
-5. The item value's data bytes follow (4).
 
-On the wire, this looks like:
-```text
-<BYTE control> [UVARINT 15+ type#] [BYTES key] [UVARINT data length]  [BYTES data]
---------------------------- item_header ----------------------------  -- codecs --
-```
+#### Control byte Is_null bit
+If this bit is 1, the item's data value is NULL (None in Python). 
+* has_data is ignored and should be 0, 
+* the data length and data bytes components must be absent.
+
+If this bit is 0, then has_data is processed.
+
+#### Control byte Has_data bit
+If this bit is 1, 
+* the data length must be present, 
+* the data bytes must be present. 
+
+If this bit is 0, 
+* the data length must be absent,
+* the data bytes components must be absent,
+* the item's data value is **the zero-value for it's type**.
+
+> has_data 1 and is_null 1 is an *invalid state*.
+
+
 
 
 ## Composite Items
