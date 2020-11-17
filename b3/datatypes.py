@@ -1,6 +1,8 @@
 
 # B3 data types & their id numbers
 
+# todo: Alias B3_DICT and B3_LIST for B3_COMPOSITE_DICT etc.
+
 # --- Core types ---
 
 B3_RESERVED_0       = 0     # Probably permanently unused.

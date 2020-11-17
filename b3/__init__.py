@@ -10,6 +10,7 @@ from b3.composite_schema import schema_pack, schema_unpack
 __all__ = [
     u"pack", u"unpack", u"unpack_into",
     u"schema_pack", u"schema_unpack",
+    u"encode_uvarint", u"decode_uvarint",
 
     u"B3_COMPOSITE_DICT", u"B3_COMPOSITE_LIST",
     u"B3_BYTES", u"B3_UTF8", u"B3_BOOL",
@@ -23,5 +24,5 @@ __all__ = [
 # |Dynamic Composite encoder| ->(dict keynames)-> |Header-encoder| <-(bytes)<- |Datatype codecs|
 # |Schema  Composite encoder| ->(tag numbers)  -^
 
-# Note: In the comments throughout we use "Encode" and "Pack" terminology interchaneably. Sorry about it.
+# Note: In the comments throughout we use "Encode" and "Pack" terminology interchangeably. Sorry about it.
 

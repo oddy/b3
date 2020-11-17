@@ -80,14 +80,14 @@ If the data length can be absent altogether only when is_null is 1 or has_data i
 > This means no bytes are wasted if encoding NULLS or zero values for items.
 
 
-#### Control byte Is_null bit
+### Control byte Is_null bit
 If this bit is 1, the item's data value is NULL (None in Python). 
 * has_data is ignored and should be 0, 
 * the data length and data bytes components must be absent.
 
 If this bit is 0, then has_data is processed.
 
-#### Control byte Has_data bit
+### Control byte Has_data bit
 If this bit is 1, 
 * the data length must be present, 
 * the data bytes must be present. 
@@ -98,8 +98,6 @@ If this bit is 0,
 * the item's data value is **the zero-value for it's type**.
 
 > has_data 1 and is_null 1 is an *invalid state*.
-
-
 
 
 ## Composite Items

@@ -96,7 +96,7 @@ def encode_key(key):
         return 0x20, encode_uvarint(len(keybytes)) + keybytes
     if ktype == bytes:
         return 0x30, encode_uvarint(len(key)) + key
-    raise TypeError("Key type must be None, int, str or bytes, not %s" % ktype)
+    raise TypeError("Key type must be None, uint, str or bytes, not %s" % ktype)
 
 
 # Out: the key, and the new index
