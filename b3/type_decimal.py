@@ -36,6 +36,9 @@ BIT_EXP_EXT  = 0x10     # 0 = exponent is lower 4 bits of control byte, 1 = expo
 BIT_SNAN     = 0x10     # 0 = Quiet NaN,  1 = 'Signalling' NaN
 EXPONENT_BITS = 0x0f    # Lower 4 bits of control byte
 
+# https://www.jpl.nasa.gov/edu/news/2016/3/16/how-many-decimals-of-pi-do-we-really-need/
+# @ 15dp, "voyager 1 distance-radius circle circumference error is 1.5 inches"
+
 
 ########################################################################################################################
 # Encode
