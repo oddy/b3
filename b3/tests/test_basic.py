@@ -21,7 +21,7 @@ def test_base_bool_dec():
 # Went and got the utf8 bytes from the equivalent golang script
 TEST_UNISTRS = (
     ( u"hello world", SBytes("68 65 6c 6c 6f 20 77 6f 72 6c 64") ),
-    ( u"Виагра",      SBytes("d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0") ),                                 # Viagra OWEN
+    ( u"Виагра",      SBytes("d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0") ),                               # Viagra OWEN
     ( u"✈✉🚀🚸🚼🚽", SBytes("e2 9c 88 e2 9c 89 f0 9f 9a 80 f0 9f 9a b8 f0 9f 9a bc f0 9f 9a bd") ),   # SMP
     ( u"", b"")                                                         # zero-length strings
 )
@@ -67,24 +67,6 @@ def test_base_float64_dec():
     for tflo,tbytes in TEST_FLOAT64S:
         assert decode_float64(tbytes,0,len(tbytes)) == tflo
     assert decode_float64(SBytes("00 00 00 00 00 00 00 00"),0,8) == 0.0     # check non-compact zero value too
-
-
-# stamp64 is signed, so it's 2**63 ns / 1000 / 1000 / 1000 / 60 / 60 / 24 / 365 = about 292.5 years each side of 1970
-# which is about yr 1678 - 2262
-# Operationally the same as int64 itself. Except with an optional float conversion on the encoder side.
-timNano = 1590845636168000000
-timFlo  = 1590845636.168
-timZero = 0
-
-def test_base_stamp64_enc():
-    assert encode_stamp64(timFlo)  == SBytes("00 22 46 6c ad d1 13 16")
-    assert encode_stamp64(timNano) == SBytes("00 22 46 6c ad d1 13 16")
-    assert encode_stamp64(timZero) == SBytes("")
-
-def test_base_stamp64_dec():
-    assert decode_stamp64(SBytes("00 22 46 6c ad d1 13 16"),0,8) == timNano
-    assert decode_stamp64(SBytes(""),0,0)                        == timZero     # compact zero-value mode
-    assert decode_stamp64(SBytes("00 00 00 00 00 00 00 00"),0,8) == timZero    # non-compact zero value too
 
 
 tcplx = 13.37+42.42j

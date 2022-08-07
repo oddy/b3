@@ -12,16 +12,19 @@ from b3.item_header import *
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
-# | is null    | has data   | key type   | key type   | data type  | data type  | data type  | data type  |
+# | has data   | null/zero  | key type   | key type   | data type  | data type  | data type  | data type  |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 
+# --- Control flags ---
 # +------------+------------+
-# | is null    | has data   |
+# | has data   | null/zero  |
 # +------------+------------+
-#     1   x  (2)    Value is None/NULL/nil - data len & has data ignored
 #     0   0  (0)    Codec zero-value for given data type (0, "", 0.0 etc)
-#     0   1  (1)    Data len present, followed by codec'ed data bytes
+#     0   1  (1)    None/NULL/nil
+#     1   x  (2)    Data len present, data bytes present, null/zero flag unused.
 
+
+# --- Key types ---
 # +------------+------------+
 # | key type   | key type   |
 # +------------+------------+
@@ -57,19 +60,19 @@ def test_keytype_dec_str_bytes():
 # --- Header null & has-data bits ENcoder ---
 
 def test_header_null_enc():
-    assert encode_header(data_type=0,  data_len=0, is_null=True)   == SBytes("80")        # null bit on
+    assert encode_header(data_type=0,  data_len=0, is_null=True)   == SBytes("40")        # null bit on
 
 def test_header_hasdata_enc():
-    assert encode_header(data_type=0,  data_len=5, is_null=False)  == SBytes("40 05")     # has-data on, size follows
+    assert encode_header(data_type=0,  data_len=5, is_null=False)  == SBytes("80 05")     # has-data on, size follows
 
 def test_header_zeroval_enc():
     assert encode_header(data_type=0,  data_len=0, is_null=False)  == SBytes("00")        # not null but no data = compact zero-value mode
 
 # ENCODER:
-# Policy: Encoder: is_null supercedes any datalen info. If null is on, data_len forced to 0, has_data forced to false.
+# API Policy: is_null supercedes any datalen info. If null is on, data_len forced to 0, has_data forced to false.
 
 def test_header_hasdata_but_null_enc():
-   assert encode_header(data_type=0,  data_len=5, is_null=True)   == SBytes("80")        # null bit on. has-data OFF, no size.
+    assert encode_header(data_type=0,  data_len=5, is_null=True)   == SBytes("40")        # null bit on. has-data OFF, no size.
 
 
 # --- Header null & has-data bits DEcoder ---
@@ -77,24 +80,14 @@ def test_header_hasdata_but_null_enc():
 # Note: decode_header returns                      (data_type, key, is_null, data_len, index)
 
 def test_header_null_dec():
-   assert decode_header(SBytes("80"),0)        == (0, None, True, 0, 1)            # is_null True
+    assert decode_header(SBytes("40"), 0)        == (0, None, True, 0, 1)            # is_null True
 
-# Policy: DEcoder: if is_null is True, and has_data is True, blow up.
-#                  because if data follows and is_null is True, doing null processing will ignore the following data and cause a misparse.
-
-# The standard says has_data being on when is_null is on, is an Invalid State.
-def test_header_invalid_state_dec():
-    with pytest.raises(ValueError):
-        decode_header(SBytes("c0"),0)
-
-# If instead of blowing up we just force data_len 0 and return that, then use this test instead.
-# def test_header_hasdata_but_null_dec():
-#     assert decode_header(SBytes("c0"),0)        == (0, None, True, 0, 1)            # is_null True, data_len 0
-
+# Policy: DEcoder: if has_data is true then ignore null/zero (but return its value)
+#         (We eventually may use the null/zero as a user-flag when there's data, but its ignored for now.
 
 def test_header_hasdata_dec():
-    assert decode_header(SBytes("40 05"),0)     == (0, None, False, 5, 2)           # with length byte value 5
-    assert decode_header(SBytes("40 90 01"),0)  == (0, None, False, 144, 3)         # with length byte value 144
+    assert decode_header(SBytes("80 05"),0)     == (0, None, False, 5, 2)           # with length byte value 5
+    assert decode_header(SBytes("80 90 01"),0)  == (0, None, False, 144, 3)         # with length byte value 144
 
 def test_header_zeroval_dec():
     assert decode_header(SBytes("00"),0)        == (0, None, False, 0, 1)           # not null, not has-data
@@ -104,12 +97,12 @@ def test_header_zeroval_dec():
 # --- Data len ---
 
 def test_header_datalen_enc():
-    assert encode_header(data_type=5, data_len=5)    == SBytes("45 05")
-    assert encode_header(data_type=5, data_len=1500) == SBytes("45 dc 0b")
+    assert encode_header(data_type=5, data_len=5)    == SBytes("85 05")
+    assert encode_header(data_type=5, data_len=1500) == SBytes("85 dc 0b")
 
 def test_header_datalen_dec():
-    assert decode_header(SBytes("45 05"),0)     == (5, None,  False, 5, 2)
-    assert decode_header(SBytes("45 dc 0b"),0)  == (5, None,  False, 1500, 3)
+    assert decode_header(SBytes("85 05"),0)     == (5, None,  False, 5, 2)
+    assert decode_header(SBytes("85 dc 0b"),0)  == (5, None,  False, 1500, 3)
 
 
 # Note: decode_header returns                      (data_type, key, is_null, data_len, index)
@@ -154,8 +147,8 @@ def test_header_keys_dec():
 
 def test_header_all_enc():
     assert encode_header(data_type=555, key=u"foo", data_len=1500, is_null=False) == \
-        SBytes("6f ab 04 03 66 6f 6f dc 0b")
-        #       --                              control: null=no  data=yes  key=1,0 (UTF8)  data_type=extended (1,1,1,1)
+        SBytes("af ab 04 03 66 6f 6f dc 0b")
+        #       --                              control: data=yes null=no key=1,0 (UTF8)  data_type=extended (1,1,1,1)
         #          -----                        ext type uvarint (555)
         #                --                     len of utf8 key (3 bytes)
         #                   --------            utf8 key u"foo"
@@ -163,10 +156,10 @@ def test_header_all_enc():
 
 def test_header_all_2_enc():
     assert encode_header(data_type=7, key=b"\x01\x02\x03", data_len=6, is_null=False) == \
-        SBytes("77 03 01 02 03 06")
+        SBytes("b7 03 01 02 03 06")
 
 # Note: decode_header returns                                       (data_type, key, is_null, data_len, index)
 
 def test_header_all_dec():
-    assert decode_header(SBytes("6f ab 04 03 66 6f 6f dc 0b"),0) == (555, u"foo", False, 1500, 9)
+    assert decode_header(SBytes("af ab 04 03 66 6f 6f dc 0b"),0) == (555, u"foo", False, 1500, 9)
 

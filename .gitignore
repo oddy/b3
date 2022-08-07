@@ -1,4 +1,25 @@
-*.pyc
-__pycache__
-.idea/
+
+# pyc & test
+*.pyc 
+__pycache__/
+
+
+# build & test 
+dist/
+build/
 .pytest_cache/
+
+# misc stuff
+.DS_Store
+Thumbs.db
+*_files/
+*.ldb
+.idea/
+
+# vim backup files
+*.py.bak
+
+# Reports / state files for coverage.py
+htmlcov/
+.coverage
+

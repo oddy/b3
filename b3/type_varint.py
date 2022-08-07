@@ -1,7 +1,7 @@
 
 # Codec for B3_UVARINT B3_SVARINT Signed and unsigned varint types
 
-# Note: this module is used internally a lot and also supplies codecs. The APIs are different for internal vs codec.
+# Note: this module is used internally a lot and also supplies codecs.
 # Note: the codec function call API is different to the internal-use call API.
 #       codec-use encode special-cases zero to empty bytes, internal-use does not.
 #       codec-use decode takes an end-index parameter, internal-use decode returns updated index

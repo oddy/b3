@@ -103,7 +103,7 @@ def encode_decimal(num):
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal
 def decode_decimal(buf, index, end):
-    if index == end:                                # no data = zero-value
+    if index == end:                                # no header byte at all = zero-value
         return decimal.Decimal('0.0')
 
     bits, index = IntByteAt(buf, index)

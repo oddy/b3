@@ -13,6 +13,9 @@ from b3.utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 # Policy: Favouring simplicity over performance by having the type safety checks here.
 
 
+# fixme: rewrite bool to use the NZU flag. So it never has any data ever.
+#        and do it in the composite functions so that bool doesnt need a codec at all (and we dont have to change the codec API to tunnel is_null/NZU
+
 def encode_bool(value):
     value = bool(value)
     # return b"\x01" if value else b"\x00"

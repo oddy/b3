@@ -14,6 +14,9 @@ from   b3.utils import IntByteAt
 # Data Format Standard
 ########################################################################################################################
 
+# TODO: use one of the reserved bits to make a "tzname type" selector so there can be 4 kinds of encoding,
+#       and 1 0 is the existing crc32 hash one.
+
 # --- Sched Flags/Control byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 # | has date   | has time   | has offset | has tzname | reserved   | reserved   | sub_exp    | sub_exp    |

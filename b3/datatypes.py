@@ -5,6 +5,30 @@
 
 # --- Core types ---
 
+# bytes = 0
+# utf8 = 1
+# bool = 2
+# uVar = 3
+# sVar  = 4
+# u32 = 5
+# s32 = 6
+# u64 = 7
+# s64 = 8
+# F32  9
+# F64  10
+# decimal  11
+# sched   12
+# list = 13
+# dict = 14
+# 15 unused
+# complex = 16
+
+
+# Policy: get rid of stamp64
+# Policy: float32 it is, because python struct can't do any floats higher than 64 bit.
+
+# fixme: make bool use the user-flag
+
 B3_RESERVED_0       = 0     # Probably permanently unused.
 
 B3_COMPOSITE_DICT   = 1     # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.

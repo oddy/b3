@@ -11,16 +11,23 @@ from b3.type_varint import encode_uvarint, decode_uvarint
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
-# | is null    | has data   | key type   | key type   | data type  | data type  | data type  | data type  |
+# | has data   | null/zero  | key type   | key type   | data type  | data type  | data type  | data type  |
+# |            | user-flag  |            |            |            |            |            |            |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 
+# --- Control flags ---
 # +------------+------------+
-# | is null    | has data   |
+# | has data   | null/zero  |
+# |            | user-flag  |
 # +------------+------------+
-#     1   x  (2)    Value is None/NULL/nil - data len & has data ignored
 #     0   0  (0)    Codec zero-value for given data type (0, "", 0.0 etc)
-#     0   1  (1)    Data len present, followed by codec'ed data bytes
+#     0   1  (1)    None/NULL/nil
+#     1   x  (2)    Data len present, data bytes present, null/zero is a userflag for the codecs.
 
+# fixme: make the bool codec use the user-flag.  we WILL have to change the encode_header API a little
+#        to support "NZU" (Null/Zero/User) semantics.
+
+# --- Key types ---
 # +------------+------------+
 # | key type   | key type   |
 # +------------+------------+
@@ -36,10 +43,10 @@ def encode_header(data_type, key=None, is_null=False, data_len=0):
 
     # --- Null & data len ---
     if is_null:
-        cbyte |= 0x80                                    # data value is null. Note: null supercedes has-data
+        cbyte |= 0x40                                    # data value is null. Note: null supercedes has-data for api purposes
     else:
         if data_len:
-            cbyte |= 0x40                                # has data flag on
+            cbyte |= 0x80                                # has data flag on
             len_bytes = encode_uvarint(data_len)
 
     # --- Key type ---
@@ -49,7 +56,7 @@ def encode_header(data_type, key=None, is_null=False, data_len=0):
     # --- Data type ---
     if data_type > 14:
         ext_data_type_bytes = encode_uvarint(data_type)  # 'extended' data types 15 and up are a seperate uvarint
-        cbyte |= 0x0f                                    # control byte data_typeck bits set to all 1's to signify this
+        cbyte |= 0x0f                                    # control byte data_type bits set to all 1's to signify this
     else:
         cbyte |= (data_type & 0x0f)                      # 'core' data types live in the control byte's bits only.
 
@@ -72,13 +79,13 @@ def decode_header(buf, index):
 
     # --- Null & Data Len ---
     data_len = 0
-    is_null  = bool(cbyte & 0x80)
-    has_data = bool(cbyte & 0x40)
-    if (not is_null) and has_data:                       # all other cases, data len will be 0
+    has_data = bool(cbyte & 0x80)
+    if has_data:
         data_len, index = decode_uvarint(buf, index)     # data len bytes
-
-    if is_null and has_data:
-        raise ValueError("Item header invalid state - is_null and has_data both ON")
+        is_null = False     # for API purposes, has_data forces is_null to false
+        # we may extend this later to enable the is_null bit to be used as a user flag when has_data is true.
+    else:
+        is_null = bool(cbyte & 0x40)
 
     return data_type, key, is_null, data_len, index
 

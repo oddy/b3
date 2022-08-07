@@ -24,11 +24,11 @@ TEST_SCHEMA = (
 # --- Shared test data - manually-built packed-bytes buffer ---
 
 number1_data   = "45"                   # encode_uvarint(69)
-number1_header = "57 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "97 01" for null,  17 01 czv
+number1_header = "97 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
 string1_data   = "66 6f 6f"             # encode_utf8(u"foo")
-string1_header = "54 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "94 02" for null,  14 01 czv
+string1_header = "94 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "54 02" for null,  14 01 czv
 bool1_data     = "01"                   # encode_bool(True)
-bool1_header   = "55 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)     # "95 03" for null,  15 01 czv
+bool1_header   = "95 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)     # "55 03" for null,  15 01 czv
 test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header, bool1_data])
 test1_buf = SBytes(test1_hex)
 
@@ -70,7 +70,7 @@ def test_schema_pack_field_unwanted_strict():
 
 def test_schema_pack_field_missing():
     # Testing this buffer...
-    bool1_header_null_value   = u"95 03"                # encode_header(B3_BOOL, key=3, is_null=True)
+    bool1_header_null_value   = u"55 03"                # encode_header(B3_BOOL, key=3, is_null=True)
     bool1_nulled_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header_null_value])  # note no data for bool1
     bool1_nulled_buf = SBytes(bool1_nulled_hex)
 
@@ -113,9 +113,9 @@ OUTER_SCHEMA = (
 
 def test_schema_pack_nesting():
     # Testing this buffer...
-    bytes1_hex      = "53 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
-    signed1_hex     = "58 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_buf_hex   = "51 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
+    bytes1_hex      = "93 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
+    signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
+    inner_buf_hex   = "91 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # ...against this data
@@ -138,13 +138,13 @@ def test_schema_unpack_dictcheck():
     assert isinstance(out1_data, dict)
 
 def test_schema_unpack_unwanted_incoming_field():
-    bool2_buf = SBytes("55 04 01 01")                   # a second B3_BOOL with key=4, len=1, value=True
+    bool2_buf = SBytes("95 04 01 01")                   # a second B3_BOOL with key=4, len=1, value=True
     unwantfield_buf = test1_buf + bool2_buf
     out2_data = schema_unpack(TEST_SCHEMA, unwantfield_buf, 0, len(unwantfield_buf))
     assert out2_data == test1
 
 def test_schema_unpack_null_data():
-    null_buf = SBytes("97 01 94 02 95 03")
+    null_buf = SBytes("57 01 54 02 55 03")
     null_data = dict(bool1=None, number1=None, string1=None)
     assert schema_unpack(TEST_SCHEMA, null_buf, 0, len(null_buf)) == null_data
 
@@ -160,15 +160,15 @@ def test_schema_unpack_type_mismatch():
 
 def test_schema_unpack_bytes_yield():
     BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_COMPOSITE_LIST, 'list1', 2))
-    bytes1_hex = "53 01 03 66 6f 6f"             # b"foo"
-    list1_hex  = "52 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
+    bytes1_hex = "93 01 03 66 6f 6f"             # b"foo"
+    list1_hex  = "92 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
     test_buf   = SBytes(" ".join([bytes1_hex, list1_hex]))
 
     test_data  = dict(bytes1=b"foo", list1=b"foo")
     assert schema_unpack(BYTES_SCHEMA, test_buf, 0, len(test_buf)) == test_data
 
 def test_schema_unpack_missing_incoming_field():
-    missing_fields_buf = SBytes("97 01")                         # so only field 1 is present (and null)
+    missing_fields_buf = SBytes("57 01")                         # so only field 1 is present (and null)
     null_data = dict(bool1=None, number1=None, string1=None)    # missing incoming fields get created and null-valued.
     assert schema_unpack(TEST_SCHEMA, missing_fields_buf, 0, len(missing_fields_buf)) == null_data
 
@@ -176,9 +176,9 @@ def test_schema_unpack_missing_incoming_field():
 
 def test_schema_unpack_nesting():
     # Testing this buffer...
-    bytes1_hex      = "53 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
-    signed1_hex     = "58 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_buf_hex   = "51 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
+    bytes1_hex      = "93 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
+    signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
+    inner_buf_hex   = "91 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # Note: It's up to the user to know - presumably using the defined schemas, that inner1 is a
@@ -211,7 +211,7 @@ def test_schema_alltypes_roundtrip():
     from decimal import Decimal
     from datetime import datetime
 
-    ALLTYPES_SCHEMA = (
+    ALLTYPES_SCHEMA = (             # fixme: finish this with the new types
         (B3_BYTES, 'bytes1', 3),
         (B3_UTF8, 'string1', 4),
         (B3_BOOL, 'bool1', 5),
@@ -220,16 +220,12 @@ def test_schema_alltypes_roundtrip():
         (B3_SVARINT, 'svint1', 8),
         (B3_FLOAT64, 'float1', 9),
         (B3_DECIMAL, 'deci1', 10),
-        (B3_STAMP64, 'stamp1', 11),
-        (B3_SCHED,  'date1', 12),
-        (B3_COMPLEX, 'cplx1', 13),
+        (B3_SCHED,  'date1', 11),
+        (B3_COMPLEX, 'cplx1', 12),
         )
 
-    now_float = time.time()                     # the STAMP64 encoder takes time.time() floats OR unixnano integers
-    now_ns    = math.trunc(now_float * 1e9)     # but it's decoder always yields unixnano integers.
-
     data = dict(bytes1=b"foo", string1=u"bar", bool1=True, int641=123, uvint1=456, svint1=-789, float1=13.37,
-                deci1=Decimal("13.37"), stamp1=now_ns, date1=datetime.now(), cplx1=33j)
+                deci1=Decimal("13.37"),  date1=datetime.now(), cplx1=33j)
 
     buf = schema_pack(ALLTYPES_SCHEMA, data)
 
@@ -239,21 +235,23 @@ def test_schema_alltypes_roundtrip():
 
 
 
-    # --- possibly for the nesting example? ---
-    # from b3 import pack
-    # data['dict1'] = pack(data['dict1'], with_header=False)
-    # data['list1'] = pack(data['list1'], with_header=False)
-    #
-    # buf = schema_pack(ALLTYPES_SCHEMA, data)
-    # out = schema_unpack(ALLTYPES_SCHEMA, buf, 0, len(buf))
-    #
-    # from pprint import pprint
-    # print("Data:")
-    # pprint(data)
-    # print("Out:")
-    # pprint(out)
-    #
-    # assert out == data
+
+
+# --- possibly for the nesting example? ---
+# from b3 import pack
+# data['dict1'] = pack(data['dict1'], with_header=False)
+# data['list1'] = pack(data['list1'], with_header=False)
+#
+# buf = schema_pack(ALLTYPES_SCHEMA, data)
+# out = schema_unpack(ALLTYPES_SCHEMA, buf, 0, len(buf))
+#
+# from pprint import pprint
+# print("Data:")
+# pprint(data)
+# print("Out:")
+# pprint(out)
+#
+# assert out == data
 
 # def test_schema_unpack_interop():
 #     buf_from_pack = 'A)t\x07string1\x0bhello worldu\x05bool1\x01\x01w\x07number1\x01x'    # see test_comp_dynamic
@@ -261,13 +259,12 @@ def test_schema_alltypes_roundtrip():
 #     from pprint import pprint
 #     pprint(schema_unpack(TEST_SCHEMA, buf, 0, len(buf)))
 
-
 # ==========
 # = unpack_into can unpack the buffer output from test_schema_pack_nesting() !
 
 # >>> from b3 import unpack
 # >>> from b3.utils import SBytes
-# >>> j = "53 01 0a 6f 75 74 65 72 62 79 74 65 73 58 02 02 a3 13 51 03 06 17 01 14 02 15 03"     # <-- output from above
+# >>> j = "93 01 0a 6f 75 74 65 72 62 79 74 65 73 98 02 02 a3 13 51 03 06 17 01 14 02 15 03"     # <-- output from above
 # >>> k = SBytes(j)
 # >>> k
 # 'S\x01\nouterbytesX\x02\x02\xa3\x13Q\x03\x06\x17\x01\x14\x02\x15\x03'
