@@ -33,7 +33,7 @@ B3_BYTES            = 0     # array of bytes.                       Note: str in
 B3_UTF8             = 1     # UTF8 strings.                         for str in py3 and unicode in py2.
 
 
-B3_COMPOSITE_LIST   = 2     # identical to COMPOSITE_DICT on the wire, hints to parser to yield a list-like obj where possible
+
 
 
 
@@ -51,6 +51,7 @@ B3_RESERVED_11      = 11    # Currently unused.
 B3_SCHED            = 12    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
 
 
+B3_COMPOSITE_LIST   = 13    # identical to COMPOSITE_DICT on the wire, hints to parser to yield a list-like obj where possible
 B3_COMPOSITE_DICT   = 14    # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.
 
 

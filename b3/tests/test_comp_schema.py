@@ -162,7 +162,7 @@ def test_schema_unpack_type_mismatch():
 def test_schema_unpack_bytes_yield():
     BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_COMPOSITE_LIST, 'list1', 2))
     bytes1_hex = "90 01 03 66 6f 6f"             # b"foo"
-    list1_hex  = "92 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
+    list1_hex  = "9d 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
     test_buf   = SBytes(" ".join([bytes1_hex, list1_hex]))
 
     test_data  = dict(bytes1=b"foo", list1=b"foo")
