@@ -6,6 +6,8 @@ from   six import PY2
 
 from   b3.utils import SBytes
 from   b3.type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
+from   b3.item_header import encode_header, decode_header
+from   b3.datatypes import B3_SCHED
 
 # todo: rename these tests to make consistent with rest of tests
 
@@ -136,6 +138,14 @@ def test_sched_zerovalue_dec():
     zero_datetime = datetime.datetime(1,1,1)
     assert decode_sched(SBytes(""),0,0) == zero_datetime
 
+
+# --- Header tests ---
+
+def test_sched_header_encode():
+    assert encode_header(data_type=B3_SCHED) == SBytes("0C")
+
+def test_sched_header_decode():
+    assert decode_header(SBytes("0C"), 0) == (12,  None,  False, 0, 1)
 
 
 

@@ -48,7 +48,7 @@ B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & com
 
 B3_RESERVED_11      = 11    # Currently unused.
 
-B3_SCHED            = 13    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
+B3_SCHED            = 12    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
 
 
 B3_COMPOSITE_DICT   = 14    # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.
