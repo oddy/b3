@@ -31,13 +31,12 @@
 
 B3_BYTES            = 0     # array of bytes.                       Note: str in py2.    for bytes.
 B3_UTF8             = 1     # UTF8 strings.                         for str in py3 and unicode in py2.
+B3_BOOL             = 2     # True or False.                                             for bool.
 
 
 
 
 
-
-B3_BOOL             = 5     # True or False.                                             for bool.
 
 B3_INT64            = 6     # signed 64bit integer                  faster & medium      for ints.
 B3_UVARINT          = 7     # unsigned varint                       slower & small/large for ints.
