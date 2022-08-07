@@ -3,6 +3,9 @@
 
 from b3.utils import SBytes
 from b3.type_basic import *
+from b3.item_header import encode_header, decode_header
+from b3.datatypes import *
+
 
 # Note: these above break with ImportError No module named b3, UNLESS i make the tests a package by adding an empty __init__.py
 # Note: once i do that, then everything seems to work perfectly. I think this is pytest magic, not sure.
@@ -34,6 +37,7 @@ def test_base_utf8_dec():
     for tstr,tbytes in TEST_UNISTRS:
         assert decode_utf8(tbytes,0,len(tbytes)) == tstr
 
+# --------------------------------------------------------------------------------------------------
 
 TEST_INT64S = (
     ( 123456789,  SBytes("15 cd 5b 07 00 00 00 00") ),
@@ -41,17 +45,22 @@ TEST_INT64S = (
     (0,           SBytes("") ),                                      # compact zero-value mode
 )
 
-
 def test_base_int64_enc():
     for tint,tbytes in TEST_INT64S:
         assert encode_int64(tint) == tbytes
-
 
 def test_base_int64_dec():
     for tint,tbytes in TEST_INT64S:
         assert decode_int64(tbytes,0,len(tbytes)) == tint
     assert decode_int64(SBytes("00 00 00 00 00 00 00 00"),0,8) == 0     # check non-compact zero value too
 
+def test_base_int64_header_encode():
+    assert encode_header(data_type=B3_INT64) == SBytes("08")
+
+def test_sched_int64_header_decode():
+    assert decode_header(SBytes("08"), 0) == (B3_INT64,  None,  False, 0, 1)
+
+# --------------------------------------------------------------------------------------------------
 
 
 TEST_FLOAT64S = (

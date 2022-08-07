@@ -24,7 +24,7 @@ TEST_SCHEMA = (
 # --- Shared test data - manually-built packed-bytes buffer ---
 
 number1_data   = "45"                   # encode_uvarint(69)
-number1_header = "97 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
+number1_header = "93 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
 string1_data   = "66 6f 6f"             # encode_utf8(u"foo")
 string1_header = "91 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "54 02" for null,  14 01 czv
 bool1_data     = "01"                   # encode_bool(True)
@@ -90,7 +90,7 @@ def test_schema_pack_field_missing():
 
 def test_schema_pack_zeroval():
     # Testing this buffer...
-    number1_zero_header = "17 01"
+    number1_zero_header = "13 01"
     string1_zero_header = "11 02"
     bool1_zero_header   = "12 03"
     buf_zv_hex = " ".join([number1_zero_header, string1_zero_header, bool1_zero_header])
@@ -115,8 +115,8 @@ OUTER_SCHEMA = (
 def test_schema_pack_nesting():
     # Testing this buffer...
     bytes1_hex      = "90 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
-    signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_buf_hex   = "9e 03 06 17 01 11 02 12 03"              # header + buffer output from the zeroval test
+    signed1_hex     = "94 02 02 a3 13"                          # header + encode_svarint(-1234)
+    inner_buf_hex   = "9e 03 06 13 01 11 02 12 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # ...against this data
@@ -145,18 +145,18 @@ def test_schema_unpack_unwanted_incoming_field():
     assert out2_data == test1
 
 def test_schema_unpack_null_data():
-    null_buf = SBytes("57 01 54 02 55 03")
+    null_buf = SBytes("53 01 54 02 55 03")
     null_data = dict(bool1=None, number1=None, string1=None)
     assert schema_unpack(TEST_SCHEMA, null_buf, 0, len(null_buf)) == null_data
 
 def test_schema_unpack_zero_data():
-    zero_buf = SBytes("17 01 11 02 12 03")
+    zero_buf = SBytes("13 01 11 02 12 03")
     zero_data = dict(bool1=False, number1=0, string1=u"")
     assert schema_unpack(TEST_SCHEMA, zero_buf, 0, len(zero_buf)) == zero_data
 
 def test_schema_unpack_type_mismatch():
     with pytest.raises(TypeError):
-        mismatch_buf = SBytes("17 01 14 02 14 03")       # field 3 is a utf8 here (x14) when it should be a bool (x15)
+        mismatch_buf = SBytes("13 01 14 02 14 03")       # field 3 is a utf8 here (x14) when it should be a bool (x15)
         schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf))
 
 def test_schema_unpack_bytes_yield():
@@ -178,8 +178,8 @@ def test_schema_unpack_missing_incoming_field():
 def test_schema_unpack_nesting():
     # Testing this buffer...
     bytes1_hex      = "90 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
-    signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_buf_hex   = "9e 03 06 17 01 11 02 12 03"              # header + buffer output from the zeroval test
+    signed1_hex     = "94 02 02 a3 13"                          # header + encode_svarint(-1234)
+    inner_buf_hex   = "9e 03 06 13 01 11 02 12 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # Note: It's up to the user to know - presumably using the defined schemas, that inner1 is a

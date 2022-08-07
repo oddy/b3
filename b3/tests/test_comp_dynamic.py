@@ -26,11 +26,11 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 
 test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:None }
 
-buf10 = "18 0a"                                             # svarint, key=10, len=0 (CZV)
+buf10 = "14 0a"                                             # svarint, key=10, len=0 (CZV)
 buf11 = "90 0b 03 66 6f 6f"                                 # bytes,   key=11, len 3, b"foo"
 buf12_list_bytes = "82 01 01 02 02 82 01 01"                # True ends up being "85 01 01" and False is "05" because CZV.
 buf12 = "9d 0c 08 " + buf12_list_bytes                      # list,    key=12, len=8
-buf13_dict_bytes = "98 09 01 10 98 07 01 0c"                # items for 9:8 and 7:6
+buf13_dict_bytes = "94 09 01 10 94 07 01 0c"                # items for 9:8 and 7:6
 buf13 = "9e 0d 08 " + buf13_dict_bytes                      # dict,    key=13, len=8
 buf14 = "50 0e"                                             # [bytes]**  key=14, is_null=True
 outer_header = "8e 20"                                      # dict, no key, len=32

@@ -32,24 +32,22 @@
 B3_BYTES            = 0     # array of bytes.                       Note: str in py2.    for bytes.
 B3_UTF8             = 1     # UTF8 strings.                         for str in py3 and unicode in py2.
 B3_BOOL             = 2     # True or False.                                             for bool.
+B3_UVARINT          = 3     # unsigned varint                       slower & small/large for ints.
+B3_SVARINT          = 4     # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
 
 
 
 
-
-
-B3_INT64            = 6     # signed 64bit integer                  faster & medium      for ints.
-B3_UVARINT          = 7     # unsigned varint                       slower & small/large for ints.
-B3_SVARINT          = 8     # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
+B3_INT64            = 8     # signed 64bit integer                  faster & medium      for ints.
 
 B3_FLOAT64          = 9     # IEEE754 64bit signed float.           faster & medium      for floats.
 B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & compact     for decimal.
 
 B3_RESERVED_11      = 11    # Currently unused.
 
+
+
 B3_SCHED            = 12    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
-
-
 B3_COMPOSITE_LIST   = 13    # identical to COMPOSITE_DICT on the wire, hints to parser to yield a list-like obj where possible
 B3_COMPOSITE_DICT   = 14    # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.
 
