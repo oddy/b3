@@ -26,7 +26,7 @@ TEST_SCHEMA = (
 number1_data   = "45"                   # encode_uvarint(69)
 number1_header = "97 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
 string1_data   = "66 6f 6f"             # encode_utf8(u"foo")
-string1_header = "94 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "54 02" for null,  14 01 czv
+string1_header = "91 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "54 02" for null,  14 01 czv
 bool1_data     = "01"                   # encode_bool(True)
 bool1_header   = "95 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)     # "55 03" for null,  15 01 czv
 test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header, bool1_data])
@@ -43,7 +43,7 @@ test1["string1"] = u"foo"
 
 # --- Pack/Encoder tests ---
 
-def test_schema_pack_nomimal_data():                                     # "Happy path"
+def test_schema_pack_nominal_data():                                     # "Happy path"
     out1_buf = schema_pack(TEST_SCHEMA, test1)
     assert out1_buf  == test1_buf
 
@@ -91,7 +91,7 @@ def test_schema_pack_field_missing():
 def test_schema_pack_zeroval():
     # Testing this buffer...
     number1_zero_header = "17 01"
-    string1_zero_header = "14 02"
+    string1_zero_header = "11 02"
     bool1_zero_header   = "15 03"
     buf_zv_hex = " ".join([number1_zero_header, string1_zero_header, bool1_zero_header])
     buf_zv = SBytes(buf_zv_hex)
@@ -100,6 +100,7 @@ def test_schema_pack_zeroval():
     test_zv_data = dict(bool1=False, number1=0, string1=u"")
 
     buf = schema_pack(TEST_SCHEMA, test_zv_data)
+    print(repr(buf))
     assert buf_zv == buf
 
 
@@ -115,7 +116,7 @@ def test_schema_pack_nesting():
     # Testing this buffer...
     bytes1_hex      = "90 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
     signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_buf_hex   = "91 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
+    inner_buf_hex   = "9e 03 06 17 01 11 02 15 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # ...against this data
@@ -149,7 +150,7 @@ def test_schema_unpack_null_data():
     assert schema_unpack(TEST_SCHEMA, null_buf, 0, len(null_buf)) == null_data
 
 def test_schema_unpack_zero_data():
-    zero_buf = SBytes("17 01 14 02 15 03")
+    zero_buf = SBytes("17 01 11 02 15 03")
     zero_data = dict(bool1=False, number1=0, string1=u"")
     assert schema_unpack(TEST_SCHEMA, zero_buf, 0, len(zero_buf)) == zero_data
 
@@ -178,7 +179,7 @@ def test_schema_unpack_nesting():
     # Testing this buffer...
     bytes1_hex      = "90 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
     signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
-    inner_buf_hex   = "91 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
+    inner_buf_hex   = "9e 03 06 17 01 11 02 15 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # Note: It's up to the user to know - presumably using the defined schemas, that inner1 is a
