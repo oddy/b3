@@ -4,7 +4,7 @@
 from b3.type_codecs import CODECS
 from b3.item_header import encode_header, decode_header
 from b3.utils import VALID_INT_TYPES
-from b3.datatypes import b3_type_name, B3_COMPOSITE_DICT, B3_COMPOSITE_LIST
+from b3.datatypes import b3_type_name, B3_DICT, B3_LIST
 
 
 def schema_lookup_key(schema, key):
@@ -49,7 +49,7 @@ def schema_pack(schema, data, strict=False):
             if schema_type in CODECS:
                 EncoderFn,_ = CODECS[schema_type]
                 field_bytes = EncoderFn(value)
-            elif schema_type in (B3_COMPOSITE_DICT, B3_COMPOSITE_LIST) and not isinstance(value, bytes):
+            elif schema_type in (B3_DICT, B3_LIST) and not isinstance(value, bytes):
                 raise TypeError("Please pack nested container field #%r ('%s') to bytes first" % (schema_key_number, schema_key_name))
             else:
                 field_bytes = bytes(value)      # Note: if the data type doesn't have a codec, it should be bytes-able.

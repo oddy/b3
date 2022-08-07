@@ -1,7 +1,7 @@
 
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
-from b3.datatypes import B3_BYTES, B3_COMPOSITE_LIST, B3_COMPOSITE_DICT, b3_type_name
+from b3.datatypes import B3_BYTES, B3_LIST, B3_DICT, b3_type_name
 from b3.type_codecs import CODECS
 from b3.guess_type import guess_type
 from b3.item_header import encode_header, decode_header
@@ -28,11 +28,11 @@ def pack(item, key=None, with_header=True, rlimit=20):
 
     elif isinstance(item, list):
         field_bytes = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])                     # Note: recursive call
-        data_type   = B3_COMPOSITE_LIST
+        data_type   = B3_LIST
 
     elif isinstance(item, dict):
         field_bytes = b"".join([pack(item=v, key=k, rlimit=rlimit-1) for k, v in item.items()])   # Note: recursive call
-        data_type   = B3_COMPOSITE_DICT
+        data_type   = B3_DICT
 
     else:
         data_type   = guess_type(item)                    # may blow up here encountering unknown types
@@ -48,7 +48,7 @@ def pack(item, key=None, with_header=True, rlimit=20):
 
 
 def new_container(data_type):
-    out = { B3_COMPOSITE_LIST:list(), B3_COMPOSITE_DICT: dict() }[data_type]
+    out = {B3_LIST:list(), B3_DICT: dict()}[data_type]
     return out
 
 
@@ -61,7 +61,7 @@ def unpack(buf, index=0):
 
     data_type, key, is_null, data_len, index = decode_header(buf, index)
 
-    if data_type not in (B3_COMPOSITE_DICT, B3_COMPOSITE_LIST):
+    if data_type not in (B3_DICT, B3_LIST):
         errmsg = "Expecting list or dict first in message, but got type %s" % (b3_type_name(data_type),)
         raise TypeError(errmsg)
 
@@ -90,7 +90,7 @@ def unpack_into(out, buf, index, end):
         elif data_type == B3_BYTES:
             value = buf[index : index+data_len]
 
-        elif data_type in (B3_COMPOSITE_LIST, B3_COMPOSITE_DICT):
+        elif data_type in (B3_LIST, B3_DICT):
             value = new_container(data_type)
             unpack_into(value, buf, index, index + data_len)       # note recursive
 

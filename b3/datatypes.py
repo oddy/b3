@@ -1,8 +1,6 @@
 
 # B3 data types & their id numbers
 
-# todo: Alias B3_DICT and B3_LIST for B3_COMPOSITE_DICT etc.
-
 # --- Core types ---
 
 # bytes = 0
@@ -33,51 +31,18 @@ B3_BYTES            = 0     # array of bytes.                       Note: str in
 B3_UTF8             = 1     # UTF8 strings.                         for str in py3 and unicode in py2.
 B3_BOOL             = 2     # True or False.                                             for bool.
 B3_UVARINT          = 3     # unsigned varint                       slower & small/large for ints.
-B3_SVARINT          = 4     # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
+B3_SVARINT          = 4     # signed varint, zigzag encoded.        slower & small/large for ints.
 
 
 
 B3_S64              = 8     # signed 64bit integer                  faster & medium      for ints.
 
-
-B3_FLOAT64          = 9     # IEEE754 64bit signed float.           faster & medium      for floats.
-
-B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & compact     for decimal.
-
-B3_RESERVED_11      = 11    # Currently unused.
-
-
-
+B3_FLOAT64          = 10    # IEEE754 64bit signed float.           faster & medium      for floats.
+B3_DECIMAL          = 11    # Arbitrary Precision decimals.         slower & compact     for decimal.
 B3_SCHED            = 12    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
-B3_COMPOSITE_LIST   = 13    # identical to COMPOSITE_DICT on the wire, hints to parser to yield a list-like obj where possible
-B3_COMPOSITE_DICT   = 14    # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.
+B3_LIST             = 13    # identical to DICT on the wire, hints to parser to yield a list-like obj where possible
+B3_DICT             = 14    # identical to LIST on the wire, hints to parser to yield a dict-like obj where possible.
 
-
-# ==== OLD core types ====
-
-# B3_RESERVED_0       = 0     # Probably permanently unused.
-#
-# B3_COMPOSITE_DICT   = 1     # identical to COMPOSITE_LIST on the wire, hints to parser to yield a dict-like obj where possible.
-# B3_COMPOSITE_LIST   = 2     # identical to COMPOSITE_DICT on the wire, hints to parser to yield a list-like obj where possible
-#
-# B3_BYTES            = 3     # array of bytes.                       Note: str in py2.    for bytes.
-# B3_UTF8             = 4     # UTF8 strings.                         for str in py3 and unicode in py2.
-# B3_BOOL             = 5     # True or False.                                             for bool.
-#
-# B3_INT64            = 6     # signed 64bit integer                  faster & medium      for ints.
-# B3_UVARINT          = 7     # unsigned varint                       slower & small/large for ints.
-# B3_SVARINT          = 8     # signed varint, zigzag encoded.        slower & small/large for ints.  slightly slower than uvarint in python
-#
-# B3_FLOAT64          = 9     # IEEE754 64bit signed float.           faster & medium      for floats.
-# B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & compact     for decimal.
-#
-# B3_RESERVED_11      = 11    # Currently unused.
-#
-# B3_STAMP64          = 12    # Signed 64bit unix nanoseconds, UTC (because unix time IS UTC) for now()-timestamp UX.
-# B3_SCHED            = 13    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
-#
-# B3_RESERVED_14      = 14    # Currently unused.
-#
 # --- Extended types ---
 
 B3_RESERVED_15      = 15    # Policy: we could totally use 15, but currently not to avoid confusion with the ext-type format.
@@ -103,12 +68,12 @@ DATATYPE_NAMES = {
     6 : u"B3_none6",
     7 : u"B3_none7",
     8 : u"B3_S64",
-    9 : u"B3_FLOAT32",
-    10: u"B3_F64",
-    11: u"B3_RESERVED_11",
+    9 : u"B3_none9",
+    10: u"B3_FLOAT64",
+    11: u"B3_DECIMAL",
     12: u"B3_SCHED",
-    13: u"B3_COMPOSITE_LIST",
-    14: u"B3_COMPOSITE_DICT",
+    13: u"B3_LIST",
+    14: u"B3_DICT",
     15: u"B3_RESERVED_15",
     16: u"B3_COMPLEX",
     }

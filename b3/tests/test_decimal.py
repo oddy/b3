@@ -5,6 +5,9 @@ import pytest
 
 from b3.utils import SBytes
 from b3.type_decimal import encode_decimal, decode_decimal
+from b3.item_header import encode_header, decode_header
+from b3.datatypes import B3_DECIMAL
+
 
 # See type_decimal.py for the Data Format Standard
 
@@ -118,6 +121,19 @@ def test_decimal_zeroval_dec():
     assert(decode_decimal(SBytes(""),0,0)) == Decimal(0)
     assert(decode_decimal(SBytes(""),0,0)) == Decimal("-0")     # oddly this passes, suspect because of python Decimal equality rules-
     assert(Decimal("-0") == Decimal("0"))                       # yeah this passes too
+
+
+
+# --- Header tests ---
+
+def test_sched_header_encode():
+    assert encode_header(data_type=B3_DECIMAL) == SBytes("0b")
+
+def test_sched_header_decode():
+    assert decode_header(SBytes("0b"), 0) == (B3_DECIMAL,  None,  False, 0, 1)
+
+
+
 
 
 # --- decode benchmark experiments ---

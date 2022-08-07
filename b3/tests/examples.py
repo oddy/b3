@@ -71,7 +71,7 @@ print(repr(sch_data == out_sch))
 OUTER_SCHEMA = (
     (b3.B3_UVARINT,         "index",         1),
     (b3.B3_UTF8,            "label",         2),
-    (b3.B3_COMPOSITE_DICT,  "inner_message", 3)
+    (b3.B3_DICT, "inner_message", 3)
     )
 
 inner_data = dict(bytes1=b"hello", number1=1337)

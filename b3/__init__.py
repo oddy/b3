@@ -13,7 +13,7 @@ __all__ = [
     u"schema_pack", u"schema_unpack",
     u"encode_uvarint", u"decode_uvarint",
 
-    u"B3_COMPOSITE_DICT", u"B3_COMPOSITE_LIST",
+    u"B3_DICT", u"B3_LIST",
     u"B3_BYTES", u"B3_UTF8", u"B3_BOOL",
     u"B3_S64", u"B3_UVARINT", u"B3_SVARINT",
     u"B3_FLOAT64", u"B3_DECIMAL",

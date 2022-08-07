@@ -109,7 +109,7 @@ def test_schema_pack_zeroval():
 OUTER_SCHEMA = (
     (B3_BYTES,          "bytes1",  1),
     (B3_SVARINT,        "signed1", 2),
-    (B3_COMPOSITE_DICT, "inner1",  3)
+    (B3_DICT, "inner1", 3)
     )
 
 def test_schema_pack_nesting():
@@ -160,7 +160,7 @@ def test_schema_unpack_type_mismatch():
         schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf))
 
 def test_schema_unpack_bytes_yield():
-    BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_COMPOSITE_LIST, 'list1', 2))
+    BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_LIST, 'list1', 2))
     bytes1_hex = "90 01 03 66 6f 6f"             # b"foo"
     list1_hex  = "9d 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
     test_buf   = SBytes(" ".join([bytes1_hex, list1_hex]))
@@ -183,7 +183,7 @@ def test_schema_unpack_nesting():
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # Note: It's up to the user to know - presumably using the defined schemas, that inner1 is a
-    # Note: B3_COMPOSITE_DICT type, as the returned dict (outer_data) just has the encoded bytes in that field.
+    # Note: B3_DICT type, as the returned dict (outer_data) just has the encoded bytes in that field.
     outer_data = schema_unpack(OUTER_SCHEMA, test_outer_buf, 0, len(test_outer_buf))
     inner_len = len(outer_data['inner1'])
     inner_data = schema_unpack(TEST_SCHEMA, outer_data['inner1'], 0, inner_len)
@@ -195,8 +195,8 @@ def test_schema_nested_errors():
     # Nested containers e.g. dict1 and list1 need to be explicitely packed to bytes first.
     # schema_pack should raise an error if it sees un-packed python dicts or lists in the fields.
     NEST_SCHEMA = (
-        (B3_COMPOSITE_DICT, 'dict1', 1),
-        (B3_COMPOSITE_LIST, 'list1', 2),
+        (B3_DICT, 'dict1', 1),
+        (B3_LIST, 'list1', 2),
     )
 
     data = dict(dict1={1:2, 3:4}, list1=[7,8,9])

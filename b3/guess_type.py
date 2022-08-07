@@ -26,10 +26,10 @@ def guess_type(obj):
         return B3_SVARINT                       # the zigzag size diff is only noticeable with small numbers.
 
     if isinstance(obj, dict):
-        return B3_COMPOSITE_DICT
+        return B3_DICT
 
     if isinstance(obj, list):
-        return B3_COMPOSITE_LIST
+        return B3_LIST
 
     if isinstance(obj, float):
         return B3_FLOAT64

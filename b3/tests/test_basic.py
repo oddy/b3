@@ -77,6 +77,14 @@ def test_base_float64_dec():
         assert decode_float64(tbytes,0,len(tbytes)) == tflo
     assert decode_float64(SBytes("00 00 00 00 00 00 00 00"),0,8) == 0.0     # check non-compact zero value too
 
+def test_base_float64_header_encode():
+    assert encode_header(data_type=B3_FLOAT64) == SBytes("0a")
+
+def test_sched_float64_header_decode():
+    assert decode_header(SBytes("0a"), 0) == (B3_FLOAT64, None, False, 0, 1)
+
+# --------------------------------------------------------------------------------------------------
+
 
 tcplx = 13.37+42.42j
 tcplx_bytes = SBytes("3d 0a d7 a3 70 bd 2a 40 f6 28 5c 8f c2 35 45 40")
