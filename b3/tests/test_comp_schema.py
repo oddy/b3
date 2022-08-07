@@ -113,7 +113,7 @@ OUTER_SCHEMA = (
 
 def test_schema_pack_nesting():
     # Testing this buffer...
-    bytes1_hex      = "93 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
+    bytes1_hex      = "90 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
     signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
     inner_buf_hex   = "91 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
@@ -160,7 +160,7 @@ def test_schema_unpack_type_mismatch():
 
 def test_schema_unpack_bytes_yield():
     BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_COMPOSITE_LIST, 'list1', 2))
-    bytes1_hex = "93 01 03 66 6f 6f"             # b"foo"
+    bytes1_hex = "90 01 03 66 6f 6f"             # b"foo"
     list1_hex  = "92 02 03 66 6f 6f"             # (actually just b"foo" as well, not an encoded list)
     test_buf   = SBytes(" ".join([bytes1_hex, list1_hex]))
 
@@ -176,7 +176,7 @@ def test_schema_unpack_missing_incoming_field():
 
 def test_schema_unpack_nesting():
     # Testing this buffer...
-    bytes1_hex      = "93 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
+    bytes1_hex      = "90 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
     signed1_hex     = "98 02 02 a3 13"                          # header + encode_svarint(-1234)
     inner_buf_hex   = "91 03 06 17 01 14 02 15 03"              # header + buffer output from the zeroval test
     test_outer_buf  = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))

@@ -1,0 +1,22 @@
+# Default. Detect text. Hopefully eol default is native. (ie autocrlf=input)
+* text=auto
+
+# Ensure sources are LF even in windows working copies
+*.py   text eol=lf
+*.go   text eol=lf
+*.c    text eol=lf
+*.cpp  text eol=lf
+*.spec text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.service text eol=lf
+*.sh   text eol=lf
+
+# Not listing here - leaving up to the default text=auto & assuming that means native:
+# nsi ui sln vcproj bat 
+# json cfg txt
+# Note we're leaving txt alone, probably a good idea with all the wacky stuff in menagerie.
+
+# Be explicit about this one because they detect as text
+*.rtf  binary

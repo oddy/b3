@@ -27,12 +27,12 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:None }
 
 buf10 = "18 0a"                                             # svarint, key=10, len=0 (CZV)
-buf11 = "93 0b 03 66 6f 6f"                                 # bytes,   key=11, len 3, b"foo"
+buf11 = "90 0b 03 66 6f 6f"                                 # bytes,   key=11, len 3, b"foo"
 buf12_list_bytes = "85 01 01 05 05 85 01 01"                # True ends up being "85 01 01" and False is "05" because CZV.
 buf12 = "92 0c 08 " + buf12_list_bytes                      # list,    key=12, len=8
 buf13_dict_bytes = "98 09 01 10 98 07 01 0c"                # items for 9:8 and 7:6
 buf13 = "91 0d 08 " + buf13_dict_bytes                      # dict,    key=13, len=8
-buf14 = "53 0e"                                             # [bytes]**  key=14, is_null=True
+buf14 = "50 0e"                                             # [bytes]**  key=14, is_null=True
 outer_header = "81 20"                                      # dict, no key, len=32
 
 test1_buf = SBytes(" ".join([outer_header, buf10, buf11, buf12, buf13, buf14]))
