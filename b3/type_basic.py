@@ -70,25 +70,6 @@ def decode_float64(buf, index, end):
 
 
 
-# In:  unix-epoch-nanoseconds integer.
-# Note: we also accept floats for convenience with e.g. time.time.
-def encode_stamp64(value):
-    if isinstance(value, float):
-        value = math.trunc(value * 1e9)
-    elif not isinstance(value, VALID_INT_TYPES):
-        raise TypeError("stamp64 only accepts float or integer values")
-    if value == 0:
-        return b""
-
-    return struct.pack("<q", value)
-
-# Note: we only yield integer nanoseconds. Up to the caller to float-er-ize it if they need.
-def decode_stamp64(buf, index, end):
-    if index == end:
-        return 0
-    if end-index != 8:
-        raise ValueError("B3_STAMP64 data size isn't 8 bytes")
-    return struct.unpack("<q", buf[index:index+8])[0]
 
 
 # In: a python complex number object. Must have real and imag properties

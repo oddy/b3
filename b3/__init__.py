@@ -6,6 +6,7 @@ __version__ = "0.9.1"
 from b3.datatypes import *
 from b3.composite_dynamic import pack, unpack, unpack_into
 from b3.composite_schema import schema_pack, schema_unpack
+from b3.type_varint import encode_uvarint, decode_uvarint
 
 __all__ = [
     u"pack", u"unpack", u"unpack_into",
@@ -16,7 +17,7 @@ __all__ = [
     u"B3_BYTES", u"B3_UTF8", u"B3_BOOL",
     u"B3_INT64", u"B3_UVARINT", u"B3_SVARINT",
     u"B3_FLOAT64", u"B3_DECIMAL",
-    u"B3_STAMP64", u"B3_SCHED",
+    u"B3_SCHED",
     u"B3_COMPLEX",
 ]
 

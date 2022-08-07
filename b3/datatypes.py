@@ -48,7 +48,6 @@ B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & com
 
 B3_RESERVED_11      = 11    # Currently unused.
 
-B3_STAMP64          = 12    # Signed 64bit unix nanoseconds, UTC (because unix time IS UTC) for now()-timestamp UX.
 B3_SCHED            = 13    # Local date-times YMDHMS & optional subsec, offset to utc, TZname, for user-input & future times.
 
 
@@ -108,7 +107,7 @@ DATATYPE_NAMES = {
     9 : u"B3_FLOAT64",
     10: u"B3_DECIMAL",
     11: u"B3_RESERVED_11",
-    12: u"B3_STAMP64",
+    12: u"B3_notSTAMP64",
     13: u"B3_SCHED",
     14: u"B3_COMPOSITE_DICT",
     15: u"B3_RESERVED_15",
