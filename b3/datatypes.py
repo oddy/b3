@@ -37,10 +37,11 @@ B3_SVARINT          = 4     # signed varint, zigzag encoded.        slower & sma
 
 
 
+B3_S64              = 8     # signed 64bit integer                  faster & medium      for ints.
 
-B3_INT64            = 8     # signed 64bit integer                  faster & medium      for ints.
 
 B3_FLOAT64          = 9     # IEEE754 64bit signed float.           faster & medium      for floats.
+
 B3_DECIMAL          = 10    # Arbitrary Precision decimals.         slower & compact     for decimal.
 
 B3_RESERVED_11      = 11    # Currently unused.
@@ -95,18 +96,18 @@ B3_COMPLEX          = 16    # encoded as 2 float64s.
 DATATYPE_NAMES = {
     0 : u"B3_BYTES",
     1 : u"B3_UTF8",
-    2 : u"B3_COMPOSITE_LIST",
-    3 : u"B3_notBYTES",
-    4 : u"B3_notUTF8",
-    5 : u"B3_BOOL",
-    6 : u"B3_INT64",
-    7 : u"B3_UVARINT",
-    8 : u"B3_SVARINT",
-    9 : u"B3_FLOAT64",
-    10: u"B3_DECIMAL",
+    2 : u"B3_BOOL",
+    3 : u"B3_UVARINT",
+    4 : u"B3_SVARINT",
+    5 : u"B3_none5",
+    6 : u"B3_none6",
+    7 : u"B3_none7",
+    8 : u"B3_S64",
+    9 : u"B3_FLOAT32",
+    10: u"B3_F64",
     11: u"B3_RESERVED_11",
-    12: u"B3_notSTAMP64",
-    13: u"B3_SCHED",
+    12: u"B3_SCHED",
+    13: u"B3_COMPOSITE_LIST",
     14: u"B3_COMPOSITE_DICT",
     15: u"B3_RESERVED_15",
     16: u"B3_COMPLEX",
@@ -114,4 +115,23 @@ DATATYPE_NAMES = {
 
 def b3_type_name(data_type):
     return DATATYPE_NAMES.get(data_type, u"B3_UNKNOWN_TYPE_%i>" % (data_type,))
+
+
+# bytes = 0
+# utf8 = 1
+# bool = 2
+# uVar = 3
+# sVar  = 4
+# u32 = 5
+# s32 = 6
+# u64 = 7
+# s64 = 8
+# F32  9
+# F64  10
+# decimal  11
+# sched   12
+# list = 13
+# dict = 14
+# 15 unused
+# complex = 16
 

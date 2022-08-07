@@ -39,18 +39,18 @@ def decode_utf8(buf, index, end):                   # handles index==end transpa
     return buf[index:end].decode("utf8")
 
 
-def encode_int64(value):
+def encode_s64(value):
     if value == 0:
         return b""
     if not isinstance(value, VALID_INT_TYPES):
-        raise TypeError("int64 only accepts integer values")
+        raise TypeError("s64 only accepts integer values")
     return struct.pack("<q", value)
 
-def decode_int64(buf, index, end):
+def decode_s64(buf, index, end):
     if index == end:
         return 0
     if end-index != 8:
-        raise ValueError("B3_INT64 data size isn't 8 bytes")
+        raise ValueError("B3_S64 data size isn't 8 bytes")
     return struct.unpack("<q", buf[index:index+8])[0]
 
 

@@ -216,7 +216,7 @@ def test_schema_alltypes_roundtrip():
         (B3_BYTES, 'bytes1', 3),
         (B3_UTF8, 'string1', 4),
         (B3_BOOL, 'bool1', 5),
-        (B3_INT64, 'int641', 6),
+        (B3_S64, 's641', 6),
         (B3_UVARINT, 'uvint1', 7),
         (B3_SVARINT, 'svint1', 8),
         (B3_FLOAT64, 'float1', 9),
@@ -225,7 +225,7 @@ def test_schema_alltypes_roundtrip():
         (B3_COMPLEX, 'cplx1', 12),
         )
 
-    data = dict(bytes1=b"foo", string1=u"bar", bool1=True, int641=123, uvint1=456, svint1=-789, float1=13.37,
+    data = dict(bytes1=b"foo", string1=u"bar", bool1=True, s641=123, uvint1=456, svint1=-789, float1=13.37,
                 deci1=Decimal("13.37"),  date1=datetime.now(), cplx1=33j)
 
     buf = schema_pack(ALLTYPES_SCHEMA, data)

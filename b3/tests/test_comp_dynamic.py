@@ -99,7 +99,7 @@ def test_dyna_roundtrip_list():
 def test_dyna_roundtrip_all_types():
     import datetime, decimal
     # dynamic uses dict, list, bytes, utf8, bool, svarint, float64, decimal, sched, complex
-    # dynamic currently does NOT use int64, uvarint
+    # dynamic currently does NOT use non-svarint number types
     data_dyna_types = [
         {1:2}, [3,4],
         b'foo', u'bar', True,

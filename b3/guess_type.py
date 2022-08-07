@@ -21,7 +21,7 @@ def guess_type(obj):
 
     if isinstance(obj, int):
         return B3_SVARINT                       # Policy: fixed to svarint to make this deterministic for better interop.
-                                                # alternatives: uvarint, int64
+                                                # alternatives: many number types
     if PY2 and isinstance(obj, long):
         return B3_SVARINT                       # the zigzag size diff is only noticeable with small numbers.
 
