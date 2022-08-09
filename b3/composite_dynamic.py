@@ -1,10 +1,58 @@
 
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
-from b3.datatypes import B3_BYTES, B3_LIST, B3_DICT, b3_type_name
-from b3.type_codecs import CODECS
+from b3.datatypes import B3_BYTES, B3_LIST, B3_DICT, b3_type_name, B3_BOOL
+from b3.type_codecs import CODECS, ENCODERS, ZERO_VALUE_TABLE
 from b3.guess_type import guess_type
-from b3.item_header import encode_header, decode_header
+from b3.item import encode_header, decode_header, encode_item
+
+
+# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
+
+# --- Encoder/Pack policies ---
+# policy: because there's no schema backing us, we dont know what incoming-to-pack missing data types SHOULD be!
+# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
+# policy: in practice None supercedes data-type checking here and in the schema packer, so this should be ok.
+
+# --- Decoder/Unpack policies ---
+# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have a top-level header at the front anyway
+#         the users just want list in list out, dict in dict out, etc.i
+#         AND this actually makes the code a LOT simpler.
+# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
+#         have a container object of their own, they can call the recursive unpacker function directly.
+
+
+def type_value_to_header_and_field_bytes(data_type, value):
+    # in: type, value   out:  has_data, is_null, field_bytes
+
+    # The 5 kinds of scenario, null, bool, zero, codec, bytes  (special codec)
+
+    # defaults ('there is data')
+    field_bytes = b""
+    has_data = True
+    is_null = False
+
+    # Note that the order of these matters. Null supercedes zero, etc etc.
+
+    if value is None:           # null value
+        has_data = False
+        is_null = True
+
+    elif data_type == B3_BOOL:   # bool type
+        is_null = value
+
+    elif value == ZERO_VALUE_TABLE[data_type]:  # zero value
+        has_data = False
+
+    elif data_type in ENCODERS:       # codec-able value
+        EncoderFn = ENCODERS[data_type]
+        field_bytes = EncoderFn(value)
+        # Note: we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
+    else:       # bytes value (bytes, dict, list, unknown data types)
+        field_bytes = bytes(value)
+        # Note: if the data type doesn't have a codec, it should be bytes-able.
+
+    return has_data, is_null, field_bytes
 
 
 def pack(item, key=None, with_header=True, rlimit=20):
@@ -17,34 +65,24 @@ def pack(item, key=None, with_header=True, rlimit=20):
        - see guess_type.py for the B3 types chosen, given certain Python types."""
     if rlimit < 1:
         raise ValueError("Recurse limit exceeded")
-    data_type = B3_BYTES
 
-    # --- Data ---
-    if item is None:
-        field_bytes = b""
+    if isinstance(item, list):      # transform item to bytes, note recursive call
+        item = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])
+        data_type = B3_LIST
 
-    elif isinstance(item, bytes):
-        field_bytes = item
-
-    elif isinstance(item, list):
-        field_bytes = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])                     # Note: recursive call
-        data_type   = B3_LIST
-
-    elif isinstance(item, dict):
-        field_bytes = b"".join([pack(item=v, key=k, rlimit=rlimit-1) for k, v in item.items()])   # Note: recursive call
-        data_type   = B3_DICT
+    elif isinstance(item, dict):        # transform item to bytes, note recursive call
+        item = b"".join([pack(item=v, key=k, rlimit=rlimit-1) for k, v in item.items()])
+        data_type = B3_DICT
 
     else:
-        data_type   = guess_type(item)                    # may blow up here encountering unknown types
-        EncoderFn,_ = CODECS[data_type]
-        field_bytes = EncoderFn(item)
+        data_type = guess_type(item)               # may blow up here encountering unknown types
 
-    # --- Header ---
+    header_bytes, value_bytes = encode_item(key, data_type, item)
+
     if with_header:
-        header_bytes = encode_header(data_type=data_type, key=key, is_null=bool(item is None), data_len=len(field_bytes))
-        return b"".join([header_bytes, field_bytes])
+        return b"".join([header_bytes, value_bytes])
     else:
-        return field_bytes
+        return value_bytes
 
 
 def new_container(data_type):
@@ -83,6 +121,16 @@ def unpack_into(out, buf, index, end):
         # --- do header ---
         data_type, key, is_null, data_len, index = decode_header(buf, index)
 
+        # if this was   type,value,key,index = decode_item(buf, index)
+
+        # it wouldn't work. because we need the data type so we can make the LIST or DICT decision.
+
+        # FIXME: figure out if we can make this work with decode_item()
+
+        # we cant because we dont eat the data items, the function we CALL does.
+        # so do the hdr thing and k4eep it split
+
+
         # --- get data value ---
         if is_null:
             value = None
@@ -113,18 +161,5 @@ def unpack_into(out, buf, index, end):
 
 
 
-# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
-
-# --- Encoder/Pack policies ---
-# policy: because there's no schema backing us, we dont know what incoming-to-pack missing data types SHOULD be!
-# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
-# policy: in practice None supercedes data-type checking here and in the schema packer, so this should be ok.
-
-# --- Decoder/Unpack policies ---
-# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have a top-level header at the front anyway
-#         the users just want list in list out, dict in dict out, etc.i
-#         AND this actually makes the code a LOT simpler.
-# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
-#         have a container object of their own, they can call the recursive unpacker function directly.
 
 

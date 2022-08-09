@@ -23,13 +23,13 @@ TEST_SCHEMA = (
 
 # --- Shared test data - manually-built packed-bytes buffer ---
 
-number1_data   = "45"                   # encode_uvarint(69)
-number1_header = "93 01 01"             # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
-string1_data   = "66 6f 6f"             # encode_utf8(u"foo")
-string1_header = "91 02 03"             # encode_header(B3_UTF8, key=2, data_len=3)     # "54 02" for null,  14 01 czv
-bool1_data     = "01"                   # encode_bool(True)
-bool1_header   = "92 03 01"             # encode_header(B3_BOOL, key=3, data_len=1)     # "55 03" for null,  15 01 czv
-test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header, bool1_data])
+number1_data   = "45"          # encode_uvarint(69)
+number1_header = "93 01 01"    # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
+string1_data   = "66 6f 6f"    # encode_utf8(u"foo")
+string1_header = "91 02 03"    # encode_header(B3_UTF8, key=2, data_len=3)     # "54 02" for null,  14 01 czv
+bool1_header   = "D2 03"       # encode_item(key=3, data_type=B3_BOOL(2), value=True)
+
+test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header])
 test1_buf = SBytes(test1_hex)
 
 # --- Shared test data - actual test data to pack ---
@@ -109,7 +109,7 @@ def test_schema_pack_zeroval():
 OUTER_SCHEMA = (
     (B3_BYTES,          "bytes1",  1),
     (B3_SVARINT,        "signed1", 2),
-    (B3_DICT, "inner1", 3)
+    (B3_DICT,           "inner1", 3)
     )
 
 def test_schema_pack_nesting():

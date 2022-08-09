@@ -1,4 +1,6 @@
 
+
+
 # B3 data types & their id numbers
 
 # --- Core types ---
@@ -45,7 +47,7 @@ B3_DICT             = 14    # identical to LIST on the wire, hints to parser to 
 
 # --- Extended types ---
 
-B3_RESERVED_15      = 15    # Policy: we could totally use 15, but currently not to avoid confusion with the ext-type format.
+# B3_RESERVED_15    = 15    # Policy: we could totally use 15, but currently not to avoid confusion with the ext-type format.
 B3_COMPLEX          = 16    # encoded as 2 float64s.
 
 
@@ -55,6 +57,7 @@ B3_COMPLEX          = 16    # encoded as 2 float64s.
 
 # Policy: Numbers 96 to 8191 reserved for User-Defined Types
 #         That's 1/4 of the one-byte space, and 1/2 of the two-byte space.
+
 
 # --- Name reverse lookup (for friendly error messages) ---
 
@@ -80,23 +83,3 @@ DATATYPE_NAMES = {
 
 def b3_type_name(data_type):
     return DATATYPE_NAMES.get(data_type, u"B3_UNKNOWN_TYPE_%i>" % (data_type,))
-
-
-# bytes = 0
-# utf8 = 1
-# bool = 2
-# uVar = 3
-# sVar  = 4
-# u32 = 5
-# s32 = 6
-# u64 = 7
-# s64 = 8
-# F32  9
-# F64  10
-# decimal  11
-# sched   12
-# list = 13
-# dict = 14
-# 15 unused
-# complex = 16
-

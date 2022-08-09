@@ -4,7 +4,7 @@
 import pytest
 
 from b3.utils import SBytes
-from b3.item_header import *
+from b3.item import *
 
 # Item:
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]

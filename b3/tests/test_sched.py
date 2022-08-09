@@ -6,7 +6,7 @@ from   six import PY2
 
 from   b3.utils import SBytes
 from   b3.type_sched import encode_sched_gen, encode_sched, decode_sched, decode_offset
-from   b3.item_header import encode_header, decode_header
+from   b3.item import encode_header, decode_header
 from   b3.datatypes import B3_SCHED
 
 # todo: rename these tests to make consistent with rest of tests

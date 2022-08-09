@@ -28,8 +28,15 @@ test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:Non
 
 buf10 = "14 0a"                                             # svarint, key=10, len=0 (CZV)
 buf11 = "90 0b 03 66 6f 6f"                                 # bytes,   key=11, len 3, b"foo"
-buf12_list_bytes = "82 01 01 02 02 82 01 01"                # True ends up being "85 01 01" and False is "05" because CZV.
-buf12 = "9d 0c 08 " + buf12_list_bytes                      # list,    key=12, len=8
+# buf12_list_bytes = "82 01 01 02 02 82 01 01"                # True ends up being "82 01 01" and False is "02" because CZV.
+# buf12 = "9d 0c 08 " + buf12_list_bytes                      # list,    key=12, len=8
+
+
+buf12_list_bytes = "c2 82 82 c2"          # True ends up being "c2" and False is "82"
+buf12 = "9d 0c 04 " + buf12_list_bytes                      # list,    key=12, len=4
+
+
+
 buf13_dict_bytes = "94 09 01 10 94 07 01 0c"                # items for 9:8 and 7:6
 buf13 = "9e 0d 08 " + buf13_dict_bytes                      # dict,    key=13, len=8
 buf14 = "50 0e"                                             # [bytes]**  key=14, is_null=True

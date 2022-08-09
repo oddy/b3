@@ -5,7 +5,7 @@ import pytest
 
 from b3.utils import SBytes
 from b3.type_decimal import encode_decimal, decode_decimal
-from b3.item_header import encode_header, decode_header
+from b3.item import encode_header, decode_header
 from b3.datatypes import B3_DECIMAL
 
 

@@ -6,7 +6,16 @@ from six import PY2
 
 from b3.datatypes import *
 
+# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because
+#         the header needs to encode *something* as the data type.
+# policy: in practice None supercedes data-type checking in dynamic and in the schema packer,
+#         so this should be ok.
+
+
 def guess_type(obj):
+    if obj is None:
+        return B3_BYTES
+
     if isinstance(obj, bytes):                  # Note this will catch also *str* on python2. If you want unicode out, pass unicode in.
         return B3_BYTES
 
