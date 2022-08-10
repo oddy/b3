@@ -84,10 +84,18 @@ def schema_unpack(schema, buf, index=0, end=None):
             index += data_len               # skip over the unwanted data!
             continue
 
-        if has_data and not is_null and schema_type != data_type:
-            emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
-              % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
-            raise TypeError(emsg)
+        # print("================================")
+        # print("has_data",    has_data)
+        # print("is_null ",    is_null)
+        # print("schema_type", schema_type)
+        # print("data_type",   data_type)
+        # print("================================")
+
+        if not (is_null and not has_data):      # only perform check if data is not null
+            if schema_type != data_type:
+                emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
+                  % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
+                raise TypeError(emsg)
 
         out[schema_key_name] = decode_value(data_type, has_data, is_null, data_len, buf, index)
         index += data_len

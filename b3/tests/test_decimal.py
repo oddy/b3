@@ -126,11 +126,11 @@ def test_decimal_zeroval_dec():
 
 # --- Header tests ---
 
-def test_sched_header_encode():
+def test_decimal_header_encode():
     assert encode_header(data_type=B3_DECIMAL) == SBytes("0b")
 
-def test_sched_header_decode():
-    assert decode_header(SBytes("0b"), 0) == (B3_DECIMAL,  None,  False, 0, 1)
+def test_decimal_header_decode():
+    assert decode_header(SBytes("b0"), 0) == (None, B3_DECIMAL,  False,  False, 0, 1)
 
 
 

@@ -12,7 +12,7 @@ from b3.type_codecs import ENCODERS, DECODERS, ZERO_VALUE_TABLE
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
-# | has data   |null/zero/UF| key type   | key type   | data type  | data type  | data type  | data type  |
+# | data type  | data type  | data type  | data type  |  has data  |null/zero/UF| key type   | key type   |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 
 # Note: UF = User Flag, can be used by codecs (e.g. bool) when has_data is True.
@@ -85,22 +85,22 @@ def encode_item(key, data_type, value):
 
     # --- Null, data & data len ---
     if has_data:
-        cbyte |= 0x80
+        cbyte |= 0x08
     if is_null:
-        cbyte |= 0x40
+        cbyte |= 0x04
     if has_data and data_type is not B3_BOOL:  # has_data controls if there is a data length
         len_bytes = encode_uvarint(len(value_bytes))   # (except for BOOL where there is never a data length)
 
     # --- Key type ---
     key_type_bits, key_bytes = encode_key(key)
-    cbyte |= (key_type_bits & 0x30)                      # middle 2 bits for key type
+    cbyte |= (key_type_bits & 0x03)                      # middle 2 bits for key type
 
     # --- Data type ---
     if data_type > 14:
         ext_data_type_bytes = encode_uvarint(data_type)  # 'extended' data types 15 and up are a seperate uvarint
-        cbyte |= 0x0f                                    # control byte data_type bits set to all 1's to signify this
+        cbyte |= 0xf0                                    # control byte data_type bits set to all 1's to signify this
     else:
-        cbyte |= (data_type & 0x0f)                      # 'core' data types live in the control byte's bits only.
+        cbyte |= (data_type << 4) & 0xf0                 # 'core' data types live in the control byte's bits only.
 
     # --- Build header ---
     header_bytes = b"".join([int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes])
@@ -115,18 +115,18 @@ def decode_header(buf, index):
     cbyte, index = IntByteAt(buf, index)                  # control byte
 
     # --- Data type ---
-    data_type = cbyte & 0x0f
+    data_type = (cbyte & 0xf0) >> 4
     if data_type == 15:  # 'extended' data types 15 and up follow the control byte
         data_type, index = decode_uvarint(buf, index)
 
     # --- Key ---
-    key_type_bits = cbyte & 0x30
+    key_type_bits = cbyte & 0x03
     key,index = decode_key(key_type_bits, buf, index)    # key bytes
 
     # --- Flags ---
     data_len = 0
-    has_data = bool(cbyte & 0x80)
-    is_null = bool(cbyte & 0x40)
+    has_data = bool(cbyte & 0x08)
+    is_null = bool(cbyte & 0x04)
 
     # --- Data length ---
     if has_data and data_type != B3_BOOL:
@@ -164,12 +164,12 @@ def encode_key(key):
     if key is None:
         return 0x00, b""
     if ktype in VALID_INT_TYPES:
-        return 0x10, encode_uvarint(key)
+        return 0x01, encode_uvarint(key)
     if ktype in VALID_STR_TYPES:
         keybytes = key.encode("utf8","replace")
-        return 0x20, encode_uvarint(len(keybytes)) + keybytes
+        return 0x02, encode_uvarint(len(keybytes)) + keybytes
     if ktype == bytes:
-        return 0x30, encode_uvarint(len(key)) + key
+        return 0x03, encode_uvarint(len(key)) + key
     raise TypeError("Key type must be None, uint, str or bytes, not %s" % ktype)
 
 
@@ -178,17 +178,17 @@ def encode_key(key):
 def decode_key(key_type_bits, buf, index):
     if key_type_bits == 0x00:
         return None, index
-    if key_type_bits == 0x10:
+    if key_type_bits == 0x01:
         return decode_uvarint(buf, index)            # note returns number, index
-    if key_type_bits == 0x20:
+    if key_type_bits == 0x02:
         klen,index = decode_uvarint(buf, index)
         key_str_bytes = buf[index:index+klen]
         return key_str_bytes.decode("utf8"), index+klen
-    if key_type_bits == 0x30:
+    if key_type_bits == 0x03:
         klen,index = decode_uvarint(buf, index)
         key_bytes = buf[index:index+klen]
         return key_bytes, index+klen
-    raise TypeError("Invalid key type in control byte")
+    raise TypeError("Invalid key type in control byte %02x" % key_type_bits)
 
 
 # Policy: we ARE doing zero-value signalling.

@@ -141,11 +141,11 @@ def test_sched_zerovalue_dec():
 
 # --- Header tests ---
 
-def test_sched_header_encode():
-    assert encode_header(data_type=B3_SCHED) == SBytes("0C")
+# def test_sched_header_encode():
+#     assert encode_header(data_type=B3_SCHED) == SBytes("0C")
 
 def test_sched_header_decode():
-    assert decode_header(SBytes("0C"), 0) == (B3_SCHED,  None,  False, 0, 1)
+    assert decode_header(SBytes("C0"), 0) == (None, B3_SCHED,  False, False, 0, 1)
 
 
 

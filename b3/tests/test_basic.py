@@ -54,11 +54,11 @@ def test_base_s64_dec():
         assert decode_s64(tbytes, 0, len(tbytes)) == tint
     assert decode_s64(SBytes("00 00 00 00 00 00 00 00"), 0, 8) == 0     # check non-compact zero value too
 
-def test_base_s64_header_encode():
-    assert encode_header(data_type=B3_S64) == SBytes("08")
+# def test_base_s64_header_encode():
+#     assert encode_header(data_type=B3_S64) == SBytes("08")
 
-def test_sched_s64_header_decode():
-    assert decode_header(SBytes("08"), 0) == (B3_S64, None, False, 0, 1)
+def test_base_s64_header_decode():
+    assert decode_header(SBytes("80"), 0) == (None, B3_S64, False, False, 0, 1)
 
 # --------------------------------------------------------------------------------------------------
 
@@ -77,11 +77,13 @@ def test_base_float64_dec():
         assert decode_float64(tbytes,0,len(tbytes)) == tflo
     assert decode_float64(SBytes("00 00 00 00 00 00 00 00"),0,8) == 0.0     # check non-compact zero value too
 
-def test_base_float64_header_encode():
-    assert encode_header(data_type=B3_FLOAT64) == SBytes("0a")
+# def test_base_float64_header_encode():
+#    assert encode_header(data_type=B3_FLOAT64) == SBytes("a0")
 
-def test_sched_float64_header_decode():
-    assert decode_header(SBytes("0a"), 0) == (B3_FLOAT64, None, False, 0, 1)
+def test_base_float64_header_decode():
+    assert decode_header(SBytes("a0"), 0) == (None, B3_FLOAT64, False, False,  0, 1)
+
+    # key, data_type, has_data, is_null, data_len, index
 
 # --------------------------------------------------------------------------------------------------
 
