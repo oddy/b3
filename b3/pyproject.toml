@@ -1,0 +1,6 @@
+
+[tool.black]
+line-length = 102
+exclude = '^datatypes.py$|^guess_type.py$|^hexdump.py$'
+verbose = true
+
