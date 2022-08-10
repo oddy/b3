@@ -27,20 +27,28 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:None }
 
 buf10 = "14 0a"                                             # svarint, key=10, len=0 (CZV)
-buf11 = "90 0b 03 66 6f 6f"                                 # bytes,   key=11, len 3, b"foo"
-# buf12_list_bytes = "82 01 01 02 02 82 01 01"                # True ends up being "82 01 01" and False is "02" because CZV.
-# buf12 = "9d 0c 08 " + buf12_list_bytes                      # list,    key=12, len=8
-
-
+buf11 = "90 0b 03 66 6f 6f"                         # bytes,   key=11, len 3, b"foo"
 buf12_list_bytes = "c2 82 82 c2"          # True ends up being "c2" and False is "82"
 buf12 = "9d 0c 04 " + buf12_list_bytes                      # list,    key=12, len=4
-
-
-
 buf13_dict_bytes = "94 09 01 10 94 07 01 0c"                # items for 9:8 and 7:6
 buf13 = "9e 0d 08 " + buf13_dict_bytes                      # dict,    key=13, len=8
 buf14 = "50 0e"                                             # [bytes]**  key=14, is_null=True
-outer_header = "8e 20"                                      # dict, no key, len=32
+outer_header = "8e 1c"                                      # dict, no key, len=28
+
+
+# todo: change the control byte so that the data_type comes first.
+
+# buf10 = "41 0a"                                             # svarint, key=10, len=0 (CZV)
+# buf11 = "09 0b 03 66 6f 6f"                         # bytes,   key=11, len 3, b"foo"
+# buf12_list_bytes = "2c 28 28 2c"          # True ends up being "c2" and False is "82"
+# buf12 = "d9 0c 04 " + buf12_list_bytes                      # list,    key=12, len=4
+# buf13_dict_bytes = "49 09 01 10 49 07 01 0c"                # items for 9:8 and 7:6
+# buf13 = "e9 0d 08 " + buf13_dict_bytes                      # dict,    key=13, len=8
+# buf14 = "05 0e"                                             # [bytes]**  key=14, is_null=True
+# outer_header = "e8 1c"                                      # dict, no key, len=28
+
+
+
 
 test1_buf = SBytes(" ".join([outer_header, buf10, buf11, buf12, buf13, buf14]))
 

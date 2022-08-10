@@ -4,7 +4,7 @@
 from b3.datatypes import B3_BYTES, B3_LIST, B3_DICT, b3_type_name, B3_BOOL
 from b3.type_codecs import CODECS, ENCODERS, ZERO_VALUE_TABLE
 from b3.guess_type import guess_type
-from b3.item import encode_header, decode_header, encode_item
+from b3.item import encode_header, decode_header, encode_item, decode_value
 
 
 # Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
@@ -97,7 +97,7 @@ def unpack(buf, index=0):
        - as unpack expects a header which has container object type
          and data length, it doesn't need an end argument. """
 
-    data_type, key, is_null, data_len, index = decode_header(buf, index)
+    dkey, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
 
     if data_type not in (B3_DICT, B3_LIST):
         errmsg = "Expecting list or dict first in message, but got type %s" % (b3_type_name(data_type),)
@@ -119,32 +119,13 @@ def unpack_into(out, buf, index, end):
 
     while index < end:
         # --- do header ---
-        data_type, key, is_null, data_len, index = decode_header(buf, index)
+        key, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
 
-        # if this was   type,value,key,index = decode_item(buf, index)
-
-        # it wouldn't work. because we need the data type so we can make the LIST or DICT decision.
-
-        # FIXME: figure out if we can make this work with decode_item()
-
-        # we cant because we dont eat the data items, the function we CALL does.
-        # so do the hdr thing and k4eep it split
-
-
-        # --- get data value ---
-        if is_null:
-            value = None
-
-        elif data_type == B3_BYTES:
-            value = buf[index : index+data_len]
-
-        elif data_type in (B3_LIST, B3_DICT):
+        if data_type in (B3_LIST, B3_DICT):
             value = new_container(data_type)
-            unpack_into(value, buf, index, index + data_len)       # note recursive
-
+            unpack_into(value, buf, index, index + data_len)    # note recursive
         else:
-            _,DecoderFn = CODECS[data_type]
-            value = DecoderFn(buf, index, index+data_len)
+            value = decode_value(data_type, has_data, is_null, data_len, buf, index)
 
         # --- Put data value into container ---
         if isinstance(out, list):

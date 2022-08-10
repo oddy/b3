@@ -4,7 +4,7 @@ from six import int2byte
 from b3.utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from b3.type_varint import encode_uvarint, decode_uvarint
 from b3.datatypes import B3_BOOL  # abstraction break: we are the bool 'codec' using the UF bit.
-from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
+from b3.type_codecs import ENCODERS, DECODERS, ZERO_VALUE_TABLE
 
 # Item:
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
@@ -16,6 +16,14 @@ from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 
 # Note: UF = User Flag, can be used by codecs (e.g. bool) when has_data is True.
+
+# The "5 kinds of data" and how the flags work for each:
+# None              has_data false  null true
+# Zero              has_data false  null false
+# Bool              has_data true   null --value--
+# Encoded-Data      has_data true   null n/a
+# Bytes             has_data true   null n/a
+
 
 # --- Control flags ---
 # +------------+------------+
@@ -29,38 +37,6 @@ from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
 # 1) switches nullzero/UF into UF mode and out of null-or-zero mode - [always]
 # 2) signals that a data len follows - [IFF the data type is not bool]
 
-# -----------------------------------------------------------
-
-# The 4 kinds of bool we can have:
-# null bool                         NULL
-# zero flagged bool                 FALSE
-# has data bool with UF = False     FALSE
-# has data bool with UF = True      TRUE
-
-# -----------------------------------------------------------
-
-# so bools can have has-data=True with data_len=0 which breaks our api
-
-# the encode_header API is bad because
-# we cant transmit the bool value into it.
-# because is_null is for if something is null!  Not for transmitting the bool value.
-
-# Which means we cant transmit it OUT of decode_header either because we lose null-vs-UF
-
-# So we DO need to NZU-ize the header API after all.
-
-
-# Think about special codecs that might want access to that bit.
-# The most straightforward thing to do would be to make them both explicit.
-
-# And the prod code actually calls the header apis only 3 times each
-# so making it explicit would not be much more work.
-
-
-
-
-
-
 
 # --- Key types ---
 # +------------+------------+
@@ -72,42 +48,12 @@ from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
 #     1   1  (c)    raw bytess
 
 
+# Note: Header encoding and data encoding are done in one step here.
+#       BUT header decoding and data decoding are split, because Dynamic's recursive unpack needs it.
 
-def type_value_to_header_and_field_bytes(data_type, value):
-    # in: type, value   out:  has_data, is_null, field_bytes
-
-    # The 5 kinds of scenario, null, bool, zero, codec, bytes  (special codec)
-
-    # defaults ('there is data')
-    field_bytes = b""
-    has_data = True
-    is_null = False
-
-    # Note that the order of these matters. Null supercedes zero, etc etc.
-
-    if value is None:           # null value
-        has_data = False
-        is_null = True
-
-    elif data_type == B3_BOOL:   # bool type
-        is_null = value
-
-    elif value == ZERO_VALUE_TABLE[data_type]:  # zero value
-        has_data = False
-
-    elif data_type in ENCODERS:       # codec-able value
-        EncoderFn = ENCODERS[data_type]
-        field_bytes = EncoderFn(value)
-        # Note: we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
-    else:       # bytes value (bytes, dict, list, unknown data types)
-        field_bytes = bytes(value)
-        # Note: if the data type doesn't have a codec, it should be bytes-able.
-
-    return has_data, is_null, field_bytes
-
-
-# Note: we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
+# we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
 # Policy: if the data type doesn't have a codec, it should be bytes-able.
+
 
 def encode_item(key, data_type, value):
     value_bytes = b""
@@ -161,71 +107,61 @@ def encode_item(key, data_type, value):
     return header_bytes, value_bytes
 
 
-
-
-
-
-
-def encode_header(data_type, key=None, has_data=False, is_null=False, data_len=0):
-    ext_data_type_bytes = len_bytes = b""
-    cbyte = 0x00
-
-    # --- Null, data & data len ---
-    if has_data:
-        cbyte |= 0x80
-    if is_null:
-        cbyte |= 0x40
-    if has_data and data_type is not B3_BOOL:  # has_data controls if there is a data length
-        len_bytes = encode_uvarint(data_len)   # (except for BOOL where there is never a data length)
-
-    # --- Key type ---
-    key_type_bits, key_bytes = encode_key(key)
-    cbyte |= (key_type_bits & 0x30)                      # middle 2 bits for key type
-
-    # --- Data type ---
-    if data_type > 14:
-        ext_data_type_bytes = encode_uvarint(data_type)  # 'extended' data types 15 and up are a seperate uvarint
-        cbyte |= 0x0f                                    # control byte data_type bits set to all 1's to signify this
-    else:
-        cbyte |= (data_type & 0x0f)                      # 'core' data types live in the control byte's bits only.
-
-    # --- Build header ---
-    out = [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
-    return b"".join(out)
+# Note: Header encoding and data encoding are done in one step here.
+#       BUT header decoding and data decoding are split, because Dynamic's recursive unpack needs it.
 
 
 def decode_header(buf, index):
-    cbyte,index = IntByteAt(buf, index)                  # control byte
+    cbyte, index = IntByteAt(buf, index)                  # control byte
 
-    # --- data type ---
+    # --- Data type ---
     data_type = cbyte & 0x0f
-    if data_type == 15:
-        data_type,index = decode_uvarint(buf, index)     # 'extended' data types 15 and up follow the control byte
+    if data_type == 15:  # 'extended' data types 15 and up follow the control byte
+        data_type, index = decode_uvarint(buf, index)
 
     # --- Key ---
     key_type_bits = cbyte & 0x30
     key,index = decode_key(key_type_bits, buf, index)    # key bytes
 
-    # --- Null & Data Len ---
+    # --- Flags ---
     data_len = 0
     has_data = bool(cbyte & 0x80)
+    is_null = bool(cbyte & 0x40)
+
+    # --- Data length ---
     if has_data and data_type != B3_BOOL:
         data_len, index = decode_uvarint(buf, index)     # data len bytes
-        is_null = False     # for API purposes, has_data forces is_null to false
-        # we may extend this later to enable the is_null bit to be used as a user flag when has_data is true.
-    else:
-        is_null = bool(cbyte & 0x40)
-        # Note: the B3_BOOL type uses is_null to report its actual value
-        # Note: So it is the ONLY data type that doesn't have a length even with has_data on.
 
-    return data_type, key, is_null, data_len, index
+    return key, data_type, has_data, is_null, data_len, index
+
+
+def decode_value(data_type, has_data, is_null, data_len, buf, index):
+    # --- No data: Null or Zero ---
+    if not has_data:
+        if is_null:
+            return None
+        else:
+            return ZERO_VALUE_TABLE.get(data_type, b"")
+
+    # --- Data: Bool is special, its "data" is the is_null bit ---
+    if data_type == B3_BOOL:
+        return bool(is_null)
+
+    # --- Encoded data ---
+    if data_type in DECODERS:
+        DecoderFn = DECODERS[data_type]
+        return DecoderFn(buf, index, index + data_len)
+
+    # --- Bytes (bytes, dict, list, unknown etc) ---
+    else:
+        return buf[index: index + data_len]
 
 
 # Out: the key type bits, and the key bytes.
 
 def encode_key(key):
     ktype = type(key)
-    if key is None:               # this is more idiomatic python than 'NoneType' (which is gone from types module in py3)
+    if key is None:
         return 0x00, b""
     if ktype in VALID_INT_TYPES:
         return 0x10, encode_uvarint(key)
@@ -259,4 +195,99 @@ def decode_key(key_type_bits, buf, index):
 # Policy: data types 15 and up are encoded as a seperate uvarint immediately following the control byte,
 #         and the control byte's data type bits are set to all 1 (x0f) to signify this.
 
+
+
+
+
+#
+# def type_value_to_header_and_field_bytes(data_type, value):
+#     # in: type, value   out:  has_data, is_null, field_bytes
+#
+#     # The 5 kinds of scenario, null, bool, zero, codec, bytes  (special codec)
+#
+#     # defaults ('there is data')
+#     field_bytes = b""
+#     has_data = True
+#     is_null = False
+#
+#     # Note that the order of these matters. Null supercedes zero, etc etc.
+#
+#     if value is None:           # null value
+#         has_data = False
+#         is_null = True
+#
+#     elif data_type == B3_BOOL:   # bool type
+#         is_null = value
+#
+#     elif value == ZERO_VALUE_TABLE[data_type]:  # zero value
+#         has_data = False
+#
+#     elif data_type in ENCODERS:       # codec-able value
+#         EncoderFn = ENCODERS[data_type]
+#         field_bytes = EncoderFn(value)
+#         # Note: we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
+#     else:       # bytes value (bytes, dict, list, unknown data types)
+#         field_bytes = bytes(value)
+#         # Note: if the data type doesn't have a codec, it should be bytes-able.
+#
+#     return has_data, is_null, field_bytes
+
+
+# old  decode header
+#
+# def decode_header(buf, index):
+#     cbyte,index = IntByteAt(buf, index)                  # control byte
+#
+#     # --- data type ---
+#     data_type = cbyte & 0x0f
+#     if data_type == 15:
+#         data_type,index = decode_uvarint(buf, index)     # 'extended' data types 15 and up follow the control byte
+#
+#     # --- Key ---
+#     key_type_bits = cbyte & 0x30
+#     key,index = decode_key(key_type_bits, buf, index)    # key bytes
+#
+#     # --- Null & Data Len ---
+#     data_len = 0
+#     has_data = bool(cbyte & 0x80)
+#     if has_data and data_type != B3_BOOL:
+#         data_len, index = decode_uvarint(buf, index)     # data len bytes
+#         is_null = False     # for API purposes, has_data forces is_null to false
+#         # we may extend this later to enable the is_null bit to be used as a user flag when has_data is true.
+#     else:
+#         is_null = bool(cbyte & 0x40)
+#         # Note: the B3_BOOL type uses is_null to report its actual value
+#         # Note: So it is the ONLY data type that doesn't have a length even with has_data on.
+#
+#     return data_type, key, is_null, data_len, index
+
+
+# old encode_header
+
+def encode_header(data_type, key=None, has_data=False, is_null=False, data_len=0):
+    ext_data_type_bytes = len_bytes = b""
+    cbyte = 0x00
+
+    # --- Null, data & data len ---
+    if has_data:
+        cbyte |= 0x80
+    if is_null:
+        cbyte |= 0x40
+    if has_data and data_type is not B3_BOOL:  # has_data controls if there is a data length
+        len_bytes = encode_uvarint(data_len)   # (except for BOOL where there is never a data length)
+
+    # --- Key type ---
+    key_type_bits, key_bytes = encode_key(key)
+    cbyte |= (key_type_bits & 0x30)                      # middle 2 bits for key type
+
+    # --- Data type ---
+    if data_type > 14:
+        ext_data_type_bytes = encode_uvarint(data_type)  # 'extended' data types 15 and up are a seperate uvarint
+        cbyte |= 0x0f                                    # control byte data_type bits set to all 1's to signify this
+    else:
+        cbyte |= (data_type & 0x0f)                      # 'core' data types live in the control byte's bits only.
+
+    # --- Build header ---
+    out = [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
+    return b"".join(out)
 

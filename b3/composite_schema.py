@@ -2,7 +2,7 @@
 # Schema-style composite encoder.
 
 from b3.type_codecs import CODECS, ENCODERS, ZERO_VALUE_TABLE
-from b3.item import encode_header, decode_header, encode_item
+from b3.item import encode_header, decode_header, encode_item, decode_value
 from b3.utils import VALID_INT_TYPES
 from b3.datatypes import b3_type_name, B3_DICT, B3_LIST, B3_BOOL
 
@@ -48,7 +48,6 @@ def schema_pack(schema, data, strict=False):
             raise TypeError(emsg)
 
         out[schema_key_number] = encode_item(schema_key_number, schema_type, value)
-        #                     ^^ is (header_bytes, value_bytes)
 
     # Check schema fields that are missing from supplied data. Policy: Do it by NUMBER.
     for mtyp, mname, mnum in schema:
@@ -61,25 +60,6 @@ def schema_pack(schema, data, strict=False):
     for key_number in sorted(out.keys()):
         out_list.extend(out[key_number])
     return b"".join(out_list)
-
-
-def data_for_item(hdr, buf, index):
-    # --- No data: Null or Zero ---
-    if not hdr.has_data:
-        if hdr.is_null:
-            return None
-        else:
-            return ZERO_VALUE_TABLE.get(hdr.data_type, b"")
-
-    # --- Data: Bool is special, its "data" is the is_null bit ---
-    if hdr.data_type == B3_BOOL:
-        return bool(hdr.is_null)
-
-    if hdr.data_type in CODECS:
-        _, DecoderFn = CODECS[hdr.data_type]
-        return DecoderFn(buf, index, index + hdr.data_len)
-    else:
-        return buf[index: index + hdr.data_len]  # buffer copy for simplicity.
 
 
 def schema_unpack(schema, buf, index=0, end=None):
@@ -97,71 +77,32 @@ def schema_unpack(schema, buf, index=0, end=None):
 
     out = {}
     while index < end:
-        data_type, key, is_null, data_len, index = decode_header(buf, index)
-        hdr, index = decode_header(buf, index)
-
-        # we're not doing decode_item because it breaks the dynamic unpacker
-        # so make a hdr namedtuple or whatever, and return it.
-
-
-
-        has_data = True # fixme get from decode header
-
+        key, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
 
         if schema_type is None:                 # key not found in schema, ignore and continue
-            index += hdr.data_len                   # skip over the unwanted data!
+            index += data_len               # skip over the unwanted data!
             continue
 
-        # ===============================================
+        if has_data and not is_null and schema_type != data_type:
+            emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
+              % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
+            raise TypeError(emsg)
 
-        # note now applies even when null
-        if schema_type != data_type:        # ensure message type matches schema type
-            type_error_msg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
-                             % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
-            raise TypeError(type_error_msg)
-
-        # ok now hdr.data_type always == schema_type so we good
-
-        out[schema_key_name] = data_for_item(hdr, buf, index)
+        out[schema_key_name] = decode_value(data_type, has_data, is_null, data_len, buf, index)
         index += data_len
-
-        # ===============================================
-
-        # fixme: this logic needs changing to support header-bool.
-        #        which means the decode_header api also needs changing (to yield has_data AND NZU(is_null)
-
-        # if is_null:                             # Policy: None supercedes data_len and data type when returning here in python.
-        #     data = None
-        # else:
-        #     if schema_type != data_type:        # ensure message type matches schema type
-        #         type_error_msg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
-        #                          % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
-        #         raise TypeError(type_error_msg)
-        #
-        #     # if schema_type == B3_BOOL:
-        #     #     data = bool(is_null)
-        #     # elif schema_type in CODECS:
-        #     if schema_type in CODECS:
-        #         _,DecoderFn = CODECS[schema_type]
-        #         # print("key %s decoderfn %r" % (schema_key_name, DecoderFn))
-        #         # Policy: codecs must handle data_len==0 case, and return a zero-value for their type.
-        #         data = DecoderFn(buf, index, index + data_len)
-        #     else:
-        #         data = buf[index : index + data_len]                    # buffer copy for simplicity.
-        #
-        #     index += data_len
-        #
-        # out[schema_key_name] = data
 
     # Check if any wanted fields are missing, add them with data=None
     # Policy: do this by whatever key type we are yielding (in this case, COMPUTED key name)
-    for missing_key_name in ( set(i[1] for i in schema) - set(out.keys()) ):
+    for missing_key_name in (set(i[1] for i in schema) - set(out.keys())):
         # print("key %r missing from incoming, adding it with value None" % (missing_key_name))
         out[missing_key_name] = None
 
     return out
 
+#
+# Be strict about the data types matching, except when incoming data is null
+# This lets us more easily interop with dynamic, which sends 'bytes' for nulls because it can't know what the actual type is.
 
 
 # --- Outer design policies ---
