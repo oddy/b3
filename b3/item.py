@@ -136,6 +136,7 @@ def decode_header(buf, index):
 
 
 def decode_value(data_type, has_data, is_null, data_len, buf, index):
+    # Note: the order of these matters, be careful about changing it.
     # --- No data: Null or Zero ---
     if not has_data:
         if is_null:
@@ -155,6 +156,19 @@ def decode_value(data_type, has_data, is_null, data_len, buf, index):
     # --- Bytes (bytes, dict, list, unknown etc) ---
     else:
         return buf[index: index + data_len]
+
+# used mainly by tests, for convenient inverse of encode_item()
+def decode_item(buf, index):
+    key, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
+    value = decode_value(data_type, has_data, is_null, data_len, buf, index)
+    return key, value, index+data_len
+
+# Convenience function, used by tests
+def decode_item_value(buf):
+    _, data_type, has_data, is_null, data_len, index = decode_header(buf, 0)
+    value = decode_value(data_type, has_data, is_null, data_len, buf, index)
+    return value
+
 
 
 # Out: the key type bits, and the key bytes.

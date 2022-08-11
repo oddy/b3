@@ -1,24 +1,42 @@
 
 # -*- coding: UTF-8 -*-
+import pytest
 
 from b3.utils import SBytes
 from b3.type_basic import *
-from b3.item import encode_header, decode_header
+from b3.item import encode_item, decode_header, decode_item
 from b3.datatypes import *
-
 
 # Note: these above break with ImportError No module named b3, UNLESS i make the tests a package by adding an empty __init__.py
 # Note: once i do that, then everything seems to work perfectly. I think this is pytest magic, not sure.
 
-def test_base_bool_enc():
-    assert encode_bool(True)   == SBytes("01")
-    assert encode_bool(False)  == b""                       # compact zero-value mode
 
-def test_base_bool_dec():
-    assert decode_bool(SBytes("01"),0,1) is True
-    assert decode_bool(SBytes("00"),0,1) is False           # normal zero-value
-    assert decode_bool(SBytes(""),0,0)   is False           # compact zero-value mode
+# The bool 'codec' is special, lives in the item header, reuses the null/zero flag to transport it's value.
 
+TEST_DECODE_BOOLS = (
+    (SBytes("24"), None),       # null
+    (SBytes("20"), False),      # normal compact-zero-value case
+    (SBytes("28"), False),      # bool bit 0
+    (SBytes("2C"), True)        # bool bit 1
+)
+@pytest.mark.parametrize("tbytes,tvalue", TEST_DECODE_BOOLS)
+def test_bool_decode(tbytes, tvalue):
+    _, val, _ = decode_item(tbytes, 0)
+    assert(val == tvalue)
+
+
+TEST_ENCODE_BOOLS = (
+    (None,  SBytes("24")),
+    (False, SBytes("28")),
+    (True,  SBytes("2C"))
+)
+@pytest.mark.parametrize("tvalue,tbytes", TEST_ENCODE_BOOLS)
+def test_bool_encode(tvalue, tbytes):
+    hdr_bytes,val_bytes = encode_item(key=None, data_type=B3_BOOL, value=tvalue)
+    assert(val_bytes == b"")
+    assert(hdr_bytes == tbytes)
+
+# --------------------------------------------------------------------------------------------------
 
 # BMP 0000-FFFF,  SMP 10000-1FFFF,  SIP 20000-2FFFF,  TIP 30000-3FFFF
 # Went and got the utf8 bytes from the equivalent golang script
@@ -58,7 +76,7 @@ def test_base_s64_dec():
 #     assert encode_header(data_type=B3_S64) == SBytes("08")
 
 def test_base_s64_header_decode():
-    assert decode_header(SBytes("80"), 0) == (None, B3_S64, False, False, 0, 1)
+    assert decode_header(SBytes("8"), 0) == (None, B3_S64, False, False, 0, 1)
 
 # --------------------------------------------------------------------------------------------------
 
