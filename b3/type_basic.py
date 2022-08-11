@@ -4,6 +4,7 @@
 import struct, math
 
 from b3.utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
+from b3.datatypes import B3_U32, B3_S32, B3_U64, B3_S64, DATATYPE_NAMES
 
 # Method: Encoders assemble lists of byte-buffers, then b"".join() them. We take advantage of this often for empty/nonexistant fields etc.
 # Method: Decoders always take the whole buffer, and an index, and return an updated index.
@@ -13,6 +14,22 @@ from b3.utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
 # Policy: Favouring simplicity over performance by having the type safety checks here.
 
 
+# for the int types, a table with typ : size, VALID_IN_TYPES, STRUCT_FORMAT_STRING
+
+INT_FMTS = { B3_U32:"<L", B3_S32:"<l", B3_U64:"<Q", B3_S64:"<q" }
+INT_SZS  = { B3_U32:4, B3_S32:4, B3_U64:8, B3_S64:8 }
+
+def encode_ints(typ, value):
+    if not isinstance(value, VALID_INT_TYPES):
+        raise TypeError("%s only accepts integer values" % DATATYPE_NAMES[typ])
+    return struct.pack(INT_FMTS[typ], value)
+
+def decode_ints(typ, buf, index, end):
+    if end-index != INT_SZS[typ]:
+        raise ValueError("%s data size isn't %d bytes" % (DATATYPE_NAMES[typ], INT_SZS[typ]))
+    return struct.unpack(INT_FMTS[typ], buf[index:index+INT_SZS[typ]])[0]
+
+# --------------------------------------------------------------------------------------------------
 
 def encode_utf8(value):
     if not isinstance(value, VALID_STR_TYPES):
@@ -23,19 +40,15 @@ def decode_utf8(buf, index, end):                   # handles index==end transpa
     return buf[index:end].decode("utf8")
 
 
-def encode_s64(value):
-    if value == 0:
-        return b""
-    if not isinstance(value, VALID_INT_TYPES):
-        raise TypeError("s64 only accepts integer values")
-    return struct.pack("<q", value)
+def encode_float32(value):
+    if not isinstance(value, float):
+        raise TypeError("float32 only accepts float values")
+    return struct.pack("<f", value)
 
-def decode_s64(buf, index, end):
-    if index == end:
-        return 0
-    if end-index != 8:
-        raise ValueError("B3_S64 data size isn't 8 bytes")
-    return struct.unpack("<q", buf[index:index+8])[0]
+def decode_float32(buf, index, end):
+    if end-index != 4:
+        raise ValueError("B3_FLOAT32 data size isn't 4 bytes")
+    return struct.unpack("<f", buf[index:index+4])[0]
 
 
 def encode_float64(value):

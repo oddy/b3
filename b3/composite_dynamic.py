@@ -2,7 +2,7 @@
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
 from b3.datatypes import B3_BYTES, B3_LIST, B3_DICT, b3_type_name, B3_BOOL
-from b3.type_codecs import CODECS, ENCODERS, ZERO_VALUE_TABLE
+from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
 from b3.guess_type import guess_type
 from b3.item import encode_header, decode_header, encode_item, decode_value
 

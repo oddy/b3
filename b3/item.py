@@ -3,8 +3,9 @@ from six import int2byte
 
 from b3.utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from b3.type_varint import encode_uvarint, decode_uvarint
-from b3.datatypes import B3_BOOL  # abstraction break: we are the bool 'codec' using the UF bit.
+from b3.datatypes import B3_BOOL, B3_U32, B3_S64
 from b3.type_codecs import ENCODERS, DECODERS, ZERO_VALUE_TABLE
+from b3.type_basic import encode_ints, decode_ints
 
 # Item:
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
@@ -63,20 +64,28 @@ def encode_item(key, data_type, value):
     # ======= Control flags and value bytes =======
     # Note that the order of these matters. Null supercedes zero, etc etc.
     if value is None:           # null value
+        # print("   ---> none path")
         has_data = False
         is_null = True
 
     elif data_type == B3_BOOL:   # bool type
+        # print("   ---> bool path")
         is_null = value          # repurposes the null/zero flag to store its value
 
     elif value == ZERO_VALUE_TABLE[data_type]:  # zero value
+        # print("   ---> zero value path")
         has_data = False
 
+    elif B3_U32 <= data_type <= B3_S64:    # int types have a common function
+        value_bytes = encode_ints(data_type, value)
+
     elif data_type in ENCODERS:       # codec-able value
+        # print("   ---> codec path")
         EncoderFn = ENCODERS[data_type]
         value_bytes = EncoderFn(value)
 
     else:       # bytes value (bytes, dict, list, unknown data types)
+        # print("   ---> bytes path")
         value_bytes = bytes(value)
 
     # ======= Header encoding =======
@@ -106,6 +115,9 @@ def encode_item(key, data_type, value):
     header_bytes = b"".join([int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes])
     return header_bytes, value_bytes
 
+# used for testing
+def encode_item_joined(key, data_type, value):
+    return b"".join(encode_item(key, data_type, value))
 
 # Note: Header encoding and data encoding are done in one step here.
 #       BUT header decoding and data decoding are split, because Dynamic's recursive unpack needs it.
@@ -148,6 +160,9 @@ def decode_value(data_type, has_data, is_null, data_len, buf, index):
     if data_type == B3_BOOL:
         return bool(is_null)
 
+    if B3_U32 <= data_type <= B3_S64:
+        return decode_ints(data_type, buf, index, index + data_len)
+
     # --- Encoded data ---
     if data_type in DECODERS:
         DecoderFn = DECODERS[data_type]
@@ -164,10 +179,10 @@ def decode_item(buf, index):
     return key, value, index+data_len
 
 # Convenience function, used by tests
-def decode_item_value(buf):
+def decode_item_type_value(buf):
     _, data_type, has_data, is_null, data_len, index = decode_header(buf, 0)
     value = decode_value(data_type, has_data, is_null, data_len, buf, index)
-    return value
+    return data_type,value
 
 
 

@@ -25,17 +25,17 @@
 
 # Policy: float32 it is, because python struct can't do any floats higher than 64 bit.
 
-
+# --- Core types ---
 B3_BYTES            = 0   # array of bytes.                    Note: str in py2.    for bytes.
 B3_UTF8             = 1   # UTF8 strings.                      for str in py3 and unicode in py2.
 B3_BOOL             = 2   # True or False.                                          for bool.
 B3_UVARINT          = 3   # unsigned varint                    slower & small/large for ints.
 B3_SVARINT          = 4   # signed varint, zigzag encoded.     slower & small/large for ints.
-
-
-
+B3_U32              = 5
+B3_S32              = 6
+B3_U64              = 7
 B3_S64              = 8   # signed 64bit integer               faster & medium      for ints.
-
+B3_FLOAT32          = 9
 B3_FLOAT64          = 10  # a IEEE754 64bit signed float.      faster & medium      for floats.
 B3_DECIMAL          = 11  # b Arbitrary Precision decimals.    slower & compact     for decimal.
 B3_SCHED            = 12  # c Datetime with tz/offset/subsec etc.  for future times.
@@ -43,7 +43,6 @@ B3_LIST             = 13  # d list-like composite object
 B3_DICT             = 14  # e dict-like composite object
 
 # --- Extended types ---
-
 # B3_RESERVED_15    = 15    # Policy: we could totally use 15, but currently not to avoid confusion with the ext-type format.
 B3_COMPLEX          = 16    # encoded as 2 float64s.
 
@@ -64,11 +63,11 @@ DATATYPE_NAMES = {
     2 : u"B3_BOOL",
     3 : u"B3_UVARINT",
     4 : u"B3_SVARINT",
-    5 : u"B3_none5",
-    6 : u"B3_none6",
-    7 : u"B3_none7",
+    5 : u"B3_U32",
+    6 : u"B3_S32",
+    7 : u"B3_U64",
     8 : u"B3_S64",
-    9 : u"B3_none9",
+    9 : u"B3_FLOAT32",
     10: u"B3_FLOAT64",
     11: u"B3_DECIMAL",
     12: u"B3_SCHED",

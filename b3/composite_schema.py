@@ -1,10 +1,9 @@
 
 # Schema-style composite encoder.
 
-from b3.type_codecs import CODECS, ENCODERS, ZERO_VALUE_TABLE
-from b3.item import encode_header, decode_header, encode_item, decode_value
+from b3.item import decode_header, encode_item, decode_value
 from b3.utils import VALID_INT_TYPES
-from b3.datatypes import b3_type_name, B3_DICT, B3_LIST, B3_BOOL
+from b3.datatypes import b3_type_name, B3_DICT, B3_LIST
 
 
 def schema_lookup_key(schema, key):
