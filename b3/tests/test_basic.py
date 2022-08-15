@@ -66,30 +66,14 @@ def test_base_utf8_dec():
 
 # --------------------------------------------------------------------------------------------------
 
-# FTR float32 is trash and we shouldn't really be using == to test it. 12345.5 round-tripping
-# successfully is just a lucky break, 12345.6 doesn't. Its used a "lot in gaming and ML" tho apparently.
-
 TEST_NUM_VALUES = (
-    ("u32", B3_U32, 123456789,  SBytes("58 04 15 cd 5b 07")),
-    ("s32", B3_S32, -123456789, SBytes("68 04 eb 32 a4 f8")),
-    ("u64", B3_U64, 123456789,  SBytes("78 08 15 cd 5b 07 00 00 00 00")),
-    ("s64", B3_S64, -123456789, SBytes("88 08 eb 32 a4 f8 ff ff ff ff")),
-    ("f32", B3_FLOAT32, 12345.5, SBytes("98 04 00 e6 40 46")),
-    ("f64", B3_FLOAT64, 12345.6789, SBytes("a8 08 a1 f8 31 e6 d6 1c c8 40")),
-    ("u32_0", B3_U32, 0, SBytes("50")),
-    ("s32_0", B3_S32, 0, SBytes("60")),
-    ("u64_0", B3_U64, 0, SBytes("70")),
-    ("s64_0", B3_S64, 0, SBytes("80")),
-    ("f32_0", B3_FLOAT32, 0.0, SBytes("90")),
-    ("f64_0", B3_FLOAT64, 0.0, SBytes("a0")),
+    ("u64", B3_U64, 123456789,  SBytes("58 08 15 cd 5b 07 00 00 00 00")),
+    ("s64", B3_S64, -123456789, SBytes("68 08 eb 32 a4 f8 ff ff ff ff")),
+    ("f64", B3_FLOAT64, 12345.6789, SBytes("78 08 a1 f8 31 e6 d6 1c c8 40")),
+    ("u64_0", B3_U64, 0, SBytes("50")),
+    ("s64_0", B3_S64, 0, SBytes("60")),
+    ("f64_0", B3_FLOAT64, 0.0, SBytes("70")),
 )
-
-# u32  "<L"  ("u32", B3_U32, 123456789,  SBytes("58 04 15 cd 5b 07")),
-# s32  "<l"  ("s32", B3_S32, -123456789, SBytes("68 04 eb 32 a4 f8")),
-# u64  "<Q"  ("u64", B3_U64, 123456789,  SBytes("78 08 15 cd 5b 07 00 00 00 00")),
-# s64  "<q"  ("s64", B3_S64, -123456789, SBytes("88 08 eb 32 a4 f8 ff ff ff ff")),
-# f32  "<f"  ("f32", B3_FLOAT32, 12345.6789, SBytes("98 04 b7 xe 36 40 46")),
-# f64  "<d"  ("f64", B3_FLOAT64, 12345.6789, SBytes("a8 08 a1 f8 31 e6 d6 1c c8 40")),
 
 @pytest.mark.parametrize("desc,ttype,tvalue,tbytes", TEST_NUM_VALUES)
 def test_number_encode(desc, ttype, tvalue, tbytes):

@@ -14,7 +14,6 @@ from b3 import type_sched
 
 ENCODERS = {
     B3_UTF8   : type_basic.encode_utf8,
-    B3_FLOAT32: type_basic.encode_float32,
     B3_FLOAT64: type_basic.encode_float64,
     B3_COMPLEX: type_basic.encode_complex,
     B3_UVARINT: type_varint.codec_encode_uvarint,
@@ -25,7 +24,6 @@ ENCODERS = {
 
 DECODERS = {
     B3_UTF8   : type_basic.decode_utf8,
-    B3_FLOAT32: type_basic.decode_float32,
     B3_FLOAT64: type_basic.decode_float64,
     B3_COMPLEX: type_basic.decode_complex,
     B3_UVARINT: type_varint.codec_decode_uvarint,
@@ -44,15 +42,11 @@ ZERO_VALUE_TABLE = {
     B3_BOOL: False,
     B3_UVARINT: 0,
     B3_SVARINT: 0,
-    B3_U32: 0,
-    B3_S32: 0,
     B3_U64: 0,
     B3_S64: 0,
-    B3_FLOAT32: 0.0,
     B3_FLOAT64: 0.0,
     B3_DECIMAL: decimal.Decimal('0.0'),
-    B3_SCHED: datetime.datetime(1, 1, 1),
-    # todo: ^^^ esomewhat arbitrary, but matches golang zero-value time, (except for the aware and UTC parts)
+    B3_SCHED: datetime.datetime(1, 1, 1),  # somewhat arbitrary, but matches golang zero-value time
     B3_LIST: [],
     B3_DICT: {},
     B3_COMPLEX: 0j,

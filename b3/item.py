@@ -3,7 +3,7 @@ from six import int2byte
 
 from b3.utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from b3.type_varint import encode_uvarint, decode_uvarint
-from b3.datatypes import B3_BOOL, B3_U32, B3_S64
+from b3.datatypes import B3_BOOL, B3_U64, B3_S64
 from b3.type_codecs import ENCODERS, DECODERS, ZERO_VALUE_TABLE
 from b3.type_basic import encode_ints, decode_ints
 
@@ -76,7 +76,7 @@ def encode_item(key, data_type, value):
         # print("   ---> zero value path")
         has_data = False
 
-    elif B3_U32 <= data_type <= B3_S64:    # int types have a common function
+    elif B3_U64 <= data_type <= B3_S64:    # int types have a common function
         value_bytes = encode_ints(data_type, value)
 
     elif data_type in ENCODERS:       # codec-able value
@@ -100,6 +100,8 @@ def encode_item(key, data_type, value):
     if has_data and data_type is not B3_BOOL:  # has_data controls if there is a data length
         len_bytes = encode_uvarint(len(value_bytes))   # (except for BOOL where there is never a data length)
 
+    # ^^^^ This would just be "dont encode len bytes according to these rules. if in NO_LEN_BYTES_LIST etc
+
     # --- Key type ---
     key_type_bits, key_bytes = encode_key(key)
     cbyte |= (key_type_bits & 0x03)                      # middle 2 bits for key type
@@ -114,6 +116,7 @@ def encode_item(key, data_type, value):
     # --- Build header ---
     header_bytes = b"".join([int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes])
     return header_bytes, value_bytes
+
 
 # used for testing
 def encode_item_joined(key, data_type, value):
@@ -160,7 +163,8 @@ def decode_value(data_type, has_data, is_null, data_len, buf, index):
     if data_type == B3_BOOL:
         return bool(is_null)
 
-    if B3_U32 <= data_type <= B3_S64:
+    # --- fixed-value integers ---
+    if B3_U64 <= data_type <= B3_S64:
         return decode_ints(data_type, buf, index, index + data_len)
 
     # --- Encoded data ---

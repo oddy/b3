@@ -5,7 +5,7 @@ import pytest
 
 from b3.utils import SBytes
 from b3.type_decimal import encode_decimal, decode_decimal
-from b3.item import encode_header, decode_header
+from b3.item import encode_header, decode_header, encode_item
 from b3.datatypes import B3_DECIMAL
 
 
@@ -119,21 +119,17 @@ def test_decimal_roundtrip_2():
 
 def test_decimal_zeroval_dec():
     assert(decode_decimal(SBytes(""),0,0)) == Decimal(0)
-    assert(decode_decimal(SBytes(""),0,0)) == Decimal("-0")     # oddly this passes, suspect because of python Decimal equality rules-
+    assert(decode_decimal(SBytes(""),0,0)) == Decimal("-0")     # this passes, suspect because of python Decimal equality rules-
     assert(Decimal("-0") == Decimal("0"))                       # yeah this passes too
-
 
 
 # --- Header tests ---
 
 def test_decimal_header_encode():
-    assert encode_header(data_type=B3_DECIMAL) == SBytes("0b")
+    assert encode_item(key=None, data_type=B3_DECIMAL, value=0.0) == (SBytes("80"), SBytes(""))
 
 def test_decimal_header_decode():
-    assert decode_header(SBytes("b0"), 0) == (None, B3_DECIMAL,  False,  False, 0, 1)
-
-
-
+    assert decode_header(SBytes("80"), 0) == (None, B3_DECIMAL,  False,  False, 0, 1)
 
 
 # --- decode benchmark experiments ---
