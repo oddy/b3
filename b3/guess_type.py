@@ -1,4 +1,3 @@
-
 # Python-Obj to B3-Type guesser for composite_dynamic (pack)
 
 import datetime, decimal
@@ -16,23 +15,23 @@ def guess_type(obj):
     if obj is None:
         return B3_BYTES
 
-    if isinstance(obj, bytes):                  # Note this will catch also *str* on python2. If you want unicode out, pass unicode in.
+    if isinstance(obj, bytes):  # Note this will catch also *str* on python2.
         return B3_BYTES
 
-    if PY2 and isinstance(obj, unicode):        # py2 unicode string
+    if PY2 and isinstance(obj, unicode):  # py2 unicode string
         return B3_UTF8
 
-    if isinstance(obj, str):                    # Py3 unicode str only, py2 str/bytes is caught by above test.
+    if isinstance(obj, str):  # Py3 unicode str only, py2 str/bytes is caught by above test.
         return B3_UTF8
 
-    if obj is True or obj is False:             # Note: make sure this check is BEFORE int checks!
-        return B3_BOOL                          # Note: because bools are a subclass of int (!?) in python :S
+    if obj is True or obj is False:  # Note: make sure this check is BEFORE int checks!
+        return B3_BOOL  # Note: because bools are a subclass of int (!?) in python :S
 
     if isinstance(obj, int):
-        return B3_SVARINT                       # Policy: fixed to svarint to make this deterministic for better interop.
-                                                # alternatives: many number types
+        return B3_SVARINT  # Policy: fixed to svarint to make this deterministic for better interop.
+
     if PY2 and isinstance(obj, long):
-        return B3_SVARINT                       # the zigzag size diff is only noticeable with small numbers.
+        return B3_SVARINT  # the zigzag size diff is only noticeable with small numbers.
 
     if isinstance(obj, dict):
         return B3_DICT
@@ -52,7 +51,7 @@ def guess_type(obj):
     if isinstance(obj, complex):
         return B3_COMPLEX
 
-    raise TypeError('Could not map type of object %r to a viable B3 type' % type(obj))
+    raise TypeError("Could not map type of object %r to a viable B3 type" % type(obj))
 
 
 # Policy: Currently guessed types are fixed and 1:1 with python types.
@@ -67,4 +66,3 @@ def guess_type(obj):
 # - just because I hate IEEE754 doesnt mean any one else does.
 
 # Note: no NULL type - the item header has a NULL flag instead. More info in item_header.
-
