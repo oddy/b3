@@ -72,7 +72,7 @@ def encode_item(key, data_type, value):
         # print("   ---> bool path")
         is_null = value          # repurposes the null/zero flag to store its value
 
-    elif value == ZERO_VALUE_TABLE[data_type]:  # zero value
+    elif data_type in ZERO_VALUE_TABLE and value == ZERO_VALUE_TABLE[data_type]:
         # print("   ---> zero value path")
         has_data = False
 
