@@ -2,7 +2,6 @@
 from b3.utils import SBytes
 from b3.type_varint import *
 
-
 # Testing the varint functions themselves.
 # codec-style varint tests are in test_basic.py
 

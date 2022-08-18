@@ -148,9 +148,8 @@ def decode_offset(buf, index):
 
 
 def decode_sched(buf, index, end):
-    if index == end:  # todo: esomewhat arbitrary, but matches golang zero-value time,
-        raise NotImplementedError("prep to remove")
-        return datetime.datetime(1, 1, 1)  # todo: (except for the aware and UTC parts)
+    if index == end:  # Note: deprecated, this should now be handled by zero_value_table
+        return datetime.datetime(1, 1, 1)
 
     year = month = day = hour = minute = second = sub = 0
     dt = None

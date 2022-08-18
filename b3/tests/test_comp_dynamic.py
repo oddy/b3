@@ -5,21 +5,19 @@ import pytest
 from b3.utils import SBytes
 from b3.composite_dynamic import pack, unpack, unpack_into
 
+# Policy: small-scale bottom-up-assembly. (See format doc)
+
 # B3 software Architecture:
 # |Json UX/Composite Packer| ->(dict keynames)-> |Header-izer| <-(bytes)<- |Single-item ToBytes packer| <- |Datatype Packers|
 # |Pbuf UX/Composite Packer| ->(tag numbers)  -^
 
-# Nested composite item structure is
-# [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
-#                          [hdr|data][hdr|data]
-
-# Item:
+# Item header & data structure is
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
 # ---------------------------- item_header -----------------------------  --- codecs ---
 
-
-# Policy: small-scale bottom-up-assembly. (See format doc)
-
+# Nested composite item structure is
+# [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
+#                          [hdr|data][hdr|data]
 
 # --- Shared test data ---
 
@@ -27,8 +25,6 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 
 test1_data = {10:0, 11:b"foo", 12:[True,False,False,True], 13:{9:8, 7:6}, 14:None }
 
-# todo: change the control byte so that the data_type comes first.
-#
 buf10 = "41 0a"                                             # svarint, key=10, len=0 (CZV)
 buf11 = "09 0b 03 66 6f 6f"                         # bytes,   key=11, len 3, b"foo"
 buf12_list_bytes = "2c 28 28 2c"          # True ends up being "c2" and False is "82"
@@ -37,15 +33,11 @@ buf13_dict_bytes = "49 09 01 10 49 07 01 0c"                # items for 9:8 and 
 buf13 = "e9 0d 08 " + buf13_dict_bytes                      # dict,    key=13, len=8
 buf14 = "05 0e"                                             # [bytes]**  key=14, is_null=True
 outer_header = "e8 1c"                                      # dict, no key, len=28
-#
-
-
-
 test1_buf = SBytes(" ".join([outer_header, buf10, buf11, buf12, buf13, buf14]))
 
 # Policy: Packer: ** we interpret Nones coming into pack from the user, as BYTES types.
-# (Because we dont have any schema info to determine what the type actually is.)
-# If this is a problem, we recommend switching to the schema-based API.
+#         (Because we dont have any schema info to determine what the type actually is.)
+#         If this is a problem, we recommend switching to the schema-based API.
 
 # --- Pack/Encoder tests ---
 
@@ -56,7 +48,6 @@ def test_dyna_pack_dict():
 def test_dyna_pack_dict_no_header():
     out1_buf = pack(test1_data, with_header=False)
     assert out1_buf == test1_buf[2:]
-
 
 # Unpack reads the initial header to see what the topmost container is, creates that, then calls unpack_into
 # unpack_into unpacks the buffer it's given, into the container it's given.
@@ -122,8 +113,6 @@ def test_dyna_roundtrip_all_guess_types():
 def test_dyna_roundtrip_all_guess_types_toplevel_dict():
     DX = dict(top=data_dyna_types)
     assert unpack(pack(DX), 0) == DX
-
-
 
 # --- Weird cases ---
 

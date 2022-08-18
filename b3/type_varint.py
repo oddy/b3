@@ -1,9 +1,8 @@
 # Codec for B3_UVARINT B3_SVARINT Signed and unsigned varint types
 
 # Note: this module is used internally a lot and also supplies codecs.
-# Note: the codec function call API is different to the internal-use call API.
-#       codec-use encode special-cases zero to empty bytes, internal-use does not.
-#       codec-use decode takes an end-index parameter, internal-use decode returns updated index
+# Note: the decoder function call API is different to the internal-use call API.
+#       codec-use decode takes an end-index parameter, internal-use decode returns an updated index
 # This is because varints are self-sizing, but the codecs always operate with known-size items because TLV.
 
 # Note: This (followed by item_header) will be the first things to C-ify as they dominate the pyinstrument/cProfile results.
@@ -45,8 +44,6 @@ def encode_uvarint_actual(num):  # actual worker (also called by encode_svarint)
 
 
 # --- Internal-use Decoders ---
-
-
 def decode_uvarint(data, index):
     item = 128
     num = 0
@@ -68,40 +65,12 @@ def decode_svarint(data, index):
     return x, index
 
 
-# --- Codec-use Encoders ---
-
-# Policy: Codec Encoders MAY return no bytes to signify a Zero Value (optional)
-# Policy: Codec Decoders MUST accept if index==end and return a Zero value (mandatory)
-
-
-def codec_encode_uvarint(num):
-    if num == 0:
-        raise NotImplementedError("prep to remove")
-        return b""
-    return encode_uvarint(num)
-
-
-def codec_encode_svarint(num):
-    if num == 0:
-        raise NotImplementedError("prep to remove")
-        return b""
-    return encode_svarint(num)
-
-
 # --- Codec-use Decoders ---
-
-
 def codec_decode_uvarint(data, index, end):
-    if index == end:
-        raise NotImplementedError("prep to remove")
-        return 0
     return decode_uvarint(data, index)[0]
 
 
 def codec_decode_svarint(data, index, end):
-    if index == end:
-        raise NotImplementedError("prep to remove")
-        return 0
     return decode_svarint(data, index)[0]
 
 

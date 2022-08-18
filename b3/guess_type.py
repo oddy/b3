@@ -33,12 +33,6 @@ def guess_type(obj):
     if PY2 and isinstance(obj, long):
         return B3_SVARINT  # the zigzag size diff is only noticeable with small numbers.
 
-    if isinstance(obj, dict):
-        return B3_DICT
-
-    if isinstance(obj, list):
-        return B3_LIST
-
     if isinstance(obj, float):
         return B3_FLOAT64
 
@@ -50,6 +44,13 @@ def guess_type(obj):
 
     if isinstance(obj, complex):
         return B3_COMPLEX
+
+    if isinstance(obj, dict):   # Not used by composite, included here for completeness
+        return B3_DICT
+
+    if isinstance(obj, list):   # Not used by composite, included here for completeness
+        return B3_LIST
+
 
     raise TypeError("Could not map type of object %r to a viable B3 type" % type(obj))
 
@@ -65,4 +66,4 @@ def guess_type(obj):
 # - because we'd have to fix a precision for the user and i dont know if we want to be opinionated about that.
 # - just because I hate IEEE754 doesnt mean any one else does.
 
-# Note: no NULL type - the item header has a NULL flag instead. More info in item_header.
+# Note: no NULL type - the item header has a NULL flag instead. More info in item.py

@@ -98,15 +98,9 @@ def encode_decimal(num):
 # Decode
 ########################################################################################################################
 
-# Note: we ARE supporting compact zero-value mode in the decoder, because it's mandatory.
-
 # In:  bytes buffer, index of our start, index of next thing's start (so index of us + size of us)
 # Out: a decimal.Decimal
 def decode_decimal(buf, index, end):
-    if index == end:  # no header byte at all = zero-value
-        raise NotImplementedError("prep to remove")
-        return decimal.Decimal("0.0")
-
     bits, index = IntByteAt(buf, index)
 
     # --- Special literals ---
@@ -129,7 +123,7 @@ def decode_decimal(buf, index, end):
         exp = bits & EXPONENT_BITS
 
     # --- value ---
-    if index == end:
+    if index == end:        # Note: old behaviour, deprecated (handled by zero_value_table)
         value = 0
     else:
         value, index = decode_uvarint(buf, index)

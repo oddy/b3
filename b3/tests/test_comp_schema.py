@@ -5,16 +5,15 @@ from b3.utils import SBytes
 from b3.datatypes import *
 from b3.composite_schema import schema_pack, schema_unpack
 
+# Item header & data structure is
+# [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
+# ---------------------------- item_header -----------------------------  --- codecs ---
+
 # Nested composite item structure is
 # [hdr|data][hdr|data][hdr|--------data--------[hdr|data][hdr|data] etc
 #                          [hdr|data][hdr|data]
 
-# Item:
-# [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
-# ---------------------------- item_header -----------------------------  --- codecs ---
-
 # --- Test data schema ---
-
 TEST_SCHEMA = (
     (B3_UVARINT, "number1", 1),
     (B3_UTF8,    "string1", 2),
@@ -22,7 +21,6 @@ TEST_SCHEMA = (
     )
 
 # --- Shared test data - manually-built packed-bytes buffer ---
-
 number1_data   = "45"          # encode_uvarint(69)
 number1_header = "39 01 01"    # encode_header(B3_UVARINT, key=1, data_len=1)  # "57 01" for null,  17 01 czv
 string1_data   = "66 6f 6f"    # encode_utf8(u"foo")
@@ -33,7 +31,6 @@ test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data
 test1_buf = SBytes(test1_hex)
 
 # --- Shared test data - actual test data to pack ---
-
 test1 = dict(bool1=True, number1=69)
 # add string1 at the end to try and influence dict ordering. Order-preserving dicts will have string1
 # last, thus bool1 successfully being at the end of pack-generated buffers means the key_number ordering
@@ -81,10 +78,12 @@ def test_schema_pack_field_missing():
     buf = schema_pack(TEST_SCHEMA, test2)
     assert buf == bool1_nulled_buf
 
-# Note: in py3, if you have a u keyname in the schema and a b keyname in the input dict, schema lookup will fail on that keyname
-# and the outgoing-field-is-missing-make-it-None thing will kick in and your field data wont get sent.
-# - this is why people should dev with strict ON, then turn it off later. This may in fact be what strict is FOR.
-# - we're not going to try and be more helpful here because we could have to pick an encoding etc to compare the strings. Too much pain.
+# Note: in py3, if you have a u keyname in the schema and a b keyname in the input dict,
+#       schema lookup will FAIL on that keyname, and the outgoing-field-is-missing-make-it-None
+#       thing will kick in and your field data wont get sent.
+#       - this is why people should dev with strict ON, then (maybe) turn it off later.
+#       - we're not going to try and be more helpful here because we could have to pick
+#         an encoding etc to compare the strings. Too much pain.
 
 # --- Zero-value compactness check ---
 
@@ -104,7 +103,6 @@ def test_schema_pack_zeroval():
 
 
 # --- Nesting UX Test ---
-
 OUTER_SCHEMA = (
     (B3_BYTES,          "bytes1",  1),
     (B3_SVARINT,        "signed1", 2),
@@ -157,8 +155,6 @@ def test_schema_unpack_type_mismatch():
     with pytest.raises(TypeError):
         mismatch_buf = SBytes("31 01   b1 02   21 03")       # field 2 is a bytes here (x10) when it should be a utf8 (x11)
         x = schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf))
-
-# todo: we need a battery of bool tests for the 4 situations.
 
 def test_schema_unpack_bytes_yield():
     BYTES_SCHEMA = ((B3_BYTES, 'bytes1', 1), (B3_LIST, 'list1', 2))

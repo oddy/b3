@@ -1,12 +1,8 @@
 
 # -*- coding: UTF-8 -*-
 
-import pytest
-import datetime
-
 from b3.utils import SBytes
 from b3.item import *
-from b3.datatypes import B3_SCHED, B3_DECIMAL
 
 # Note: encode_item takes (key, data_type, value)
 # Note: decode_header returns    (key, data_type, has_data, is_null, data_len, index)

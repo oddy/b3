@@ -12,10 +12,10 @@ from b3.type_basic import encode_ints, decode_ints
 
 # --- header byte ---
 # +------------+------------+------------+------------+------------+------------+------------+------------+
-# | data type  | data type  | data type  | data type  |  has data  |null/zero/UF| key type   | key type   |
+# | data type  | data type  | data type  | data type  |  has data  | null/zero  | key type   | key type   |
 # +------------+------------+------------+------------+------------+------------+------------+------------+
 
-# Note: UF = User Flag, can be used by codecs (e.g. bool) when has_data is True.
+# Note: null/zero bit can be used by codecs (e.g. bool) when has_data is True.
 
 # The "5 kinds of data" and how the flags work for each:
 # None              has_data false  null true
@@ -24,19 +24,17 @@ from b3.type_basic import encode_ints, decode_ints
 # Encoded-Data      has_data true   null n/a
 # Bytes             has_data true   null n/a
 
-
 # --- Control flags ---
 # +------------+------------+
-# | has data   |null/zero/UF|
+# | has data   |null/zero   |
 # +------------+------------+
 #     0   0  (0)    No data, value is Codec zero-value for given data type (0, "", 0.0 etc)
 #     0   1  (1)    No data, value is None / NULL / nil
-#     1   x  (2)    Data present (len and value), UF bit can be used by codecs such as Bool.
+#     1   x  (2)    Data present (len and value), nullzero bit can be re-used by codecs such as Bool.
 
 # Has-data==True does two things:
-# 1) switches nullzero/UF into UF mode and out of null-or-zero mode - [always]
+# 1) makes the nullzero bit available for custom use (e.g. bool)
 # 2) signals that a data len follows - [IFF the data type is not bool]
-
 
 # --- Key types ---
 # +------------+------------+
@@ -51,9 +49,8 @@ from b3.type_basic import encode_ints, decode_ints
 # Note: Header encoding and data encoding are done in one step here.
 #       BUT header decoding and data decoding are split, because Dynamic's recursive unpack needs it.
 
-# we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
+# we can: make the nullzero bit available for use by codecs in future if needed.
 # Policy: if the data type doesn't have a codec, it should be bytes-able.
-
 
 def encode_item(key, data_type, value):
     value_bytes = b""
@@ -62,29 +59,25 @@ def encode_item(key, data_type, value):
 
     # ======= Control flags and value bytes =======
     # Note that the order of these matters. Null supercedes zero, etc etc.
-    if value is None:  # null value
-        # print("   ---> none path")
+    if value is None:
         has_data = False
         is_null = True
 
-    elif data_type == B3_BOOL:  # bool type
-        # print("   ---> bool path")
+    elif data_type == B3_BOOL:
         is_null = value  # repurposes the null/zero flag to store its value
 
     elif data_type in ZERO_VALUE_TABLE and value == ZERO_VALUE_TABLE[data_type]:
-        # print("   ---> zero value path")
         has_data = False
 
     elif B3_U64 <= data_type <= B3_S64:  # int types have a common function
         value_bytes = encode_ints(data_type, value)
 
-    elif data_type in ENCODERS:  # codec-able value
-        # print("   ---> codec path")
+    elif data_type in ENCODERS:
         EncoderFn = ENCODERS[data_type]
         value_bytes = EncoderFn(value)
 
-    else:  # bytes value (bytes, dict, list, unknown data types)
-        # print("   ---> bytes path")
+    else:
+        # bytes value (bytes, dict, list, unknown data types)
         value_bytes = bytes(value)
 
     # ======= Header encoding =======
@@ -117,14 +110,13 @@ def encode_item(key, data_type, value):
     return header_bytes, value_bytes
 
 
-# used for testing
+# Convenience function for tests
 def encode_item_joined(key, data_type, value):
     return b"".join(encode_item(key, data_type, value))
 
 
 # Note: Header encoding and data encoding are done in one step here.
 #       BUT header decoding and data decoding are split, because Dynamic's recursive unpack needs it.
-
 
 def decode_header(buf, index):
     cbyte, index = IntByteAt(buf, index)  # control byte
@@ -193,7 +185,6 @@ def decode_item_type_value(buf):
 
 # Out: the key type bits, and the key bytes.
 
-
 def encode_key(key):
     ktype = type(key)
     if key is None:
@@ -209,7 +200,6 @@ def encode_key(key):
 
 
 # Out: the key, and the new index
-
 
 def decode_key(key_type_bits, buf, index):
     if key_type_bits == 0x00:
@@ -227,6 +217,7 @@ def decode_key(key_type_bits, buf, index):
     raise TypeError("Invalid key type in control byte %02x" % key_type_bits)
 
 
-# Policy: we ARE doing zero-value signalling.
 # Policy: data types 15 and up are encoded as a seperate uvarint immediately following the control byte,
 #         and the control byte's data type bits are set to all 1 (x0f) to signify this.
+
+

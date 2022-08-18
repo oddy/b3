@@ -1,26 +1,11 @@
 
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
-from b3.datatypes import B3_LIST, B3_DICT, b3_type_name, B3_BOOL
-from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
+from b3.datatypes import B3_LIST, B3_DICT, b3_type_name
 from b3.guess_type import guess_type
 from b3.item import encode_item, decode_header, decode_value
 
-
-# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
-
-# --- Encoder/Pack policies ---
-# policy: because there's no schema backing us, we dont know what incoming-to-pack missing data types SHOULD be!
-# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
-# policy: in practice None supercedes data-type checking here and in the schema packer, so this should be ok.
-
-# --- Decoder/Unpack policies ---
-# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have a top-level header at the front anyway
-#         the users just want list in list out, dict in dict out, etc.i
-#         AND this actually makes the code a LOT simpler.
-# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
-#         have a container object of their own, they can call the recursive unpacker function directly.
-
+# See bottom of file for design policy notes.
 
 def pack(item, key=None, with_header=True, rlimit=20):
     """Packs a list or dict to bytes.
@@ -111,3 +96,16 @@ def unpack_into(out, buf, index, end):
 
 
 
+# Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
+
+# --- Encoder/Pack policies ---
+# policy: because there's no schema backing us, we dont know what incoming-to-pack missing data types SHOULD be!
+# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
+# policy: in practice None supercedes data-type checking here and in the schema packer, so this should be ok.
+
+# --- Decoder/Unpack policies ---
+# Policy: we're not hardwiring top-level it to a list like the old version did, so we HAVE to have a top-level header at the front anyway
+#         the users just want list in list out, dict in dict out, etc.i
+#         AND this actually makes the code a LOT simpler.
+# Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
+#         have a container object of their own, they can call the recursive unpacker function directly.

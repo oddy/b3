@@ -3,17 +3,11 @@ import datetime, decimal
 import pytest
 
 from b3.utils import SBytes
-from b3.item import (
-    encode_item,
-    decode_header,
-    decode_item,
-    encode_item_joined,
-    decode_item_type_value,
-)
+from b3.item import encode_item, decode_item, encode_item_joined, decode_item_type_value
 from b3.datatypes import *
 
-# encode_item takes (key, data_type, value)
-# decode_header returns    (key, data_type, has_data, is_null, data_len, index)
+# Note: encode_item takes    (key, data_type, value)
+# Note: decode_header returns    (key, data_type, has_data, is_null, data_len, index)
 
 # --------------------------------------------------------------------------------------------------
 def test_enc_bytes():

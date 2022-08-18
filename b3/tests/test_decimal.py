@@ -7,7 +7,6 @@ from b3.utils import SBytes
 from b3.type_decimal import encode_decimal, decode_decimal
 
 # Note: these test the decimal CODEC directly, rather than going through Item
-
 # See type_decimal.py for the Data Format Standard
 
 # --- Things to test for ---
