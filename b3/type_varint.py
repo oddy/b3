@@ -30,14 +30,6 @@ def encode_svarint(num):
     return encode_uvarint_actual(num)
 
 
-# API level - choose between signed and unsigned,
-def encode_varint(num):
-    if num < 0:
-        return encode_svarint(num)
-    else:
-        return encode_uvarint(num)
-
-
 # Actual worker
 def encode_uvarint_actual(num):  # actual worker (also called by encode_svarint)
     _next = 1
@@ -84,12 +76,14 @@ def decode_svarint(data, index):
 
 def codec_encode_uvarint(num):
     if num == 0:
+        raise NotImplementedError("prep to remove")
         return b""
     return encode_uvarint(num)
 
 
 def codec_encode_svarint(num):
     if num == 0:
+        raise NotImplementedError("prep to remove")
         return b""
     return encode_svarint(num)
 
@@ -99,12 +93,14 @@ def codec_encode_svarint(num):
 
 def codec_decode_uvarint(data, index, end):
     if index == end:
+        raise NotImplementedError("prep to remove")
         return 0
     return decode_uvarint(data, index)[0]
 
 
 def codec_decode_svarint(data, index, end):
     if index == end:
+        raise NotImplementedError("prep to remove")
         return 0
     return decode_svarint(data, index)[0]
 

@@ -5,9 +5,8 @@ import pytest
 
 from b3.utils import SBytes
 from b3.type_decimal import encode_decimal, decode_decimal
-from b3.item import encode_header, decode_header, encode_item
-from b3.datatypes import B3_DECIMAL
 
+# Note: these test the decimal CODEC directly, rather than going through Item
 
 # See type_decimal.py for the Data Format Standard
 
@@ -109,27 +108,6 @@ def test_decimal_roundtrip_2():
     buf = encode_decimal(Decimal('-0.0000000006789'))
     # print(hexdump(buf))
     assert decode_decimal(buf,0,len(buf))  == Decimal('-0.0000000006789')
-
-
-# --- compact zero-value mode ---
-
-# Note: decimal ENcoder does not support compact zero-value mode.
-# def test_deci_zeroval_enc_1():
-#     assert(encode_decimal(Decimal(0.0))) == SBytes("")
-
-def test_decimal_zeroval_dec():
-    assert(decode_decimal(SBytes(""),0,0)) == Decimal(0)
-    assert(decode_decimal(SBytes(""),0,0)) == Decimal("-0")     # this passes, suspect because of python Decimal equality rules-
-    assert(Decimal("-0") == Decimal("0"))                       # yeah this passes too
-
-
-# --- Header tests ---
-
-def test_decimal_header_encode():
-    assert encode_item(key=None, data_type=B3_DECIMAL, value=0.0) == (SBytes("80"), SBytes(""))
-
-def test_decimal_header_decode():
-    assert decode_header(SBytes("80"), 0) == (None, B3_DECIMAL,  False,  False, 0, 1)
 
 
 # --- decode benchmark experiments ---

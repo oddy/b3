@@ -177,7 +177,7 @@ def decode_value(data_type, has_data, is_null, data_len, buf, index):
         return buf[index : index + data_len]
 
 
-# used mainly by tests, for convenient inverse of encode_item()
+# inverse of encode_item()
 def decode_item(buf, index):
     key, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
     value = decode_value(data_type, has_data, is_null, data_len, buf, index)

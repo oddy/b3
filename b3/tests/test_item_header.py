@@ -2,9 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import pytest
+import datetime
 
 from b3.utils import SBytes
 from b3.item import *
+from b3.datatypes import B3_SCHED, B3_DECIMAL
 
 # Note: encode_item takes (key, data_type, value)
 # Note: decode_header returns    (key, data_type, has_data, is_null, data_len, index)
@@ -137,5 +139,4 @@ def test_dec_header_keys():
     assert decode_header(SBytes("03 03 66 6f 6f"), 0)        == (b"foo",     0, False, False, 0, 5)
 
 
-# Note: bool tests are in test_basic
 

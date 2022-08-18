@@ -1,4 +1,5 @@
 
+import datetime, decimal
 import pytest
 
 from b3.utils import SBytes
@@ -101,19 +102,27 @@ def test_dyna_roundtrip_list():
     test_list = [1, 2, 3, 4, 5, u'a', u'b', b'xx']
     assert unpack(pack(test_list),0)  == test_list
 
-def test_dyna_roundtrip_all_types():
-    import datetime, decimal
+
+data_dyna_types = [
+    None,
+    b'foo', u'bar', True,
+    -69,                        # note: only SVARINT tested here because of guess_type policy
+    2.318,
+    decimal.Decimal('3.8'), datetime.datetime.now(),
+    {1: 2}, [3, 4],
+    4j,
+]
+
+
+def test_dyna_roundtrip_all_guess_types():
     # dynamic uses dict, list, bytes, utf8, bool, svarint, float64, decimal, sched, complex
     # dynamic currently does NOT use non-svarint number types
-    data_dyna_types = [
-        {1:2}, [3,4],
-        b'foo', u'bar', True,
-        -69, 2.318,
-        decimal.Decimal('3.8'), datetime.datetime.now(),
-        4j,
-        None
-        ]
-    assert unpack(pack(data_dyna_types),0) == data_dyna_types
+    assert unpack(pack(data_dyna_types), 0) == data_dyna_types
+
+def test_dyna_roundtrip_all_guess_types_toplevel_dict():
+    DX = dict(top=data_dyna_types)
+    assert unpack(pack(DX), 0) == DX
+
 
 
 # --- Weird cases ---

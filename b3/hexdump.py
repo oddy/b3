@@ -61,14 +61,12 @@ def CheckColorOk():
         return
     colChecked = True
 
-    if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+    # try to ensure we're at interactive prompt AND not inside a repl (python / ipython)
+    if hasattr(sys.stdout, "isatty") and sys.stdout.isatty() and not hasattr(sys, "ps1"):
         if not hasattr(sys, "winver"):  # linux/mac
             colOK = True
         else:
             # windows - do color only if win10 & its "does ansi if you turn it on" console
-            # Don't go color in windows if inside python or ipython repl.
-            if hasattr(sys, "ps1"):
-                return
             import ctypes  # https://docs.microsoft.com/en-us/windows/console/setconsolemode
             kernel32 = ctypes.windll.kernel32
             ret = kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)

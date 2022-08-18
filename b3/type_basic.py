@@ -2,7 +2,7 @@
 
 import struct, math
 
-from b3.utils import IntByteAt, VALID_INT_TYPES, VALID_STR_TYPES
+from b3.utils import VALID_INT_TYPES, VALID_STR_TYPES
 from b3.datatypes import B3_U64, B3_S64, DATATYPE_NAMES
 
 # Method: Encoders assemble lists of byte-buffers, then b"".join() them. We take advantage of this often for empty/nonexistant fields etc.
@@ -48,12 +48,14 @@ def encode_float64(value):
     if not isinstance(value, float):
         raise TypeError("float64 only accepts float values")
     if value == 0.0:
+        raise NotImplementedError("prep to remove")
         return b""
     return struct.pack("<d", value)
 
 
 def decode_float64(buf, index, end):
     if index == end:
+        raise NotImplementedError("prep to remove")
         return 0.0
     if end - index != 8:
         raise ValueError("B3_FLOAT64 data size isn't 8 bytes")
@@ -65,12 +67,15 @@ def encode_complex(value):
     if not isinstance(value, complex):
         raise TypeError("complex only accepts complex types")
     if value == 0j:
+        raise NotImplementedError("prep to remove")
         return b""
     return struct.pack("<dd", value.real, value.imag)
 
 
 def decode_complex(buf, index, end):
+
     if index == end:
+        raise NotImplementedError("prep to remove")
         return 0j
     if end - index != 16:
         raise ValueError("B3_COMPLEX data size isn't 16 bytes")

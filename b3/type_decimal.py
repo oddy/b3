@@ -104,6 +104,7 @@ def encode_decimal(num):
 # Out: a decimal.Decimal
 def decode_decimal(buf, index, end):
     if index == end:  # no header byte at all = zero-value
+        raise NotImplementedError("prep to remove")
         return decimal.Decimal("0.0")
 
     bits, index = IntByteAt(buf, index)

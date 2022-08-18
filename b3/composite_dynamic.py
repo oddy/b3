@@ -1,10 +1,10 @@
 
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
-from b3.datatypes import B3_BYTES, B3_LIST, B3_DICT, b3_type_name, B3_BOOL
+from b3.datatypes import B3_LIST, B3_DICT, b3_type_name, B3_BOOL
 from b3.type_codecs import ENCODERS, ZERO_VALUE_TABLE
 from b3.guess_type import guess_type
-from b3.item import encode_header, decode_header, encode_item, decode_value
+from b3.item import encode_item, decode_header, decode_value
 
 
 # Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
@@ -20,39 +20,6 @@ from b3.item import encode_header, decode_header, encode_item, decode_value
 #         AND this actually makes the code a LOT simpler.
 # Note:   The recursive unpack function takes a given container object (list, dict) as an argument, so if users already
 #         have a container object of their own, they can call the recursive unpacker function directly.
-
-
-def type_value_to_header_and_field_bytes(data_type, value):
-    # in: type, value   out:  has_data, is_null, field_bytes
-
-    # The 5 kinds of scenario, null, bool, zero, codec, bytes  (special codec)
-
-    # defaults ('there is data')
-    field_bytes = b""
-    has_data = True
-    is_null = False
-
-    # Note that the order of these matters. Null supercedes zero, etc etc.
-
-    if value is None:           # null value
-        has_data = False
-        is_null = True
-
-    elif data_type == B3_BOOL:   # bool type
-        is_null = value
-
-    elif value == ZERO_VALUE_TABLE[data_type]:  # zero value
-        has_data = False
-
-    elif data_type in ENCODERS:       # codec-able value
-        EncoderFn = ENCODERS[data_type]
-        field_bytes = EncoderFn(value)
-        # Note: we can: field_bytes, is_null = SpecialEncoderFn(value) in future if wanted.
-    else:       # bytes value (bytes, dict, list, unknown data types)
-        field_bytes = bytes(value)
-        # Note: if the data type doesn't have a codec, it should be bytes-able.
-
-    return has_data, is_null, field_bytes
 
 
 def pack(item, key=None, with_header=True, rlimit=20):
