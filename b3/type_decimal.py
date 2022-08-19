@@ -77,7 +77,9 @@ def encode_decimal(num):
     # --- Exponent ---
     exp_abs = abs(exp)
 
-    if exp_abs > 0x0F:  # bit 1 (0x10) : [number] 0=expo bottom-4bits 1=expo varint follows
+    if (
+        exp_abs > 0x0F
+    ):  # bit 1 (0x10) : [number] 0=expo bottom-4bits 1=expo varint follows
         bits |= 0x10  # exponent > 15, store it in varint
         out = [int2byte(bits), encode_uvarint(exp_abs)]
         # ^^ uv b/c exp sign already done & we're trying to be compact

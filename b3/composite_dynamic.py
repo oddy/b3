@@ -1,6 +1,6 @@
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
-from b3.datatypes import B3_LIST, B3_DICT, b3_type_name
+from b3.datatypes import LIST, DICT, b3_type_name
 from b3.guess_type import guess_type
 from b3.item import encode_item, decode_header, decode_value
 
@@ -20,11 +20,13 @@ def pack(item, key=None, with_header=True, rlimit=20):
 
     if isinstance(item, list):  # transform item to bytes, note recursive call
         item = b"".join([pack(item=i, rlimit=rlimit - 1) for i in item])
-        data_type = B3_LIST
+        data_type = LIST
 
     elif isinstance(item, dict):  # transform item to bytes, note recursive call
-        item = b"".join([pack(item=v, key=k, rlimit=rlimit - 1) for k, v in item.items()])
-        data_type = B3_DICT
+        item = b"".join(
+            [pack(item=v, key=k, rlimit=rlimit - 1) for k, v in item.items()]
+        )
+        data_type = DICT
 
     else:
         data_type = guess_type(item)  # may blow up here encountering unknown types
@@ -38,7 +40,7 @@ def pack(item, key=None, with_header=True, rlimit=20):
 
 
 def new_container(data_type):
-    out = {B3_LIST: list(), B3_DICT: dict()}[data_type]
+    out = {LIST: list(), DICT: dict()}[data_type]
     return out
 
 
@@ -51,11 +53,9 @@ def unpack(buf, index=0):
 
     dkey, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
 
-    if data_type not in (B3_DICT, B3_LIST):
-        errmsg = "Expecting list or dict first in message, but got type %s" % (
-            b3_type_name(data_type),
-        )
-        raise TypeError(errmsg)
+    if data_type not in (DICT, LIST):
+        emsg = "Expecting list or dict first, but got %s" % (b3_type_name(data_type))
+        raise TypeError(emsg)
 
     out = new_container(data_type)
     unpack_into(out, buf, index, index + data_len)
@@ -75,7 +75,7 @@ def unpack_into(out, buf, index, end):
         # --- do header ---
         key, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
 
-        if data_type in (B3_LIST, B3_DICT):
+        if data_type in (LIST, DICT):
             value = new_container(data_type)
             unpack_into(value, buf, index, index + data_len)  # note recursive
         else:
@@ -99,7 +99,7 @@ def unpack_into(out, buf, index, end):
 
 # --- Encoder/Pack policies ---
 # policy: because there's no schema backing us, we dont know what incoming-to-pack missing data types SHOULD be!
-# policy: Weird edge case: if the encoder gets a None, we consider that B3_BYTES, because the header needs to encode *something* as the data type.
+# policy: Weird edge case: if the encoder gets a None, we consider that BYTES, because the header needs to encode *something* as the data type.
 # policy: in practice None supercedes data-type checking here and in the schema packer, so this should be ok.
 
 # --- Decoder/Unpack policies ---

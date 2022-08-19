@@ -1,4 +1,3 @@
-
 # ================== B3 Usage examples ==================
 
 from __future__ import print_function
@@ -10,8 +9,19 @@ import b3
 # ==================== EASY MODE ========================
 # You can pack lists of things (like json.dumps):
 
-list_data = [ None,  b"foo",  u"bar",  True,  -69,  2.318,  46j,  [1,2,3],  {4:5, 6:7},
-              decimal.Decimal("13.37"), datetime.datetime.now() ]
+list_data = [
+    None,
+    b"foo",
+    "bar",
+    True,
+    -69,
+    2.318,
+    46j,
+    [1, 2, 3],
+    {4: 5, 6: 7},
+    decimal.Decimal("13.37"),
+    datetime.datetime.now(),
+]
 # Complex numbers, decimal numbers, and dates and times all work.
 
 list_buf = b3.pack(list_data)
@@ -20,7 +30,7 @@ out_list = b3.unpack(list_buf)
 
 # You can pack dicts of things:
 
-dict_data = { 1:1, u"2":u"2", b"3":b"3" }
+dict_data = {1: 1, "2": "2", b"3": b"3"}
 
 # byte keys are supported as well as string and number keys
 
@@ -44,9 +54,9 @@ print(repr(dict_data == out_dict))
 # (See datatypes.py for the available types)
 
 SCHEMA = (
-    (b3.B3_BYTES,   "bytes1",  1),
-    (b3.B3_UVARINT, "number1", 2),
-    )
+    (b3.BYTES,   "bytes1",  1),
+    (b3.UVARINT, "number1", 2),
+)
 
 # Schema packing/unpacking is to and from python Dicts.
 
@@ -62,32 +72,30 @@ print("\nSchema matches?")
 print(repr(sch_data == out_sch))
 
 
-
 # ==================== SCHEMA NESTING ===================
 # Schema is intended for flat data structures, but nesting is still straightforward,
 # You can pack nested fields first, building bottom-up:
 
 OUTER_SCHEMA = (
-    (b3.B3_UVARINT,         "index",         1),
-    (b3.B3_UTF8,            "label",         2),
-    (b3.B3_DICT, "inner_message", 3)
-    )
+    (b3.UVARINT, "index",         1),
+    (b3.UTF8,    "label",         2),
+    (b3.DICT,    "inner_message", 3),
+)
 
 inner_data = dict(bytes1=b"hello", number1=1337)
-inner_buf  = b3.schema_pack(SCHEMA, inner_data)
-outer_data = dict(index=23, label=u"ss", inner_message=inner_buf)
-outer_buf  = b3.schema_pack(OUTER_SCHEMA, outer_data)
+inner_buf = b3.schema_pack(SCHEMA, inner_data)
+outer_data = dict(index=23, label="ss", inner_message=inner_buf)
+outer_buf = b3.schema_pack(OUTER_SCHEMA, outer_data)
 
 # Unpacking is the reverse, so a little bit manual, but still easy:
 
-ret_outer  = b3.schema_unpack(OUTER_SCHEMA, outer_buf)
-inner_buf  = ret_outer['inner_message']
-ret_inner  = b3.schema_unpack(SCHEMA, inner_buf)
+ret_outer = b3.schema_unpack(OUTER_SCHEMA, outer_buf)
+inner_buf = ret_outer["inner_message"]
+ret_inner = b3.schema_unpack(SCHEMA, inner_buf)
 
 print("\nNesting matches?:")
-print("inner ",repr(inner_data == ret_inner))
-print("outer ",repr(outer_data == ret_outer))
-
+print("inner ", repr(inner_data == ret_inner))
+print("outer ", repr(outer_data == ret_outer))
 
 
 # ==================== INTEROP (WIP) ====================
@@ -95,20 +103,16 @@ print("outer ",repr(outer_data == ret_outer))
 # This means you can start with json-like and 'upgrade' to schemas later, or have "quick-n-dirty" clients talking to schema-ed servers.
 # Going the other way (schema_pack() -> unpack()) is harder but doable if you're prepared to accept tag numbers as keys instead of string names.
 
-source_data = dict(tom=u"hello", dick=u"world", harry=777)
-source_buf  = b3.pack(source_data, with_header=False)
+source_data = dict(tom="hello", dick="world", harry=777)
+source_buf = b3.pack(source_data, with_header=False)
 
 b3.composite_schema.strict_mode = False
 # ^^ if strict is on, incoming types must match the type the schema wants.
 # ^^ if strict is off, then incoming types are allowed to not match if the value is NULL.
 #    This is helpful for e.g. if dynamic is packing and schema is unpacking.
 
-DEST_SCHEMA = ((b3.B3_UTF8, "tom", 1), (b3.B3_UTF8, "dick", 2), (b3.B3_SVARINT, "harry", 3))
-dest_data   = b3.schema_unpack(DEST_SCHEMA, source_buf)
+DEST_SCHEMA = ((b3.UTF8, "tom", 1), (b3.UTF8, "dick", 2), (b3.SVARINT, "harry", 3))
+dest_data = b3.schema_unpack(DEST_SCHEMA, source_buf)
 
 print("\nInterop matches?:")
 print(repr(source_data == dest_data))
-
-
-
-

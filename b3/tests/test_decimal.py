@@ -38,7 +38,9 @@ def test_decimal_zeros_enc():
 
 def test_decimal_smallexp_enc():
     assert encode_decimal(Decimal("1")) == SBytes("00 01")  # 0000 0000  & signif 01
-    assert encode_decimal(Decimal("2.01")) == SBytes("22 c9 01")  # 0010 0010  & signif c9 01
+    assert encode_decimal(Decimal("2.01")) == SBytes(
+        "22 c9 01"
+    )  # 0010 0010  & signif c9 01
 
 
 def test_decimal_largeexp_enc():
@@ -66,7 +68,9 @@ def test_decimal_nans_dec():
 
 def test_decimal_snan_dec():
     with pytest.raises(InvalidOperation):
-        assert decode_decimal(SBytes("90"), 0, 1) == Decimal("snan")  # sNans raise exceptions
+        assert decode_decimal(SBytes("90"), 0, 1) == Decimal(
+            "snan"
+        )  # sNans raise exceptions
 
 
 def test_decimal_sign_inf_dec():

@@ -3,7 +3,7 @@
 import struct, math
 
 from b3.utils import VALID_INT_TYPES, VALID_STR_TYPES
-from b3.datatypes import B3_U64, B3_S64, DATATYPE_NAMES
+from b3.datatypes import U64, S64, DATATYPE_NAMES
 
 # Method: Encoders assemble lists of byte-buffers, then b"".join() them.
 #         We take advantage of this often for empty/nonexistant fields etc.
@@ -12,8 +12,8 @@ from b3.datatypes import B3_U64, B3_S64, DATATYPE_NAMES
 # Policy: Favouring simplicity over performance by having some type safety checks here.
 #         (There probably should be more)
 
-INT_FMTS = {B3_U64: "<Q", B3_S64: "<q"}
-INT_SZS = {B3_U64: 8, B3_S64: 8}
+INT_FMTS = {U64: "<Q", S64: "<q"}
+INT_SZS = {U64: 8, S64: 8}
 
 
 def encode_ints(typ, value):
@@ -24,7 +24,9 @@ def encode_ints(typ, value):
 
 def decode_ints(typ, buf, index, end):
     if end - index != INT_SZS[typ]:
-        raise ValueError("%s data size isn't %d bytes" % (DATATYPE_NAMES[typ], INT_SZS[typ]))
+        raise ValueError(
+            "%s data size isn't %d bytes" % (DATATYPE_NAMES[typ], INT_SZS[typ])
+        )
     return struct.unpack(INT_FMTS[typ], buf[index : index + INT_SZS[typ]])[0]
 
 
@@ -49,7 +51,7 @@ def encode_float64(value):
 
 def decode_float64(buf, index, end):
     if end - index != 8:
-        raise ValueError("B3_FLOAT64 data size isn't 8 bytes")
+        raise ValueError("FLOAT64 data size isn't 8 bytes")
     return struct.unpack("<d", buf[index : index + 8])[0]
 
 
@@ -62,7 +64,7 @@ def encode_complex(value):
 
 def decode_complex(buf, index, end):
     if end - index != 16:
-        raise ValueError("B3_COMPLEX data size isn't 16 bytes")
+        raise ValueError("COMPLEX data size isn't 16 bytes")
     return complex(*struct.unpack("<dd", buf[index : index + 16]))
 
 

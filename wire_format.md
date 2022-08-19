@@ -138,25 +138,25 @@ An item's data bytes _can themselves be_ a series of encoded items, which is how
 The core data types are as follows. 
 Unknown data types can be interpreted as BYTES and passed through successfully, as the length is always known and explicit.
 
-| Name       | Number | Info                                                    |
-|------------|--------|---------------------------------------------------------|
-| B3_BYTES   | 0      | array of bytes.   Note: str in py2.    for bytes.       |
-| B3_UTF8    | 1      | UTF8 strings.     for str in py3 and unicode in py2.    |
-| B3_BOOL    | 2      | True or False.                                          |
-| B3_UVARINT | 3      | unsigned varint                 (small or v.large ints) |
-| B3_SVARINT | 4      | signed varint, zigzag encoded.                          |
-| B3_U64     | 5      | unsigned 64bit integer                                  |
-| B3_S64     | 6      | signed 64bit integer                                    |
-| B3_FLOAT64 | 7      | IEEE754 64bit signed float.                             |
-| B3_DECIMAL | 8      | Arbitrary Precision decimals.                           |
-| B3_SCHED   | 9      | Datetime with tz/offset/subsec etc.  for future times.  |
-|            | 10     | reserved for future use                                 |
-|            | 11     | reserved for future use                                 |
-|            | 12     | reserved for future use                                 |
-| B3_LIST    | 13     | (d) list-like composite object                          |
-| B3_DICT    | 14     | (e) dict-like composite object                          |
-|            | 15     | reserved                                                |
-| B3_COMPLEX | 16     | encoded as 3 float64s                                   |
+| Name     | Number | Info                                                    |
+|----------|--------|---------------------------------------------------------|
+| BYTES    | 0      | array of bytes.   Note: str in py2.    for bytes.       |
+| UTF8     | 1      | UTF8 strings.     for str in py3 and unicode in py2.    |
+| BOOL     | 2      | True or False.                                          |
+| UVARINT  | 3      | unsigned varint                 (small or v.large ints) |
+| SVARINT  | 4      | signed varint, zigzag encoded.                          |
+| U64      | 5      | unsigned 64bit integer                                  |
+| S64      | 6      | signed 64bit integer                                    |
+| FLOAT64  | 7      | IEEE754 64bit signed float.                             |
+| DECIMAL  | 8      | Arbitrary Precision decimals.                           |
+| SCHED    | 9      | Datetime with tz/offset/subsec etc.  for future times.  |
+|          | 10     | reserved for future use                                 |
+|          | 11     | reserved for future use                                 |
+|          | 12     | reserved for future use                                 |
+| LIST     | 13     | (d) list-like composite object                          |
+| DICT     | 14     | (e) dict-like composite object                          |
+|          | 15     | reserved                                                |
+| COMPLEX  | 16     | encoded as 3 float64s                                   |
 
 
 [^1]: The only use-cases we could think of for unknown-size items were a) huge data structures like DB tables which will have their own sizing anyway, and b) streaming TCP scenarios which always end up being chunked anyway for a better UX.

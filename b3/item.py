@@ -2,7 +2,7 @@ from six import int2byte
 
 from b3.utils import VALID_STR_TYPES, VALID_INT_TYPES, IntByteAt
 from b3.type_varint import encode_uvarint, decode_uvarint
-from b3.datatypes import B3_BOOL, B3_U64, B3_S64
+from b3.datatypes import BOOL, U64, S64
 from b3.type_codecs import ENCODERS, DECODERS, ZERO_VALUE_TABLE
 from b3.type_basic import encode_ints, decode_ints
 
@@ -64,13 +64,13 @@ def encode_item(key, data_type, value):
         has_data = False
         is_null = True
 
-    elif data_type == B3_BOOL:
+    elif data_type == BOOL:
         is_null = value  # repurposes the null/zero flag to store its value
 
     elif data_type in ZERO_VALUE_TABLE and value == ZERO_VALUE_TABLE[data_type]:
         has_data = False
 
-    elif B3_U64 <= data_type <= B3_S64:  # int types have a common function
+    elif U64 <= data_type <= S64:  # int types have a common function
         value_bytes = encode_ints(data_type, value)
 
     elif data_type in ENCODERS:
@@ -90,7 +90,9 @@ def encode_item(key, data_type, value):
         cbyte |= 0x08
     if is_null:
         cbyte |= 0x04
-    if has_data and data_type is not B3_BOOL:  # has_data controls if there is a data length
+    if (
+        has_data and data_type is not BOOL
+    ):  # has_data controls if there is a data length
         len_bytes = encode_uvarint(len(value_bytes))
         # ^^ (except for BOOL where there is never a data length)
 
@@ -104,10 +106,14 @@ def encode_item(key, data_type, value):
         # ^^ 'extended' data types 15 and up are a seperate uvarint
         cbyte |= 0xF0  # control byte data_type bits set to all 1's to signify this
     else:
-        cbyte |= (data_type << 4) & 0xF0  # 'core' data types live in the control byte's bits only.
+        cbyte |= (
+            data_type << 4
+        ) & 0xF0  # 'core' data types live in the control byte's bits only.
 
     # --- Build header ---
-    header_bytes = b"".join([int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes])
+    header_bytes = b"".join(
+        [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
+    )
     return header_bytes, value_bytes
 
 
@@ -138,7 +144,7 @@ def decode_header(buf, index):
     is_null = bool(cbyte & 0x04)
 
     # --- Data length ---
-    if has_data and data_type != B3_BOOL:
+    if has_data and data_type != BOOL:
         data_len, index = decode_uvarint(buf, index)  # data len bytes
 
     return key, data_type, has_data, is_null, data_len, index
@@ -154,11 +160,11 @@ def decode_value(data_type, has_data, is_null, data_len, buf, index):
             return ZERO_VALUE_TABLE.get(data_type, b"")
 
     # --- Data: Bool is special, its "data" is the is_null bit ---
-    if data_type == B3_BOOL:
+    if data_type == BOOL:
         return bool(is_null)
 
     # --- fixed-value integers ---
-    if B3_U64 <= data_type <= B3_S64:
+    if U64 <= data_type <= S64:
         return decode_ints(data_type, buf, index, index + data_len)
 
     # --- Encoded data ---

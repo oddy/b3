@@ -3,7 +3,7 @@ import pytest, copy
 from b3.utils import SBytes
 from b3.datatypes import *
 from b3.composite_schema import schema_pack, schema_unpack
-from b3 import composite_schema     # so we can get to strict_mode
+from b3 import composite_schema  # so we can get to strict_mode
 
 # Item header & data structure is
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
@@ -14,16 +14,18 @@ from b3 import composite_schema     # so we can get to strict_mode
 #                          [hdr|data][hdr|data]
 
 # --- Test data schema ---
-TEST_SCHEMA = ((B3_UVARINT, "number1", 1), (B3_UTF8, "string1", 2), (B3_BOOL, "bool1", 3))
+TEST_SCHEMA = ((UVARINT, "number1", 1), (UTF8, "string1", 2), (BOOL, "bool1", 3))
 
 # --- Shared test data - manually-built packed-bytes buffer ---
 number1_data = "45"  # encode_uvarint(69)
-number1_header = "39 01 01"  # encode_header(B3_UVARINT, key=1, data_len=1)
+number1_header = "39 01 01"  # encode_header(UVARINT, key=1, data_len=1)
 string1_data = "66 6f 6f"  # encode_utf8(u"foo")
-string1_header = "19 02 03"  # encode_header(B3_UTF8, key=2, data_len=3)
-bool1_header = "2D 03"  # encode_item(key=3, data_type=B3_BOOL(2), value=True)
+string1_header = "19 02 03"  # encode_header(UTF8, key=2, data_len=3)
+bool1_header = "2D 03"  # encode_item(key=3, data_type=BOOL(2), value=True)
 
-test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header])
+test1_hex = " ".join(
+    [number1_header, number1_data, string1_header, string1_data, bool1_header]
+)
 test1_buf = SBytes(test1_hex)
 
 # --- Shared test data - actual test data to pack ---
@@ -31,7 +33,7 @@ test1 = dict(bool1=True, number1=69)
 # add string1 at the end to try and influence dict ordering. Order-preserving dicts will have string1
 # last, thus bool1 successfully being at the end of pack-generated buffers means the key_number ordering
 # is working.
-test1["string1"] = u"foo"
+test1["string1"] = "foo"
 
 
 # --- Pack/Encoder tests ---
@@ -71,15 +73,23 @@ def test_schema_pack_field_unwanted_strict():
 
 def test_schema_pack_field_missing():
     # Testing this buffer...
-    bool1_header_null_value = "25 03"  # encode_header(B3_BOOL, key=3, is_null=True)
+    bool1_header_null_value = "25 03"  # encode_header(BOOL, key=3, is_null=True)
     bool1_nulled_hex = " ".join(
-        [number1_header, number1_data, string1_header, string1_data, bool1_header_null_value]
+        [
+            number1_header,
+            number1_data,
+            string1_header,
+            string1_data,
+            bool1_header_null_value,
+        ]
     )
     bool1_nulled_buf = SBytes(bool1_nulled_hex)
 
     # ...against this data
     test2 = copy.copy(test1)
-    del test2["bool1"]  # Missing field should be sent out as present but with a null value.
+    del test2[
+        "bool1"
+    ]  # Missing field should be sent out as present but with a null value.
 
     buf = schema_pack(TEST_SCHEMA, test2)
     assert buf == bool1_nulled_buf
@@ -111,14 +121,16 @@ def test_schema_pack_zeroval():
 
 
 # --- Nesting UX Test ---
-OUTER_SCHEMA = ((B3_BYTES, "bytes1", 1), (B3_SVARINT, "signed1", 2), (B3_DICT, "inner1", 3))
+OUTER_SCHEMA = ((BYTES, "bytes1", 1), (SVARINT, "signed1", 2), (DICT, "inner1", 3))
 
 
 def test_schema_pack_nesting():
     # Testing this buffer...
     bytes1_hex = "09 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
     signed1_hex = "49 02 02 a3 13"  # header + encode_svarint(-1234)
-    inner_buf_hex = "e9 03 06 31 01 11 02 29 03"  # header + buffer output from the zeroval test
+    inner_buf_hex = (
+        "e9 03 06 31 01 11 02 29 03"  # header + buffer output from the zeroval test
+    )
     test_outer_buf = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # ...against this data
@@ -144,7 +156,7 @@ def test_schema_unpack_dictcheck():
 
 
 def test_schema_unpack_unwanted_incoming_field():
-    bool2_buf = SBytes("59 04 01 01")  # a second B3_BOOL with key=4, len=1, value=True
+    bool2_buf = SBytes("59 04 01 01")  # a second BOOL with key=4, len=1, value=True
     unwantfield_buf = test1_buf + bool2_buf
     out2_data = schema_unpack(TEST_SCHEMA, unwantfield_buf, 0, len(unwantfield_buf))
     # we are asserting that the unwanted field is ignored
@@ -176,9 +188,11 @@ def test_schema_unpack_type_mismatch():
 
 
 def test_schema_unpack_bytes_yield():
-    BYTES_SCHEMA = ((B3_BYTES, "bytes1", 1), (B3_LIST, "list1", 2))
+    BYTES_SCHEMA = ((BYTES, "bytes1", 1), (LIST, "list1", 2))
     bytes1_hex = "09 01 03 66 6f 6f"  # b"foo"
-    list1_hex = "d9 02 03 66 6f 6f"  # (actually just b"foo" as well, not an encoded list)
+    list1_hex = (
+        "d9 02 03 66 6f 6f"  # (actually just b"foo" as well, not an encoded list)
+    )
     test_buf = SBytes(" ".join([bytes1_hex, list1_hex]))
 
     test_data = dict(bytes1=b"foo", list1=b"foo")
@@ -189,7 +203,10 @@ def test_schema_unpack_missing_incoming_field():
     missing_fields_buf = SBytes("57 01")  # so only field 1 is present (and null)
     null_data = dict(bool1=None, number1=None, string1=None)
     # ^^^  missing incoming fields should get created and null-valued.
-    assert schema_unpack(TEST_SCHEMA, missing_fields_buf, 0, len(missing_fields_buf)) == null_data
+    assert (
+        schema_unpack(TEST_SCHEMA, missing_fields_buf, 0, len(missing_fields_buf))
+        == null_data
+    )
 
 
 # Policy: its expected that the user would save a copy of incoming messages for cases where there are more fields than there are in the schema.
@@ -199,11 +216,13 @@ def test_schema_unpack_nesting():
     # Testing this buffer...
     bytes1_hex = "09 01 0a 6f 75 74 65 72 62 79 74 65 73"  # header + 'outerbytes'
     signed1_hex = "49 02 02 a3 13"  # header + encode_svarint(-1234)
-    inner_buf_hex = "e9 03 06 31 01 11 02 29 03"  # header + buffer output from the zeroval test
+    inner_buf_hex = (
+        "e9 03 06 31 01 11 02 29 03"  # header + buffer output from the zeroval test
+    )
     test_outer_buf = SBytes(" ".join([bytes1_hex, signed1_hex, inner_buf_hex]))
 
     # Note: It's up to the user to know - presumably using the defined schemas, that inner1 is a
-    # Note: B3_DICT type, as the returned dict (outer_data) just has the encoded bytes in that field.
+    # Note: DICT type, as the returned dict (outer_data) just has the encoded bytes in that field.
     outer_data = schema_unpack(OUTER_SCHEMA, test_outer_buf, 0, len(test_outer_buf))
     inner_len = len(outer_data["inner1"])
     inner_data = schema_unpack(TEST_SCHEMA, outer_data["inner1"], 0, inner_len)
@@ -215,8 +234,8 @@ def test_schema_nested_errors():
     # Nested containers e.g. dict1 and list1 need to be explicitely packed to bytes first.
     # schema_pack should raise an error if it sees un-packed python dicts or lists in the fields.
     NEST_SCHEMA = (
-        (B3_DICT, "dict1", 1),
-        (B3_LIST, "list1", 2),
+        (DICT, "dict1", 1),
+        (LIST, "list1", 2),
     )
 
     data = dict(dict1={1: 2, 3: 4}, list1=[7, 8, 9])
@@ -227,27 +246,28 @@ def test_schema_nested_errors():
 
 # --- Roundtrip / all data types testing ---
 
+
 def test_schema_alltypes_roundtrip():
     from decimal import Decimal
     from datetime import datetime
 
     ALLTYPES_SCHEMA = (
-        (B3_BYTES, "bytes1", 1),
-        (B3_UTF8, "string1", 2),
-        (B3_BOOL, "bool1", 3),
-        (B3_UVARINT, "uvint1", 4),
-        (B3_SVARINT, "svint1", 5),
-        (B3_U64, "u641", 6),
-        (B3_S64, "s641", 7),
-        (B3_FLOAT64, "float1", 8),
-        (B3_DECIMAL, "deci1", 9),
-        (B3_SCHED, "date1", 10),
-        (B3_COMPLEX, "cplx1", 11),
+        (BYTES, "bytes1", 1),
+        (UTF8, "string1", 2),
+        (BOOL, "bool1", 3),
+        (UVARINT, "uvint1", 4),
+        (SVARINT, "svint1", 5),
+        (U64, "u641", 6),
+        (S64, "s641", 7),
+        (FLOAT64, "float1", 8),
+        (DECIMAL, "deci1", 9),
+        (SCHED, "date1", 10),
+        (COMPLEX, "cplx1", 11),
     )
 
     data = dict(
         bytes1=b"foo",
-        string1=u"bar",
+        string1="bar",
         bool1=True,
         u641=123,
         s641=123,

@@ -8,7 +8,7 @@ from b3.item import *
 
 # --- Kitchen sink ---
 def test_enc_header_all():
-    assert encode_item(key=u"foo", data_type=555, value=b"\xbe\xef") == (
+    assert encode_item(key="foo", data_type=555, value=b"\xbe\xef") == (
         SBytes("fa ab 04 03 66 6f 6f 02"),
         SBytes("be ef"),
     )
@@ -21,7 +21,7 @@ def test_enc_header_all():
 
 def test_dec_header_all():
     hbytes = SBytes("fa ab 04 03 66 6f 6f dc 0b")
-    assert decode_header(hbytes, 0) == (u"foo", 555, True, False, 1500, 9)
+    assert decode_header(hbytes, 0) == ("foo", 555, True, False, 1500, 9)
 
 
 # --- key types ---
@@ -40,14 +40,20 @@ def test_dec_keytype_none_int():
 
 
 def test_enc_keytype_str_bytes():
-    assert encode_key(u"foo") == (0x02, SBytes("03 66 6f 6f"))  # string key
-    assert encode_key(u"Виагра") == (0x02, SBytes("0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"))
+    assert encode_key("foo") == (0x02, SBytes("03 66 6f 6f"))  # string key
+    assert encode_key("Виагра") == (
+        0x02,
+        SBytes("0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"),
+    )
     assert encode_key(b"foo") == (0x03, SBytes("03 66 6f 6f"))  # bytes key
 
 
 def test_dec_keytype_str_bytes():
-    assert decode_key(0x02, SBytes("03 66 6f 6f"), 0) == (u"foo", 4)
-    assert decode_key(0x02, SBytes("0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"), 0) == (u"Виагра", 13)
+    assert decode_key(0x02, SBytes("03 66 6f 6f"), 0) == ("foo", 4)
+    assert decode_key(0x02, SBytes("0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"), 0) == (
+        "Виагра",
+        13,
+    )
     assert decode_key(0x03, SBytes("03 66 6f 6f"), 0) == (b"foo", 4)
 
 
@@ -138,18 +144,28 @@ def test_enc_header_keys():
     assert encode_item(None, 0, b"") == (SBytes("00"), b"")
     assert encode_item(4, 0, b"") == (SBytes("01 04"), b"")
     assert encode_item(7777777777, 0, b"") == (SBytes("01 f1 f0 dd fc 1c"), b"")
-    assert encode_item(u"foo", 0, b"") == (SBytes("02 03 66 6f 6f"), b"")
-    assert encode_item(u"Виагра", 0, b"") == (SBytes("02 0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"), b"")
+    assert encode_item("foo", 0, b"") == (SBytes("02 03 66 6f 6f"), b"")
+    assert encode_item("Виагра", 0, b"") == (
+        SBytes("02 0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"),
+        b"",
+    )
     assert encode_item(b"foo", 0, b"") == (SBytes("03 03 66 6f 6f"), b"")
 
 
 def test_dec_header_keys():
     assert decode_header(SBytes("00"), 0) == (None, 0, False, False, 0, 1)
     assert decode_header(SBytes("01 04"), 0) == (4, 0, False, False, 0, 2)
-    assert decode_header(SBytes("01 f1 f0 dd fc 1c"), 0) == (7777777777, 0, False, False, 0, 6)
-    assert decode_header(SBytes("02 03 66 6f 6f"), 0) == (u"foo", 0, False, False, 0, 5)
+    assert decode_header(SBytes("01 f1 f0 dd fc 1c"), 0) == (
+        7777777777,
+        0,
+        False,
+        False,
+        0,
+        6,
+    )
+    assert decode_header(SBytes("02 03 66 6f 6f"), 0) == ("foo", 0, False, False, 0, 5)
     assert decode_header(SBytes("02 0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0"), 0) == (
-        u"Виагра",
+        "Виагра",
         0,
         False,
         False,

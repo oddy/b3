@@ -22,7 +22,13 @@ from b3.composite_dynamic import pack, unpack, unpack_into
 
 # This structure should test all code paths in pack, unpack, and unpack_into.
 
-test1_data = {10: 0, 11: b"foo", 12: [True, False, False, True], 13: {9: 8, 7: 6}, 14: None}
+test1_data = {
+    10: 0,
+    11: b"foo",
+    12: [True, False, False, True],
+    13: {9: 8, 7: 6},
+    14: None,
+}
 
 buf10 = "41 0a"  # svarint, key=10, len=0 (CZV)
 buf11 = "09 0b 03 66 6f 6f"  # bytes,   key=11, len 3, b"foo"
@@ -84,7 +90,9 @@ def test_dyna_unpack_dict():
 
 def test_dyna_unpack_recurse_invalid_container():
     with pytest.raises(TypeError):
-        unpack_into(None, SBytes("53 0e"), 0, 2)  # passing None instead of a list or dict.
+        unpack_into(
+            None, SBytes("53 0e"), 0, 2
+        )  # passing None instead of a list or dict.
 
 
 # --- Round Trip ---

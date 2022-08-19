@@ -1,4 +1,4 @@
-# Codec for B3_UVARINT B3_SVARINT Signed and unsigned varint types
+# Codec for UVARINT SVARINT Signed and unsigned varint types
 
 # Note: this module is used internally a lot and also supplies codecs.
 # Note: the decoder function call API is different to the internal-use call API.

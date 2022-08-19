@@ -2,11 +2,12 @@
 
 from b3.item import encode_item, decode_header, decode_value
 from b3.utils import VALID_INT_TYPES
-from b3.datatypes import b3_type_name, B3_DICT, B3_LIST
+from b3.datatypes import b3_type_name, DICT, LIST
 
 strict_mode = False
 # strict pack: exception instead of ignore if input data has keys that are not in the schema.
 # struct unpack: whether to insist the type be correct even if the value is null
+
 
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
@@ -43,7 +44,7 @@ def schema_pack(schema, data):
             else:
                 continue
 
-        if schema_type in (B3_DICT, B3_LIST) and not isinstance(value, bytes):
+        if schema_type in (DICT, LIST) and not isinstance(value, bytes):
             emsg = "Please pack field #%r ('%s') to bytes first" % (
                 schema_key_number,
                 schema_key_name,
@@ -90,15 +91,20 @@ def schema_unpack(schema, buf, index=0, end=None):
         # if not strict, only perform check if data is not null
         if (not (is_null and not has_data)) or strict_mode:
             if schema_type != data_type:
-                emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" % (
-                    schema_key_number,
-                    schema_key_name,
-                    b3_type_name(schema_type),
-                    b3_type_name(data_type),
+                emsg = (
+                    "Field #%d ('%s') type mismatch - schema wants %s incoming has %s"
+                    % (
+                        schema_key_number,
+                        schema_key_name,
+                        b3_type_name(schema_type),
+                        b3_type_name(data_type),
+                    )
                 )
                 raise TypeError(emsg)
 
-        out[schema_key_name] = decode_value(data_type, has_data, is_null, data_len, buf, index)
+        out[schema_key_name] = decode_value(
+            data_type, has_data, is_null, data_len, buf, index
+        )
         index += data_len
 
     # Check if any wanted fields are missing, add them with data=None
