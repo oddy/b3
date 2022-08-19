@@ -14,6 +14,14 @@ The small number of lovingly-handcrafted data types means often the only choice 
 This version is pure python, no dependencies apart from Six (and pytest for the tests).
 Tested working in python 3.8 & 2.7 on windows & linux.
 
+## Version
+
+B3 is now version 1.x, it is out of beta.
+
+The wire format and existing core data types are now *frozen* and *will not change*.
+
+(v1.x is not backward compatible with beta 0.9.x versions) 
+
 ## Installing
 
 ```
