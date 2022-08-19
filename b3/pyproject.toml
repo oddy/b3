@@ -3,4 +3,6 @@
 line-length = 102
 exclude = 'datatypes.py|guess_type.py|hexdump.py|examples.py|htmlcov'
 verbose = true
-
+skip-string-normalization = true
+# ^^ Stop black from stripping u"" thus wrecking a bunch of tests on py2
+# ^^ Apparently that can't be turned off individually because they "dropped support for py2"

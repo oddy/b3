@@ -17,11 +17,9 @@ TEST_SCHEMA = ((B3_UVARINT, "number1", 1), (B3_UTF8, "string1", 2), (B3_BOOL, "b
 
 # --- Shared test data - manually-built packed-bytes buffer ---
 number1_data = "45"  # encode_uvarint(69)
-number1_header = "39 01 01"
-#    ^^^ encode_header(B3_UVARINT, key=1, data_len=1)  # "37 01" for null,  37 01 czv
+number1_header = "39 01 01"  # encode_header(B3_UVARINT, key=1, data_len=1)
 string1_data = "66 6f 6f"  # encode_utf8(u"foo")
-string1_header = "19 02 03"
-#    ^^^ encode_header(B3_UTF8, key=2, data_len=3)     # "14 02" for null,  14 01 czv
+string1_header = "19 02 03"  # encode_header(B3_UTF8, key=2, data_len=3)
 bool1_header = "2D 03"  # encode_item(key=3, data_type=B3_BOOL(2), value=True)
 
 test1_hex = " ".join([number1_header, number1_data, string1_header, string1_data, bool1_header])
@@ -32,7 +30,7 @@ test1 = dict(bool1=True, number1=69)
 # add string1 at the end to try and influence dict ordering. Order-preserving dicts will have string1
 # last, thus bool1 successfully being at the end of pack-generated buffers means the key_number ordering
 # is working.
-test1["string1"] = "foo"
+test1["string1"] = u"foo"
 
 
 # --- Pack/Encoder tests ---
@@ -74,7 +72,6 @@ def test_schema_pack_field_missing():
     bool1_nulled_hex = " ".join(
         [number1_header, number1_data, string1_header, string1_data, bool1_header_null_value]
     )
-    # note ^^^ no data for bool1
     bool1_nulled_buf = SBytes(bool1_nulled_hex)
 
     # ...against this data
@@ -250,7 +247,7 @@ def test_schema_alltypes_roundtrip():
 
     data = dict(
         bytes1=b"foo",
-        string1="bar",
+        string1=u"bar",
         bool1=True,
         u641=123,
         s641=123,
