@@ -18,7 +18,10 @@ Tested working in python 3.8 & 2.7 on windows & linux.
 
 B3 is now version 1.x, it is out of beta.
 
-The wire format and existing core data types are now *frozen* and *will not change*.
+__The wire format and existing core data types are now *frozen* and *will not change*.__
+
+* Except for the unused core types 10,11,12 which may have a type assigned in future, and
+* Except for SCHEDs unfinished named-timezone support, which needs py3.10+)
 
 (v1.x is not backward compatible with beta 0.9.x versions) 
 
