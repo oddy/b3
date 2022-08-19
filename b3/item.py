@@ -52,6 +52,7 @@ from b3.type_basic import encode_ints, decode_ints
 # we can: make the nullzero bit available for use by codecs in future if needed.
 # Policy: if the data type doesn't have a codec, it should be bytes-able.
 
+
 def encode_item(key, data_type, value):
     value_bytes = b""
     has_data = True
@@ -117,6 +118,7 @@ def encode_item_joined(key, data_type, value):
 
 # Note: Header encoding and data encoding are done in one step here.
 #       BUT header decoding and data decoding are split, because Dynamic's recursive unpack needs it.
+
 
 def decode_header(buf, index):
     cbyte, index = IntByteAt(buf, index)  # control byte
@@ -185,6 +187,7 @@ def decode_item_type_value(buf):
 
 # Out: the key type bits, and the key bytes.
 
+
 def encode_key(key):
     ktype = type(key)
     if key is None:
@@ -200,6 +203,7 @@ def encode_key(key):
 
 
 # Out: the key, and the new index
+
 
 def decode_key(key_type_bits, buf, index):
     if key_type_bits == 0x00:
@@ -219,5 +223,3 @@ def decode_key(key_type_bits, buf, index):
 
 # Policy: data types 15 and up are encoded as a seperate uvarint immediately following the control byte,
 #         and the control byte's data type bits are set to all 1 (x0f) to signify this.
-
-

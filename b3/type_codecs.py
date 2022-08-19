@@ -40,14 +40,14 @@ ZERO_VALUE_TABLE = {
     B3_BYTES: b"",
     B3_UTF8: "",
     B3_BOOL: False,
-    B3_UVARINT: 0,   # FIXME: why does changing this to a string cause fallthrough to codec zero value prep-to-remove?
+    B3_UVARINT: 0,
     B3_SVARINT: 0,
     B3_U64: 0,
     B3_S64: 0,
     B3_FLOAT64: 0.0,
     B3_DECIMAL: decimal.Decimal("0.0"),
-    B3_SCHED:  datetime.datetime(1, 1, 1),  # somewhat arbitrary, but matches golang zero-value time
-    B3_LIST: [],              # Note: unused because the composite modules have their own logic
-    B3_DICT: {},              # Note: for list and dict.
+    B3_SCHED: datetime.datetime(1, 1, 1),  # somewhat arbitrary, but matches golang zero-value time
+    B3_LIST: [],  # Note: unused because the composite modules have their own logic
+    B3_DICT: {},  # Note: for list and dict.
     B3_COMPLEX: 0j,
 }

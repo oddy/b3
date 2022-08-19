@@ -1,4 +1,3 @@
-
 # B3 Public API
 
 __version__ = "1.0.1"
@@ -10,18 +9,28 @@ from b3.type_varint import encode_uvarint, decode_uvarint
 from b3.item import encode_item, encode_item_joined
 
 __all__ = [
-    u"pack", u"unpack", u"unpack_into",
-    u"schema_pack", u"schema_unpack",
-    u"encode_uvarint", u"decode_uvarint",
-    u"encode_item", u"encode_item_joined",
-
-    u"B3_BYTES", u"B3_UTF8", u"B3_BOOL",
-    u"B3_UVARINT", u"B3_SVARINT",
-    u"B3_U64", u"B3_S64",
-    u"B3_FLOAT64", u"B3_DECIMAL",
-    u"B3_SCHED",
-    u"B3_DICT", u"B3_LIST",
-    u"B3_COMPLEX",
+    "pack",
+    "unpack",
+    "unpack_into",
+    "schema_pack",
+    "schema_unpack",
+    "encode_uvarint",
+    "decode_uvarint",
+    "encode_item",
+    "encode_item_joined",
+    "B3_BYTES",
+    "B3_UTF8",
+    "B3_BOOL",
+    "B3_UVARINT",
+    "B3_SVARINT",
+    "B3_U64",
+    "B3_S64",
+    "B3_FLOAT64",
+    "B3_DECIMAL",
+    "B3_SCHED",
+    "B3_DICT",
+    "B3_LIST",
+    "B3_COMPLEX",
 ]
 
 # B3 software Architecture:
@@ -29,4 +38,3 @@ __all__ = [
 # |Schema  Composite encoder| ->(tag numbers)  -^
 
 # Note: In the comments throughout we use "Encode" and "Pack" terminology interchangeably. Sorry about it.
-

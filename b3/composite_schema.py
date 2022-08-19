@@ -1,4 +1,3 @@
-
 # Schema-style composite encoder.
 
 from b3.item import encode_item, decode_header, decode_value
@@ -9,29 +8,31 @@ from b3.datatypes import b3_type_name, B3_DICT, B3_LIST
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
     if isinstance(key, VALID_INT_TYPES):
-        for typ,name,n in schema:
+        for typ, name, n in schema:
             if key == n:
-                return typ,name,n
-        return None,None,None
+                return typ, name, n
+        return None, None, None
     else:
-        for typ,name,n in schema:
+        for typ, name, n in schema:
             if key == name:
-                return typ,name,n
-        return None,None,None
+                return typ, name, n
+        return None, None, None
 
 
 def schema_pack(schema, data, strict=False):
     """Packs a dict to bytes using a given schema.
-       schema - list/tuple of (type, name, tag-number) values,
-       data   - dict of data to pack
-       strict - whether to exception or ignore, if input data has keys that are not in the schema.
-       - dict keys can match to schema using both string name or tag number.
-       - nested fields with dicts or lists in them must be packed to bytes first.
-       - schema fields that are missing from input data, are still packed but with value None.
-       - packed data is always sorted by schema key number ascending"""
+    schema - list/tuple of (type, name, tag-number) values,
+    data   - dict of data to pack
+    strict - whether to exception or ignore, if input data has keys that are not in the schema.
+    - dict keys can match to schema using both string name or tag number.
+    - nested fields with dicts or lists in them must be packed to bytes first.
+    - schema fields that are missing from input data, are still packed but with value None.
+    - packed data is always sorted by schema key number ascending"""
     if not isinstance(data, dict):
         raise TypeError("currently only dict input data supported by schema_pack")
-    out = {}                            # header and data items by schema_key_number
+
+    out = {}  # header and data items by schema_key_number
+
     for key, value in data.items():
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
         if schema_type is None:
@@ -41,7 +42,10 @@ def schema_pack(schema, data, strict=False):
                 continue
 
         if schema_type in (B3_DICT, B3_LIST) and not isinstance(value, bytes):
-            emsg = "Please pack field #%r ('%s') to bytes first" % (schema_key_number, schema_key_name)
+            emsg = "Please pack field #%r ('%s') to bytes first" % (
+                schema_key_number,
+                schema_key_name,
+            )
             raise TypeError(emsg)
 
         out[schema_key_number] = encode_item(schema_key_number, schema_type, value)
@@ -59,16 +63,17 @@ def schema_pack(schema, data, strict=False):
     return b"".join(out_list)
 
 
-def schema_unpack(schema, buf, index=0, end=None):
+def schema_unpack(schema, buf, index=0, end=None, strict=False):
     """Unpacks bytes to a dict using the given schema.
-        schema - list/tuple of (type, name, tag-number) values,
-        buf    - bytes data,
-        index  - where to start in buf (if not given, defaults to 0)
-        end    - where to stop in buf (if not given, defaults to len(buf)
-        - if an incoming key is not found in the schema it is ignored.
-        - if a schema key is not found in the incoming data it is added with value None.
-        - if incoming data has no keys an error will occur (e.g. from pack()ing a list).
-        - nested fields are returned as byte strings, will need unpacking too."""
+    schema - list/tuple of (type, name, tag-number) values,
+    buf    - bytes data,
+    index  - where to start in buf (if not given, defaults to 0),
+    end    - where to stop in buf (if not given, defaults to len(buf),
+    strict - whether to insist the type be correct even if the value is null,
+    - if an incoming key is not found in the schema it is ignored.
+    - if a schema key is not found in the incoming data it is added with value None.
+    - if incoming data has no keys an error will occur (e.g. from pack()ing a list).
+    - nested fields are returned as byte strings, will need unpacking too."""
     if end is None:
         end = len(buf)
 
@@ -77,14 +82,18 @@ def schema_unpack(schema, buf, index=0, end=None):
         key, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
 
-        if schema_type is None:                 # key not found in schema, ignore and continue
-            index += data_len               # skip over the unwanted data!
+        if schema_type is None:  # key not found in schema, ignore and continue
+            index += data_len  # skip over the unwanted data!
             continue
 
-        if not (is_null and not has_data):      # only perform check if data is not null
+        if (not (is_null and not has_data)) or strict:  # only perform check if data is not null
             if schema_type != data_type:
-                emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" \
-                  % (schema_key_number, schema_key_name, b3_type_name(schema_type), b3_type_name(data_type))
+                emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" % (
+                    schema_key_number,
+                    schema_key_name,
+                    b3_type_name(schema_type),
+                    b3_type_name(data_type),
+                )
                 raise TypeError(emsg)
 
         out[schema_key_name] = decode_value(data_type, has_data, is_null, data_len, buf, index)
@@ -92,7 +101,7 @@ def schema_unpack(schema, buf, index=0, end=None):
 
     # Check if any wanted fields are missing, add them with data=None
     # Policy: do this by whatever key type we are yielding (in this case, COMPUTED key name)
-    for missing_key_name in (set(i[1] for i in schema) - set(out.keys())):
+    for missing_key_name in set(i[1] for i in schema) - set(out.keys()):
         # print("key %r missing from incoming, adding it with value None" % (missing_key_name))
         out[missing_key_name] = None
 
@@ -146,4 +155,3 @@ def schema_unpack(schema, buf, index=0, end=None):
 
 # Policy: schema type and message type are only checked for match if the value isn't None/NULL/Nil (None is its own type)
 #         this is favouring interop over correctness.
-# fixme this may not be true any more, pleas check

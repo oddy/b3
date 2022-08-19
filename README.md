@@ -78,7 +78,7 @@ B3 ships with an extensive test suite, using pytest.
 ```
 pip install pytest
 cd /your/site-packages/b3
-pytest -v
+pytest 
 ```
 
 ## More Info
@@ -86,6 +86,8 @@ pytest -v
 See the tests, and examples.py in the tests folder for more examples (including how to nest schemas)
 
 See datatypes.py for the available data types.
+
+See wire_format.md for an overview of the wire format.
 
 
 ## Licensing

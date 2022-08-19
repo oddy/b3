@@ -123,7 +123,7 @@ def decode_decimal(buf, index, end):
         exp = bits & EXPONENT_BITS
 
     # --- value ---
-    if index == end:        # Note: old behaviour, deprecated (handled by zero_value_table)
+    if index == end:  # Note: old behaviour, deprecated (handled by zero_value_table)
         value = 0
     else:
         value, index = decode_uvarint(buf, index)

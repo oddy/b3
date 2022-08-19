@@ -21,7 +21,7 @@ B3_DICT             = 14        # (e) dict-like composite object
 B3_COMPLEX          = 16  # encoded as 2 float64s.
 
 
-# Note: The core type numbers are all intended to fit into the lower half of the item header control byte.
+# Note: The core type numbers are all intended to fit into the upper half of the item header control byte.
 #       Extended type numbers are encoded in a varint following the header control byte.
 # Note: NEVER have a module in your project named types.py!! Conflicts with a stdlib .py of same name, but this only breaks on py3 for some reason.
 

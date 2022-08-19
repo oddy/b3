@@ -1,4 +1,3 @@
-
 # Dynamic-recursive composite pack/unpack  (like json.dumps/loads)
 
 from b3.datatypes import B3_LIST, B3_DICT, b3_type_name
@@ -7,27 +6,28 @@ from b3.item import encode_item, decode_header, decode_value
 
 # See bottom of file for design policy notes.
 
+
 def pack(item, key=None, with_header=True, rlimit=20):
     """Packs a list or dict to bytes.
-       item        - the list or dict to pack
-       with_header - returned bytes include a header. unpack() needs this on,
-                     unpack_into() and embedding into schema fields needs it off.
-       key         - key value for the top-level header (optional, typically not needed)
-       rlimit      - recurse limit. Raises ValueError if limit exceeded.
-       - see guess_type.py for the B3 types chosen, given certain Python types."""
+    item        - the list or dict to pack
+    with_header - returned bytes include a header. unpack() needs this on,
+                  unpack_into() and embedding into schema fields needs it off.
+    key         - key value for the top-level header (optional, typically not needed)
+    rlimit      - recurse limit. Raises ValueError if limit exceeded.
+    - see guess_type.py for the B3 types chosen, given certain Python types."""
     if rlimit < 1:
         raise ValueError("Recurse limit exceeded")
 
-    if isinstance(item, list):      # transform item to bytes, note recursive call
-        item = b"".join([pack(item=i, rlimit=rlimit-1) for i in item])
+    if isinstance(item, list):  # transform item to bytes, note recursive call
+        item = b"".join([pack(item=i, rlimit=rlimit - 1) for i in item])
         data_type = B3_LIST
 
-    elif isinstance(item, dict):        # transform item to bytes, note recursive call
-        item = b"".join([pack(item=v, key=k, rlimit=rlimit-1) for k, v in item.items()])
+    elif isinstance(item, dict):  # transform item to bytes, note recursive call
+        item = b"".join([pack(item=v, key=k, rlimit=rlimit - 1) for k, v in item.items()])
         data_type = B3_DICT
 
     else:
-        data_type = guess_type(item)               # may blow up here encountering unknown types
+        data_type = guess_type(item)  # may blow up here encountering unknown types
 
     header_bytes, value_bytes = encode_item(key, data_type, item)
 
@@ -38,21 +38,23 @@ def pack(item, key=None, with_header=True, rlimit=20):
 
 
 def new_container(data_type):
-    out = {B3_LIST:list(), B3_DICT: dict()}[data_type]
+    out = {B3_LIST: list(), B3_DICT: dict()}[data_type]
     return out
 
 
 def unpack(buf, index=0):
     """Unpacks byte data to a new filled container object (list or dict).
-       buf    - bytes data,
-       index  - where to start in buf (defaults to 0)
-       - as unpack expects a header which has container object type
-         and data length, it doesn't need an end argument. """
+    buf    - bytes data,
+    index  - where to start in buf (defaults to 0)
+    - as unpack expects a header which has container object type
+      and data length, it doesn't need an end argument."""
 
     dkey, data_type, has_data, is_null, data_len, index = decode_header(buf, index)
 
     if data_type not in (B3_DICT, B3_LIST):
-        errmsg = "Expecting list or dict first in message, but got type %s" % (b3_type_name(data_type),)
+        errmsg = "Expecting list or dict first in message, but got type %s" % (
+            b3_type_name(data_type),
+        )
         raise TypeError(errmsg)
 
     out = new_container(data_type)
@@ -62,12 +64,12 @@ def unpack(buf, index=0):
 
 def unpack_into(out, buf, index, end):
     """Unpacks bytes data to a given container object.
-       out   - container (list or dict) to fill with data,
-       buf   - bytes data,
-       index - where to start in buf,
-       end   - where to stop in buf
-       - use this function directly if you already have a container to put things into.
-       - or if you want to specify start and end explicitly."""
+    out   - container (list or dict) to fill with data,
+    buf   - bytes data,
+    index - where to start in buf,
+    end   - where to stop in buf
+    - use this function directly if you already have a container to put things into.
+    - or if you want to specify start and end explicitly."""
 
     while index < end:
         # --- do header ---
@@ -75,7 +77,7 @@ def unpack_into(out, buf, index, end):
 
         if data_type in (B3_LIST, B3_DICT):
             value = new_container(data_type)
-            unpack_into(value, buf, index, index + data_len)    # note recursive
+            unpack_into(value, buf, index, index + data_len)  # note recursive
         else:
             value = decode_value(data_type, has_data, is_null, data_len, buf, index)
 
@@ -88,12 +90,9 @@ def unpack_into(out, buf, index, end):
             raise TypeError("unpack_into only supports list or dict container objects")
 
         # --- Advance index ---
-        index += data_len       # decode_header sets data_len=0 for us if is_null is on
+        index += data_len  # decode_header sets data_len=0 for us if is_null is on
 
     return out
-
-
-
 
 
 # Policy: Unlike the schema encoder we DO recurse. We also treat the incoming message as authoritative and do less validation.
