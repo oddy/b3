@@ -68,6 +68,7 @@ print(repr(sch_data == out_sch))
 # Schema is intended for flat data structures, but nesting is still straightforward,
 # You can pack nested fields first, building bottom-up:
 
+
 OUTER_SCHEMA = (
     (b3.B3_UVARINT,         "index",         1),
     (b3.B3_UTF8,            "label",         2),

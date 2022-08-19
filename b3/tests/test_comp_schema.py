@@ -3,6 +3,7 @@ import pytest, copy
 from b3.utils import SBytes
 from b3.datatypes import *
 from b3.composite_schema import schema_pack, schema_unpack
+from b3 import composite_schema     # so we can get to strict_mode
 
 # Item header & data structure is
 # [header BYTE] [15+ type# UVARINT] [key (see below)] [data len UVARINT]  [ data BYTES ]
@@ -52,6 +53,7 @@ def test_schema_pack_dictcheck():
 def test_schema_pack_field_unwanted_ignore():
     test2 = copy.copy(test1)
     test2["unwanted_field"] = "hello"
+    composite_schema.strict_mode = False
     buf = schema_pack(TEST_SCHEMA, test2)  # aka strict=False
     assert buf == test1_buf  # ensure unwanted field is not in result data.
 
@@ -60,7 +62,8 @@ def test_schema_pack_field_unwanted_strict():
     test2 = copy.copy(test1)
     test2["unwanted_field"] = "hello"
     with pytest.raises(KeyError):
-        schema_pack(TEST_SCHEMA, test2, strict=True)
+        composite_schema.strict_mode = True
+        schema_pack(TEST_SCHEMA, test2)
 
 
 # --- Field exists in shcmea, but missing from input dict, output present with null/None value. ---
@@ -156,8 +159,6 @@ def test_schema_unpack_unwanted_incoming_field():
 def test_schema_unpack_null_data():
     for null_buf in (SBytes("35 01 15 02 25 03"), b""):
         null_data = dict(bool1=None, number1=None, string1=None)
-        ARR = schema_unpack(TEST_SCHEMA, null_buf, 0, len(null_buf))
-        print(ARR)
         assert schema_unpack(TEST_SCHEMA, null_buf, 0, len(null_buf)) == null_data
 
 
@@ -226,7 +227,6 @@ def test_schema_nested_errors():
 
 # --- Roundtrip / all data types testing ---
 
-
 def test_schema_alltypes_roundtrip():
     from decimal import Decimal
     from datetime import datetime
@@ -274,6 +274,7 @@ def test_schema_alltypes_roundtrip():
 def test_schema_unpack_type_mismatch_nulls():
     mismatch_buf = SBytes("31 01   85 02   21 03")
     # ^^ field 2 is coming in as a decimal here when it should be a utf8
+    composite_schema.strict_mode = False
     x = schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf))
     assert True  # as in it didn't blow up with an exception, which is what we want.
 
@@ -283,7 +284,8 @@ def test_schema_unpack_type_mismatch_nulls_strict():
     with pytest.raises(TypeError):
         mismatch_buf = SBytes("31 01   85 02   21 03")
         # ^^ field 2 is coming in as a decimal here when it should be a utf8
-        x = schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf), strict=True)
+        composite_schema.strict_mode = True
+        x = schema_unpack(TEST_SCHEMA, mismatch_buf, 0, len(mismatch_buf))
 
 
 # --- possibly for the nesting example? ---

@@ -98,6 +98,11 @@ print("outer ",repr(outer_data == ret_outer))
 source_data = dict(tom=u"hello", dick=u"world", harry=777)
 source_buf  = b3.pack(source_data, with_header=False)
 
+b3.composite_schema.strict_mode = False
+# ^^ if strict is on, incoming types must match the type the schema wants.
+# ^^ if strict is off, then incoming types are allowed to not match if the value is NULL.
+#    This is helpful for e.g. if dynamic is packing and schema is unpacking.
+
 DEST_SCHEMA = ((b3.B3_UTF8, "tom", 1), (b3.B3_UTF8, "dick", 2), (b3.B3_SVARINT, "harry", 3))
 dest_data   = b3.schema_unpack(DEST_SCHEMA, source_buf)
 

@@ -4,6 +4,9 @@ from b3.item import encode_item, decode_header, decode_value
 from b3.utils import VALID_INT_TYPES
 from b3.datatypes import b3_type_name, B3_DICT, B3_LIST
 
+strict_mode = False
+# strict pack: exception instead of ignore if input data has keys that are not in the schema.
+# struct unpack: whether to insist the type be correct even if the value is null
 
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
@@ -19,11 +22,10 @@ def schema_lookup_key(schema, key):
         return None, None, None
 
 
-def schema_pack(schema, data, strict=False):
+def schema_pack(schema, data):
     """Packs a dict to bytes using a given schema.
     schema - list/tuple of (type, name, tag-number) values,
     data   - dict of data to pack
-    strict - whether to exception or ignore, if input data has keys that are not in the schema.
     - dict keys can match to schema using both string name or tag number.
     - nested fields with dicts or lists in them must be packed to bytes first.
     - schema fields that are missing from input data, are still packed but with value None.
@@ -36,7 +38,7 @@ def schema_pack(schema, data, strict=False):
     for key, value in data.items():
         schema_type, schema_key_name, schema_key_number = schema_lookup_key(schema, key)
         if schema_type is None:
-            if strict:
+            if strict_mode:
                 raise KeyError("Supplied key %r is not in the schema" % (key,))
             else:
                 continue
@@ -63,13 +65,12 @@ def schema_pack(schema, data, strict=False):
     return b"".join(out_list)
 
 
-def schema_unpack(schema, buf, index=0, end=None, strict=False):
+def schema_unpack(schema, buf, index=0, end=None):
     """Unpacks bytes to a dict using the given schema.
     schema - list/tuple of (type, name, tag-number) values,
     buf    - bytes data,
     index  - where to start in buf (if not given, defaults to 0),
     end    - where to stop in buf (if not given, defaults to len(buf),
-    strict - whether to insist the type be correct even if the value is null,
     - if an incoming key is not found in the schema it is ignored.
     - if a schema key is not found in the incoming data it is added with value None.
     - if incoming data has no keys an error will occur (e.g. from pack()ing a list).
@@ -86,7 +87,8 @@ def schema_unpack(schema, buf, index=0, end=None, strict=False):
             index += data_len  # skip over the unwanted data!
             continue
 
-        if (not (is_null and not has_data)) or strict:  # only perform check if data is not null
+        # if not strict, only perform check if data is not null
+        if (not (is_null and not has_data)) or strict_mode:
             if schema_type != data_type:
                 emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" % (
                     schema_key_number,
