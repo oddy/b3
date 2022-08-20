@@ -91,20 +91,15 @@ def schema_unpack(schema, buf, index=0, end=None):
         # if not strict, only perform check if data is not null
         if (not (is_null and not has_data)) or strict_mode:
             if schema_type != data_type:
-                emsg = (
-                    "Field #%d ('%s') type mismatch - schema wants %s incoming has %s"
-                    % (
-                        schema_key_number,
-                        schema_key_name,
-                        b3_type_name(schema_type),
-                        b3_type_name(data_type),
-                    )
+                emsg = "Field #%d ('%s') type mismatch - schema wants %s incoming has %s" % (
+                    schema_key_number,
+                    schema_key_name,
+                    b3_type_name(schema_type),
+                    b3_type_name(data_type),
                 )
                 raise TypeError(emsg)
 
-        out[schema_key_name] = decode_value(
-            data_type, has_data, is_null, data_len, buf, index
-        )
+        out[schema_key_name] = decode_value(data_type, has_data, is_null, data_len, buf, index)
         index += data_len
 
     # Check if any wanted fields are missing, add them with data=None

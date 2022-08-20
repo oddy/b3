@@ -36,15 +36,9 @@ def test_tmfuncs():
 
 
 def test_sched_gen_date_enc():
-    assert encode_sched_gen(TmDate("2020 01 16"), True, False) == SBytes(
-        "80 c8 1f 01 10"
-    )
-    assert encode_sched_gen(TmDate("1984 01 16"), True, False) == SBytes(
-        "80 80 1f 01 10"
-    )
-    assert encode_sched_gen(TmDate("-1984 01 16"), True, False) == SBytes(
-        "80 ff 1e 01 10"
-    )
+    assert encode_sched_gen(TmDate("2020 01 16"), True, False) == SBytes("80 c8 1f 01 10")
+    assert encode_sched_gen(TmDate("1984 01 16"), True, False) == SBytes("80 80 1f 01 10")
+    assert encode_sched_gen(TmDate("-1984 01 16"), True, False) == SBytes("80 ff 1e 01 10")
 
 
 def test_enc_gen_time():
@@ -68,44 +62,28 @@ def test_enc_gen_offset():
 
 
 def test_enc_gen_offset_dst():
-    assert encode_sched_gen(
-        TMX(0, 0, 0, 0, 0, 0, 0), False, False, offset="+0200"
-    ) == SBytes("20 02")
-    assert encode_sched_gen(
-        TMX(0, 0, 0, 0, 0, 0, 1), False, False, offset="+0200"
-    ) == SBytes("20 42")
-    assert encode_sched_gen(
-        TMX(0, 0, 0, 0, 0, 0, -1), False, False, offset="+0200"
-    ) == SBytes("20 02")
+    assert encode_sched_gen(TMX(0, 0, 0, 0, 0, 0, 0), False, False, offset="+0200") == SBytes("20 02")
+    assert encode_sched_gen(TMX(0, 0, 0, 0, 0, 0, 1), False, False, offset="+0200") == SBytes("20 42")
+    assert encode_sched_gen(TMX(0, 0, 0, 0, 0, 0, -1), False, False, offset="+0200") == SBytes(
+        "20 02"
+    )
 
 
 def test_enc_gen_tzname():
-    assert encode_sched_gen(None, False, False, tzname="Pacific/Auckland") == SBytes(
-        "10 b9 f8 32 9f"
+    assert encode_sched_gen(None, False, False, tzname="Pacific/Auckland") == SBytes("10 b9 f8 32 9f")
+    assert encode_sched_gen(None, False, False, tzname="America/Argentina/Buenos_Aires") == SBytes(
+        "10 1e 59 9d e4"
     )
-    assert encode_sched_gen(
-        None, False, False, tzname="America/Argentina/Buenos_Aires"
-    ) == SBytes("10 1e 59 9d e4")
 
 
 def test_enc_gen_subsec():
-    assert encode_sched_gen(None, False, False, sub_exp=0, sub=69) == SBytes(
-        "00"
-    )  # no sub_exp
-    assert encode_sched_gen(None, False, False, sub_exp=3, sub=0) == SBytes(
-        "00"
-    )  # no sub
-    assert encode_sched_gen(None, False, False, sub_exp=3, sub=69) == SBytes(
-        "01 45"
-    )  # 69 ms
+    assert encode_sched_gen(None, False, False, sub_exp=0, sub=69) == SBytes("00")  # no sub_exp
+    assert encode_sched_gen(None, False, False, sub_exp=3, sub=0) == SBytes("00")  # no sub
+    assert encode_sched_gen(None, False, False, sub_exp=3, sub=69) == SBytes("01 45")  # 69 ms
     assert encode_sched_gen(None, False, False, sub_exp=-3, sub=69) == SBytes("01 45")
     # ^^ 69 ms (exponent always -ve so we dont actually need the sign)
-    assert encode_sched_gen(None, False, False, sub_exp=6, sub=69) == SBytes(
-        "02 45"
-    )  # 69 us
-    assert encode_sched_gen(None, False, False, sub_exp=9, sub=69) == SBytes(
-        "03 45"
-    )  # 69 ns
+    assert encode_sched_gen(None, False, False, sub_exp=6, sub=69) == SBytes("02 45")  # 69 us
+    assert encode_sched_gen(None, False, False, sub_exp=9, sub=69) == SBytes("03 45")  # 69 ns
 
 
 # --- Testing the Python Datetime encode API ---
@@ -162,9 +140,9 @@ def test_dec_dt_time():
 
 
 def test_dec_dt_sub():
-    assert decode_sched(
-        SBytes("c2 c8 1f 01 10 0d 25 14 b9 60"), 0, 10
-    ) == datetime.datetime(2020, 1, 16, 13, 37, 20, 12345)
+    assert decode_sched(SBytes("c2 c8 1f 01 10 0d 25 14 b9 60"), 0, 10) == datetime.datetime(
+        2020, 1, 16, 13, 37, 20, 12345
+    )
 
 
 # Note: We can only do offsets in the stdlib in py3, py2 doesnt have a builtin concrete tzinfo class
@@ -173,9 +151,7 @@ def test_dec_dt_sub():
 if not PY2:
 
     def test_dec_dt_offset():
-        assert decode_sched(
-            SBytes("e0 c8 1f 01 10 0d 25 14 a2"), 0, 9
-        ) == datetime.datetime(
+        assert decode_sched(SBytes("e0 c8 1f 01 10 0d 25 14 a2"), 0, 9) == datetime.datetime(
             2020,
             1,
             16,
@@ -186,9 +162,7 @@ if not PY2:
         )
 
     def test_dec_dt_offset_sub():
-        assert decode_sched(
-            SBytes("e2 c8 1f 01 10 0d 25 14 a2 b9 60"), 0, 11
-        ) == datetime.datetime(
+        assert decode_sched(SBytes("e2 c8 1f 01 10 0d 25 14 a2 b9 60"), 0, 11) == datetime.datetime(
             2020,
             1,
             16,

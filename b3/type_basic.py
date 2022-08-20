@@ -24,9 +24,7 @@ def encode_ints(typ, value):
 
 def decode_ints(typ, buf, index, end):
     if end - index != INT_SZS[typ]:
-        raise ValueError(
-            "%s data size isn't %d bytes" % (DATATYPE_NAMES[typ], INT_SZS[typ])
-        )
+        raise ValueError("%s data size isn't %d bytes" % (DATATYPE_NAMES[typ], INT_SZS[typ]))
     return struct.unpack(INT_FMTS[typ], buf[index : index + INT_SZS[typ]])[0]
 
 

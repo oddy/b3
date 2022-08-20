@@ -31,15 +31,13 @@ def test_dec_bytes_z():
 # BMP 0000-FFFF,  SMP 10000-1FFFF,  SIP 20000-2FFFF,  TIP 30000-3FFFF
 # Went and got the utf8 bytes from the equivalent golang script
 TEST_UNISTRS = (
-    ("hello world", SBytes("18 0b 68 65 6c 6c 6f 20 77 6f 72 6c 64")),
-    ("Виагра", SBytes("18 0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0")),  # Viagra OWEN
+    (u"hello world", SBytes("18 0b 68 65 6c 6c 6f 20 77 6f 72 6c 64")),
+    (u"Виагра", SBytes("18 0c d0 92 d0 b8 d0 b0 d0 b3 d1 80 d0 b0")),  # Viagra OWEN
     (
-        "✈✉🚀🚸🚼🚽",
-        SBytes(
-            "18 16 e2 9c 88 e2 9c 89 f0 9f 9a 80 f0 9f 9a b8 f0 9f 9a bc f0 9f 9a bd"
-        ),
+        u"✈✉🚀🚸🚼🚽",
+        SBytes("18 16 e2 9c 88 e2 9c 89 f0 9f 9a 80 f0 9f 9a b8 f0 9f 9a bc f0 9f 9a bd"),
     ),
-    ("", SBytes("10")),  # only the header, no data
+    (u"", SBytes("10")),  # only the header, no data
 )
 
 

@@ -90,9 +90,7 @@ def test_dyna_unpack_dict():
 
 def test_dyna_unpack_recurse_invalid_container():
     with pytest.raises(TypeError):
-        unpack_into(
-            None, SBytes("53 0e"), 0, 2
-        )  # passing None instead of a list or dict.
+        unpack_into(None, SBytes("53 0e"), 0, 2)  # passing None instead of a list or dict.
 
 
 # --- Round Trip ---
@@ -108,14 +106,14 @@ def test_dyna_roundtrip_into():
 
 
 def test_dyna_roundtrip_list():
-    test_list = [1, 2, 3, 4, 5, "a", "b", b"xx"]
+    test_list = [1, 2, 3, 4, 5, u"a", u"b", b"xx"]
     assert unpack(pack(test_list), 0) == test_list
 
 
 data_dyna_types = [
     None,
     b"foo",
-    "bar",
+    u"bar",
     True,
     -69,  # note: only SVARINT tested here because of guess_type policy
     2.318,

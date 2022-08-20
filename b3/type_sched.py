@@ -64,9 +64,7 @@ OFFS_HOUR_BITS = 0x0F
 
 def encode_sched(dt, tzname=""):
     if isinstance(dt, datetime.time):  # ugh datetime.time doesnt have timetuple!?
-        tms = namedtuple("tms", "tm_hour tm_min tm_sec tm_isdst")(
-            dt.hour, dt.minute, dt.second, -1
-        )
+        tms = namedtuple("tms", "tm_hour tm_min tm_sec tm_isdst")(dt.hour, dt.minute, dt.second, -1)
     else:
         tms = dt.timetuple()
 
@@ -113,13 +111,9 @@ def encode_sched_gen(tm, is_date, is_time, offset="", tzname="", sub_exp=0, sub=
     # --- Data bytes ---
     out = [int2byte(flags)]
     if is_date:
-        out.extend(
-            [encode_svarint(tm.tm_year), int2byte(tm.tm_mon), int2byte(tm.tm_mday)]
-        )
+        out.extend([encode_svarint(tm.tm_year), int2byte(tm.tm_mon), int2byte(tm.tm_mday)])
     if is_time:
-        out.extend(
-            [int2byte(tm.tm_hour), int2byte(tm.tm_min), int2byte(tm.tm_sec)]
-        )  # note 24hr hour
+        out.extend([int2byte(tm.tm_hour), int2byte(tm.tm_min), int2byte(tm.tm_sec)])  # note 24hr hour
     if offset:
         out.append(encode_offset(offset, tm))  # dst on, vs dst off *or not present*.
     if tzname:

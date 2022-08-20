@@ -46,9 +46,7 @@ ZERO_VALUE_TABLE = {
     S64: 0,
     FLOAT64: 0.0,
     DECIMAL: decimal.Decimal("0.0"),
-    SCHED: datetime.datetime(
-        1, 1, 1
-    ),  # somewhat arbitrary, but matches golang zero-value time
+    SCHED: datetime.datetime(1, 1, 1),  # somewhat arbitrary, but matches golang zero-value time
     LIST: [],  # Note: unused because the composite modules have their own logic
     DICT: {},  # Note: for list and dict.
     COMPLEX: 0j,

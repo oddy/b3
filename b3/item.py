@@ -90,9 +90,7 @@ def encode_item(key, data_type, value):
         cbyte |= 0x08
     if is_null:
         cbyte |= 0x04
-    if (
-        has_data and data_type is not BOOL
-    ):  # has_data controls if there is a data length
+    if has_data and data_type is not BOOL:  # has_data controls if there is a data length
         len_bytes = encode_uvarint(len(value_bytes))
         # ^^ (except for BOOL where there is never a data length)
 
@@ -106,14 +104,10 @@ def encode_item(key, data_type, value):
         # ^^ 'extended' data types 15 and up are a seperate uvarint
         cbyte |= 0xF0  # control byte data_type bits set to all 1's to signify this
     else:
-        cbyte |= (
-            data_type << 4
-        ) & 0xF0  # 'core' data types live in the control byte's bits only.
+        cbyte |= (data_type << 4) & 0xF0  # 'core' data types live in the control byte's bits only.
 
     # --- Build header ---
-    header_bytes = b"".join(
-        [int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes]
-    )
+    header_bytes = b"".join([int2byte(cbyte), ext_data_type_bytes, key_bytes, len_bytes])
     return header_bytes, value_bytes
 
 

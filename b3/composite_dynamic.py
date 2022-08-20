@@ -23,9 +23,7 @@ def pack(item, key=None, with_header=True, rlimit=20):
         data_type = LIST
 
     elif isinstance(item, dict):  # transform item to bytes, note recursive call
-        item = b"".join(
-            [pack(item=v, key=k, rlimit=rlimit - 1) for k, v in item.items()]
-        )
+        item = b"".join([pack(item=v, key=k, rlimit=rlimit - 1) for k, v in item.items()])
         data_type = DICT
 
     else:

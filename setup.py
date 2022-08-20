@@ -28,7 +28,7 @@ setup(
     long_description=open(os.path.join(here, "README.md"), "rb").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/oddy/b3",
-    author="Beau Butler (Oddy)",
+    author="Beau Butler",
     author_email="beau.butler@gmail.com",
     license="MIT",
     classifiers=[
