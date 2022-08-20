@@ -25,7 +25,7 @@ setup(
     packages=find_packages(),
     install_requires=["six"],
     description="B3 is a binary serializer which is easy like json, compact like msgpack, powerful like protobuf, and handles datetimes in python",
-    long_description=open(os.path.join(here, "README.md"), "rb").read(),
+    long_description=open(os.path.join(here, "README.md"), "r").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/oddy/b3",
     author="Beau Butler",
