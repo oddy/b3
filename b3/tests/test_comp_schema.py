@@ -33,9 +33,10 @@ test1 = dict(bool1=True, number1=69)
 # is working.
 test1["string1"] = u"foo"
 
+# --- Test ignoring additional schema info fields after the first 3 ---
+TEST_SCHEMA4 = ((UVARINT, "number1", 1, True), (UTF8, "string1", 2, False), (BOOL, "bool1", 3, True))
 
 # --- Pack/Encoder tests ---
-
 
 def test_schema_pack_nominal_data():  # "Happy path"
     out1_buf = schema_pack(TEST_SCHEMA, test1)
@@ -45,6 +46,11 @@ def test_schema_pack_nominal_data():  # "Happy path"
 def test_schema_pack_dictcheck():
     with pytest.raises(TypeError):
         schema_pack(TEST_SCHEMA, [])
+
+
+def test_schema_pack_ignores_4fields():
+    out1_buf = schema_pack(TEST_SCHEMA4, test1)
+    assert out1_buf == test1_buf
 
 
 # --- Field found in input dict which does not exist in schema. Default=ignore it, strict=raise exception. ---
@@ -144,6 +150,10 @@ def test_schema_pack_nesting():
 
 def test_schema_unpack_nominal_data():  # "Happy path"
     out1_data = schema_unpack(TEST_SCHEMA, test1_buf, 0, len(test1_buf))
+    assert out1_data == test1
+
+def test_schema_unpack_nominal_data_4fields():  # "Happy path"
+    out1_data = schema_unpack(TEST_SCHEMA4, test1_buf, 0, len(test1_buf))
     assert out1_data == test1
 
 
@@ -259,10 +269,10 @@ def test_schema_alltypes_roundtrip():
         bytes1=b"foo",
         string1=u"bar",
         bool1=True,
-        u641=123,
-        s641=123,
         uvint1=456,
         svint1=-789,
+        u641=123,
+        s641=123,
         float1=13.37,
         deci1=Decimal("13.37"),
         date1=datetime.now(),

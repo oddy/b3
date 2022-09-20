@@ -1,12 +1,12 @@
 # B3 Public API
 
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 from b3.datatypes import *
 from b3.composite_dynamic import pack, unpack, unpack_into
 from b3.composite_schema import schema_pack, schema_unpack
 from b3.type_varint import encode_uvarint, decode_uvarint
-from b3.item import encode_item, encode_item_joined
+from b3.item import encode_item, encode_item_joined, decode_header, decode_value
 
 __all__ = [
     "pack",

@@ -12,12 +12,14 @@ strict_mode = False
 def schema_lookup_key(schema, key):
     """return the schema entry given a key value. Try to match field names if non-number provided"""
     if isinstance(key, VALID_INT_TYPES):
-        for typ, name, n in schema:
+        for field_def in schema:
+            typ, name, n = field_def[:3]  # ignore additional schema fields
             if key == n:
                 return typ, name, n
         return None, None, None
     else:
-        for typ, name, n in schema:
+        for field_def in schema:     # ignore additional schema fields
+            typ, name, n = field_def[:3]
             if key == name:
                 return typ, name, n
         return None, None, None
@@ -54,7 +56,8 @@ def schema_pack(schema, data):
         out[schema_key_number] = encode_item(schema_key_number, schema_type, value)
 
     # Check schema fields that are missing from supplied data. Policy: Do it by NUMBER.
-    for mtyp, mname, mnum in schema:
+    for field_def in schema:
+        mtyp, mname, mnum = field_def[:3]
         if mnum not in out:
             out[mnum] = encode_item(mnum, mtyp, None)
             # print("schema field %i missing from supplied, adding it with value None" % (mnum,))
