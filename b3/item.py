@@ -168,6 +168,10 @@ def decode_value(data_type, has_data, is_null, data_len, buf, index):
 
     # --- Bytes (bytes, dict, list, unknown etc) ---
     else:
+        # go would blow up in this case, python just gives us what it can, but we don't want that
+        # all the other decoders complain if the sizing is wrong, so we should behave consistently
+        if index+data_len > len(buf):
+            raise ValueError("buffer truncated - field data is shorter than wanted field size")
         return buf[index : index + data_len]
 
 
