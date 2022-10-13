@@ -2,7 +2,7 @@ from b3.utils import SBytes
 from b3.type_varint import *
 
 # Testing the varint functions themselves.
-# codec-style varint tests are in test_basic.py
+# most of the codec-varint tests are in the Numbers test bank in test_core.py
 
 
 def test_uvarint_enc():
@@ -30,6 +30,8 @@ def test_svarint_dec():
     assert decode_svarint(SBytes("63"), 0) == (-50, 1)
     assert decode_svarint(SBytes("aa b4 de 75"), 0) == (123456789, 4)
     assert decode_svarint(SBytes("a9 b4 de 75"), 0) == (-123456789, 4)
+
+
 
 
 # --- Notes for benchmarking ---

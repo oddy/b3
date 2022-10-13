@@ -113,6 +113,33 @@ def test_dec_number(desc, ttype, tvalue, tbytes):
 
 # --------------------------------------------------------------------------------------------------
 
+# Ensure the codec-varint decoder routines correctly deal with a field that's sized wrong
+# (ie the field size should match the varint's self-sizing size, error if not.)
+
+def test_dec_uvarint_badsize_lg():
+    tbytes = SBytes("38 05 85 a3 a8 6a 10")
+    with pytest.raises(ValueError):
+        data_type, value = decode_item_type_value(tbytes)
+
+def test_dec_svarint_badsize_lg():
+    tbytes = SBytes("48 05 85 a3 a8 6a 10")
+    with pytest.raises(ValueError):
+        data_type, value = decode_item_type_value(tbytes)
+
+def test_dec_uvarint_badsize_sm():
+    tbytes = SBytes("38 03 85 a3 a8 6a 10")
+    with pytest.raises(ValueError):
+        data_type, value = decode_item_type_value(tbytes)
+
+def test_dec_svarint_badsize_sm():
+    tbytes = SBytes("48 03 85 a3 a8 6a 10")
+    with pytest.raises(ValueError):
+        data_type, value = decode_item_type_value(tbytes)
+
+
+
+# --------------------------------------------------------------------------------------------------
+
 # Sched and decimal basic tests (incl zerovalues).
 # Codec tests for sched and decimal have their own test file.
 # Note passing the value to decimal.Decimal as a string to ensure precision.

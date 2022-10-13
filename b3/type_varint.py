@@ -67,11 +67,17 @@ def decode_svarint(data, index):
 
 # --- Codec-use Decoders ---
 def codec_decode_uvarint(data, index, end):
-    return decode_uvarint(data, index)[0]
+    val, index2 = decode_uvarint(data, index)
+    if index2 != end:
+        raise ValueError("mismatch between tlv field size and uvarint data size")
+    return val
 
 
 def codec_decode_svarint(data, index, end):
-    return decode_svarint(data, index)[0]
+    val, index2 = decode_svarint(data, index)
+    if index2 != end:
+        raise ValueError("mismatch between tlv field size and svarint data size")
+    return val
 
 
 # microbenchmark:
